@@ -1,6 +1,6 @@
 include $(GOROOT)/src/Make.inc
 
-TARG=github.com/pomack/dsocial.go/dsocial
+TARG=github.com/pomack/dsocial.go/models/dsocial
 GOFILES=\
 	accounts.go\
 	albums.go\
