@@ -542,6 +542,30 @@ func GoogleContactToDsocial(g *google.Contact) *Contact {
 }
 
 
+func GoogleGroupToDsocial(g *google.ContactGroup) *Group {
+    if g == nil {
+        return nil
+    }
+    c := new(Group)
+    c.Name = g.Title.Value
+    c.Description = g.Content.Value
+    return c
+}
+
+func DsocialGroupToGoogle(g *Group) *google.ContactGroup {
+    if g == nil {
+        return nil
+    }
+    c := new(google.ContactGroup)
+    c.Title.Value = g.Name
+    c.Content.Value = g.Description
+    c.Xmlns = google.XMLNS_ATOM
+    c.XmlnsGcontact = google.XMLNS_GCONTACT
+    c.XmlnsBatch = google.XMLNS_GDATA_BATCH
+    c.XmlnsGd = google.XMLNS_GD
+    return c
+}
+
 ///
 /// Begin conversions from dsocial Contact to Google
 ///
