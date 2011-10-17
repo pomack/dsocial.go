@@ -151,6 +151,7 @@ type ContactDateTime struct {
 
 type Group struct {
     AclPersistableModel `json:"model,omitempty,collapse"`
+    UserId              string   `json:"user_id,omitempty"`
     Name                string   `json:"name,omitempty"`
     Description         string   `json:"description,omitempty"`
     ContactIds          []string `json:"contact_ids,omitempty"`
