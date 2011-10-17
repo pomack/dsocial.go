@@ -1,7 +1,7 @@
 package dsocial_test
 
 import (
-    . "github.com/pomack/contacts.go/dsocial"
+    . "github.com/pomack/dsocial.go/models/dsocial"
     "testing"
 )
 
