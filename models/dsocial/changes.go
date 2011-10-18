@@ -8,49 +8,49 @@ import (
 )
 
 type ChangeSet struct {
-    Id              string      `json:"id"`
-    RecordId        string      `json:"record_id"`
-    CreatedAt       string      `json:"created_at"`
-    ChangedBy       string      `json:"changed_by"`
-    ChangeImportId  string      `json:"change_import_id,omitempty"`
-    Changes         []*Change   `json:"changes"`
+    Id             string    `json:"id"`
+    RecordId       string    `json:"record_id"`
+    CreatedAt      string    `json:"created_at"`
+    ChangedBy      string    `json:"changed_by"`
+    ChangeImportId string    `json:"change_import_id,omitempty"`
+    Changes        []*Change `json:"changes"`
 }
 
 type Change struct {
-    Id              string              `json:"id"`
-    RecordId        string              `json:"record_id"`
-    Path            []*PathComponent    `json:"path"`
-    ChangeType      ChangeType          `json:"change_type"`
-    OriginalValue   interface{}         `json:"original_value,omitempty"`
-    NewValue        interface{}         `json:"new_value,omitempty"`
+    Id            string           `json:"id"`
+    RecordId      string           `json:"record_id"`
+    Path          []*PathComponent `json:"path"`
+    ChangeType    ChangeType       `json:"change_type"`
+    OriginalValue interface{}      `json:"original_value,omitempty"`
+    NewValue      interface{}      `json:"new_value,omitempty"`
 }
 
 type ChangeType string
 
 type PathComponent struct {
-    Type    int             `json:"type"`
-    Value   string          `json:"value"`
+    Type  int    `json:"type"`
+    Value string `json:"value"`
 }
 
-func (p *PathComponent) IsId() bool { return p.Type == PATH_COMPONENT_TYPE_ID }
-func (p *PathComponent) IsKey() bool { return p.Type == PATH_COMPONENT_TYPE_KEY }
-func (p *PathComponent) IsIndex() bool { return p.Type == PATH_COMPONENT_TYPE_INDEX }
+func (p *PathComponent) IsId() bool       { return p.Type == PATH_COMPONENT_TYPE_ID }
+func (p *PathComponent) IsKey() bool      { return p.Type == PATH_COMPONENT_TYPE_KEY }
+func (p *PathComponent) IsIndex() bool    { return p.Type == PATH_COMPONENT_TYPE_INDEX }
 func (p *PathComponent) IsMapIndex() bool { return p.Type == PATH_COMPONENT_TYPE_MAP_INDEX }
 
-func NewPathComponentId(value string) *PathComponent{
-    return &PathComponent{Type:PATH_COMPONENT_TYPE_ID, Value:value}
+func NewPathComponentId(value string) *PathComponent {
+    return &PathComponent{Type: PATH_COMPONENT_TYPE_ID, Value: value}
 }
 
-func NewPathComponentKey(value string) *PathComponent{
-    return &PathComponent{Type:PATH_COMPONENT_TYPE_KEY, Value:value}
+func NewPathComponentKey(value string) *PathComponent {
+    return &PathComponent{Type: PATH_COMPONENT_TYPE_KEY, Value: value}
 }
 
-func NewPathComponentIndex(value string) *PathComponent{
-    return &PathComponent{Type:PATH_COMPONENT_TYPE_INDEX, Value:value}
+func NewPathComponentIndex(value string) *PathComponent {
+    return &PathComponent{Type: PATH_COMPONENT_TYPE_INDEX, Value: value}
 }
 
-func NewPathComponentMapIndex(value string) *PathComponent{
-    return &PathComponent{Type:PATH_COMPONENT_TYPE_MAP_INDEX, Value:value}
+func NewPathComponentMapIndex(value string) *PathComponent {
+    return &PathComponent{Type: PATH_COMPONENT_TYPE_MAP_INDEX, Value: value}
 }
 
 func NewPathComponentFromExisting(pathComponent []*PathComponent, parts ...*PathComponent) []*PathComponent {
@@ -58,32 +58,38 @@ func NewPathComponentFromExisting(pathComponent []*PathComponent, parts ...*Path
         return parts
     }
     l := len(pathComponent)
-    p := make([]*PathComponent, l + len(parts))
+    p := make([]*PathComponent, l+len(parts))
     for i, path := range pathComponent {
         p[i] = path
     }
     for i, path := range parts {
-        p[i + l] = path
+        p[i+l] = path
     }
     return p
 }
 
 func ApplyAddChange(itemToModify interface{}, value interface{}, path []*PathComponent) {
-    if value == nil { return }
-    if itemToModify == nil { return }
+    if value == nil {
+        return
+    }
+    if itemToModify == nil {
+        return
+    }
     v := reflect.Indirect(reflect.ValueOf(itemToModify))
     lpath := len(path)
     valueType := reflect.TypeOf(value)
     valueValue := reflect.ValueOf(value)
     for i, component := range path {
-        isLast := i + 1 == lpath
+        isLast := i+1 == lpath
         switch component.Type {
         case PATH_COMPONENT_TYPE_ID:
             l := v.Len()
             var nextV reflect.Value
             for k := 0; k < l && !nextV.IsValid(); k++ {
                 pelem := v.Index(k)
-                if pelem.IsNil() { continue }
+                if pelem.IsNil() {
+                    continue
+                }
                 elem := reflect.Indirect(pelem)
                 idValue := elem.FieldByName("Id")
                 if idValue.IsValid() {
@@ -180,20 +186,23 @@ func ApplyAddChange(itemToModify interface{}, value interface{}, path []*PathCom
     }
 }
 
-
 func ApplyDeleteChange(itemToModify interface{}, valueToDelete interface{}, path []*PathComponent) {
-    if itemToModify == nil { return }
+    if itemToModify == nil {
+        return
+    }
     v := reflect.Indirect(reflect.ValueOf(itemToModify))
     lpath := len(path)
     for i, component := range path {
-        isLast := i + 1 == lpath
+        isLast := i+1 == lpath
         switch component.Type {
         case PATH_COMPONENT_TYPE_ID:
             l := v.Len()
             var nextV reflect.Value
             for k := 0; k < l && !nextV.IsValid(); k++ {
                 pelem := v.Index(k)
-                if pelem.IsNil() { continue }
+                if pelem.IsNil() {
+                    continue
+                }
                 elem := reflect.Indirect(pelem)
                 idValue := elem.FieldByName("Id")
                 if idValue.IsValid() {
@@ -238,7 +247,7 @@ func ApplyDeleteChange(itemToModify interface{}, valueToDelete interface{}, path
                                     l1 := nextV.Len()
                                     for i1 := 0; i1 < l1; i1++ {
                                         if reflect.DeepEqual(nextV.Index(i1).Interface(), valueToDelete) {
-                                            if i1 + 1 >= l1 {
+                                            if i1+1 >= l1 {
                                                 vField.Set(nextV.Slice(0, i1))
                                             } else {
                                                 vField.Set(reflect.AppendSlice(nextV.Slice(0, i1), nextV.Slice(i1+1, l1)))
@@ -264,7 +273,7 @@ func ApplyDeleteChange(itemToModify interface{}, valueToDelete interface{}, path
             atIndex, _ := strconv.Atoi(component.Value)
             if isLast {
                 if atIndex >= 0 && atIndex < v.Len() {
-                    if atIndex + 1 == v.Len() {
+                    if atIndex+1 == v.Len() {
                         v.Set(v.Slice(0, atIndex))
                     } else {
                         v.Set(reflect.AppendSlice(v.Slice(0, atIndex), v.Slice(atIndex+1, v.Len())))
@@ -294,23 +303,28 @@ func ApplyDeleteChange(itemToModify interface{}, valueToDelete interface{}, path
     }
 }
 
-
 func ApplyUpdateChange(itemToModify interface{}, original interface{}, latest interface{}, path []*PathComponent) {
-    if latest == nil { return }
-    if itemToModify == nil { return }
+    if latest == nil {
+        return
+    }
+    if itemToModify == nil {
+        return
+    }
     v := reflect.Indirect(reflect.ValueOf(itemToModify))
     lpath := len(path)
     latestType := reflect.TypeOf(latest)
     latestValue := reflect.ValueOf(latest)
     for i, component := range path {
-        isLast := i + 1 == lpath
+        isLast := i+1 == lpath
         switch component.Type {
         case PATH_COMPONENT_TYPE_ID:
             l := v.Len()
             var nextV reflect.Value
             for k := 0; k < l && !nextV.IsValid(); k++ {
                 pelem := v.Index(k)
-                if pelem.IsNil() { continue }
+                if pelem.IsNil() {
+                    continue
+                }
                 elem := reflect.Indirect(pelem)
                 idValue := elem.FieldByName("Id")
                 if idValue.IsValid() {
@@ -395,7 +409,7 @@ func ApplyUpdateChange(itemToModify interface{}, original interface{}, latest in
                 for i1 := 0; i1 < l1; i1++ {
                     if reflect.DeepEqual(reflect.Indirect(v.Index(i1)).Interface(), original) {
                         found = true
-                        if i1 + 1 >= l1 {
+                        if i1+1 >= l1 {
                             curValue = v.Slice(0, i1)
                         } else {
                             curValue = reflect.AppendSlice(v.Slice(0, i1), v.Slice(i1+1, l1))
@@ -448,7 +462,9 @@ func ApplyUpdateChange(itemToModify interface{}, original interface{}, latest in
 }
 
 func ApplyChange(itemToModify interface{}, ch *Change) {
-    if ch == nil { return }
+    if ch == nil {
+        return
+    }
     switch ch.ChangeType {
     case CHANGE_TYPE_ADD:
         ApplyAddChange(itemToModify, ch.NewValue, ch.Path)

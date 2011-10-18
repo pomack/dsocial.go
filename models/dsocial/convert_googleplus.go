@@ -40,9 +40,9 @@ func GooglePlusPersonToDsocial(g *googleplus.Person) *Contact {
     c.PostalAddresses = make([]*PostalAddress, len(g.PlacesLived))
     for i, addr := range g.PlacesLived {
         c.PostalAddresses[i] = &PostalAddress{
-            Address:addr.Value,
-            Rel:REL_ADDRESS_OTHER,
-            IsPrimary:addr.Primary,
+            Address:   addr.Value,
+            Rel:       REL_ADDRESS_OTHER,
+            IsPrimary: addr.Primary,
         }
     }
     educations := list.New()
@@ -54,27 +54,27 @@ func GooglePlusPersonToDsocial(g *googleplus.Person) *Contact {
             to := googleDateStringToDsocial(org.EndDate)
             isCurrent := (from != nil && to == nil) || org.Primary
             educations.PushBack(&Education{
-                Label:org.Title,
-                Institution:org.Name,
-                AttendedFrom:from,
-                AttendedTill:to,
-                IsCurrent:isCurrent,
+                Label:        org.Title,
+                Institution:  org.Name,
+                AttendedFrom: from,
+                AttendedTill: to,
+                IsCurrent:    isCurrent,
             })
         case googleplus.ORGANIZATION_TYPE_WORK:
             from := googleDateStringToDsocial(org.StartDate)
             to := googleDateStringToDsocial(org.EndDate)
             isCurrent := (from != nil && to == nil) || org.Primary
             workhistories.PushBack(&WorkHistory{
-                Positions:[]*WorkPosition{&WorkPosition{
-                   Title:org.Title, 
-                   Description:org.Description,
-                   From:from,
-                   To:to,
-                   IsCurrent:isCurrent,
-                   Location:org.Location,
-                   Department:org.Department,
+                Positions: []*WorkPosition{&WorkPosition{
+                    Title:       org.Title,
+                    Description: org.Description,
+                    From:        from,
+                    To:          to,
+                    IsCurrent:   isCurrent,
+                    Location:    org.Location,
+                    Department:  org.Department,
                 }},
-                Company:org.Name,
+                Company: org.Name,
             })
         }
     }
@@ -88,7 +88,7 @@ func GooglePlusPersonToDsocial(g *googleplus.Person) *Contact {
     }
     c.Languages = make([]*Language, len(g.LanguagesSpoken))
     for i, lang := range g.LanguagesSpoken {
-        c.Languages[i] = &Language{Name:lang}
+        c.Languages[i] = &Language{Name: lang}
     }
     c.EmailAddresses = make([]*Email, len(g.Emails))
     for i, email := range g.Emails {
@@ -116,7 +116,7 @@ func googleplusUriToDsocial(g *googleplus.Url) *Uri {
     default:
         rel = REL_URI_OTHER
     }
-    return &Uri{Rel:rel, Uri:g.Value, IsPrimary:g.Primary}
+    return &Uri{Rel: rel, Uri: g.Value, IsPrimary: g.Primary}
 }
 
 func googleplusEmailToDsocial(g *googleplus.Email) *Email {
@@ -134,9 +134,5 @@ func googleplusEmailToDsocial(g *googleplus.Email) *Email {
     default:
         rel = REL_EMAIL_OTHER
     }
-    return &Email{Rel:rel, EmailAddress:g.Value, IsPrimary:g.Primary}
+    return &Email{Rel: rel, EmailAddress: g.Value, IsPrimary: g.Primary}
 }
-
-
-
-

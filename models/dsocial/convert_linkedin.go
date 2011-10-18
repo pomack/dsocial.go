@@ -52,10 +52,10 @@ func LinkedInContactToDsocial(l *linkedin.Contact) *Contact {
     c.PrimaryAddress = l.MainAddress
     if l.MainAddress != "" || l.Location.Country.Code != "" || l.Location.Name != "" {
         c.PostalAddresses = []*PostalAddress{&PostalAddress{
-            Address:          l.MainAddress,
-            Municipality:     l.Location.Name,
-            Country:          l.Location.Country.Code,
-            Rel:              REL_ADDRESS_HOME,
+            Address:      l.MainAddress,
+            Municipality: l.Location.Name,
+            Country:      l.Location.Country.Code,
+            Rel:          REL_ADDRESS_HOME,
         }}
     }
     c.Skills = make([]*Skill, len(l.Skills.Values))
@@ -66,7 +66,7 @@ func LinkedInContactToDsocial(l *linkedin.Contact) *Contact {
     for i, language := range l.Languages.Values {
         c.Languages[i] = linkedinLanguageToDsocial(&language)
     }
-    c.Uris = make([]*Uri, len(l.Urls.Values) + 1)
+    c.Uris = make([]*Uri, len(l.Urls.Values)+1)
     c.Uris[0] = &Uri{Rel: REL_URI_LINKEDIN, Uri: l.PublicProfileUrl}
     for i, resource := range l.Urls.Values {
         c.Uris[i+1] = linkedinUrlResourceToDsocial(&resource)

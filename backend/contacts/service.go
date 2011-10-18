@@ -8,7 +8,6 @@ import (
 
 type NextToken interface{}
 
-
 type DataStoreService interface {
     // Retrieve the dsocial contact id for the specified external service/user id/contact id combo
     // Returns:
@@ -42,8 +41,7 @@ type DataStoreService interface {
     //   dsocialExisted : whether the dsocial group id mapping already existed and was overwritten
     //   err : error or nil
     StoreDsocialExternalGroupMapping(externalServiceId, externalUserId, externalGroupId, dsocialUserId, dsocialGroupId string) (externalExisted, dsocialExisted bool, err os.Error)
-    
-    
+
     // Retrieve external contact
     // Returns:
     //   externalContact : the contact as stored into the service using StoreExternalContact or nil if not found
@@ -76,7 +74,7 @@ type DataStoreService interface {
     //   existed : whether the group existed upon deletion
     //   err : error or nil
     DeleteExternalGroup(externalServiceId, externalUserId, dsocialUserId, externalGroupId string) (existed bool, err os.Error)
-    
+
     // Retrieve dsocial contact
     // Returns:
     //   dsocialContact : the contact as stored into the service using StoreDsocialContact or nil if not found
@@ -110,7 +108,6 @@ type DataStoreService interface {
     //   err : error or nil
     DeleteDsocialGroup(dsocialUserId, dsocialGroupId string) (existed bool, err os.Error)
 }
-
 
 type ContactsService interface {
     // Whether this service can retrieve all contacts at once
@@ -147,7 +144,7 @@ type ContactsService interface {
     GroupInfoIncludesContactIds() bool
     // Whether this service shows group memberships when retrieving a single contact
     ContactInfoIncludesGroups() bool
-    
+
     // Retrieve all contacts using the specified client
     // Returns:
     //   contacts : all contacts
@@ -195,12 +192,12 @@ type ContactsService interface {
     // Returns:
     //   updatedContact : updated version of contact with fields updated like Id and LastModified
     //   err : error or nil
-    CreateContact(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId string, contact *dm.Contact)  (updatedContact *dm.Contact, err os.Error)
+    CreateContact(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId string, contact *dm.Contact) (updatedContact *dm.Contact, err os.Error)
     // Creates the specified group
     // Returns:
     //   updatedGroup : updated version of group with fields updated like Id and LastModified
     //   err : error or nil
-    CreateGroup(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId string, group *dm.Group)  (updatedGroup *dm.Group, err os.Error)
+    CreateGroup(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId string, group *dm.Group) (updatedGroup *dm.Group, err os.Error)
     // Updates the specified contact
     // Returns:
     //   updatedContact : updated version of contact with fields updated like LastModified
@@ -210,7 +207,7 @@ type ContactsService interface {
     // Returns:
     //   updatedGroup : updated version of group with fields updated like LastModified
     //   err : error or nil
-    UpdateGroup(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId string, originalGroup, group *dm.Group)  (updatedGroup *dm.Group, err os.Error)
+    UpdateGroup(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId string, originalGroup, group *dm.Group) (updatedGroup *dm.Group, err os.Error)
     // Deletes the specified contact
     // Returns:
     //   existed : whether the contact existed upon deletiong

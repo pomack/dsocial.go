@@ -13,10 +13,9 @@ func SmugMugUserToDsocial(s *smugmug.PersonReference) *Contact {
     c.Nickname = s.NickName
     if s.Url != "" {
         c.Uris = []*Uri{&Uri{
-            Rel:REL_URI_SMUGMUG,
-            Uri:s.Url,
+            Rel: REL_URI_SMUGMUG,
+            Uri: s.Url,
         }}
     }
     return c
 }
-

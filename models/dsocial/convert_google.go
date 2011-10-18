@@ -541,7 +541,6 @@ func GoogleContactToDsocial(g *google.Contact) *Contact {
     return c
 }
 
-
 func GoogleGroupToDsocial(g *google.ContactGroup) *Group {
     if g == nil {
         return nil
@@ -739,7 +738,7 @@ func dsocialImToGoogle(c *IM, g *google.Im, primaryIm string) {
     g.Rel = rel
     g.Address = c.Handle
     g.Protocol = protocol
-    if c.IsPrimary || protocol + ":" + c.Handle == primaryIm {
+    if c.IsPrimary || protocol+":"+c.Handle == primaryIm {
         g.Primary = "true"
     } else {
         g.Primary = ""
@@ -767,16 +766,16 @@ func dsocialPostalAddressToGoogle(c *PostalAddress, g *google.StructuredPostalAd
     }
     // TODO figure out how to handle all these types
     /*
-    other := ""
-    if g.POBox.Value != "" {
-        other = "P.O. Box " + g.POBox.Value
-    } else if g.Neighborhood.Value != "" {
-        other = g.Neighborhood.Value
-    } else if g.Agent.Value != "" {
-        other = g.Agent.Value
-    } else if g.HouseName.Value != "" {
-        other = g.HouseName.Value
-    }
+       other := ""
+       if g.POBox.Value != "" {
+           other = "P.O. Box " + g.POBox.Value
+       } else if g.Neighborhood.Value != "" {
+           other = g.Neighborhood.Value
+       } else if g.Agent.Value != "" {
+           other = g.Agent.Value
+       } else if g.HouseName.Value != "" {
+           other = g.HouseName.Value
+       }
     */
     g.Rel = rel
     g.Label = label
@@ -976,7 +975,7 @@ func DsocialContactToGoogle(c *Contact) *google.Contact {
         dsocialImToGoogle(im, &g.Ims[i], c.PrimaryIm)
     }
     g.Birthday.When = dsocialDateToGoogleString(c.Birthday)
-    
+
     events := list.New()
     if c.Anniversary != nil && !c.Anniversary.IsEmpty() {
         event := new(google.Event)
@@ -1000,7 +999,7 @@ func DsocialContactToGoogle(c *Contact) *google.Contact {
     }
     n := events.Len()
     g.Events = make([]google.Event, n)
-    for i, e := 0, events.Front(); e != nil; i, e = i + 1, e.Next() {
+    for i, e := 0, events.Front(); e != nil; i, e = i+1, e.Next() {
         g.Events[i] = *(e.Value.(*google.Event))
     }
     // TODO group memberships
@@ -1014,4 +1013,3 @@ func DsocialContactToGoogle(c *Contact) *google.Contact {
     }
     return g
 }
-

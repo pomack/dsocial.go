@@ -1,20 +1,19 @@
 package dsocial
 
 const (
-    
+
     // ChangeType
-    CHANGE_TYPE_CREATE  ChangeType = "create"
-    CHANGE_TYPE_ADD     ChangeType = "add"
-    CHANGE_TYPE_UPDATE  ChangeType = "update"
-    CHANGE_TYPE_DELETE  ChangeType = "delete"
-    
+    CHANGE_TYPE_CREATE ChangeType = "create"
+    CHANGE_TYPE_ADD    ChangeType = "add"
+    CHANGE_TYPE_UPDATE ChangeType = "update"
+    CHANGE_TYPE_DELETE ChangeType = "delete"
+
     // Path Component Type
-    PATH_COMPONENT_TYPE_ID = 1
-    PATH_COMPONENT_TYPE_KEY = 2
-    PATH_COMPONENT_TYPE_INDEX = 3
+    PATH_COMPONENT_TYPE_ID        = 1
+    PATH_COMPONENT_TYPE_KEY       = 2
+    PATH_COMPONENT_TYPE_INDEX     = 3
     PATH_COMPONENT_TYPE_MAP_INDEX = 4
-    
-    
+
     // Contact Name Ordering
     GIVEN_MIDDLE_SURNAME          ContactNameOrdering = "gms"
     SURNAME_GIVEN_MIDDLE          ContactNameOrdering = "sgm"
@@ -42,7 +41,7 @@ const (
     REL_EDUCATION_COLLEGE           RelEducation = "college"
     REL_EDUCATION_GRADUATE_SCHOOL   RelEducation = "graduate_school"
     REL_EDUCATION_VOCATIONAL        RelEducation = "vocational"
-    REL_EDUCATION_OTHER   RelEducation = REL_OTHER
+    REL_EDUCATION_OTHER             RelEducation = REL_OTHER
 
     // Phone rels
     REL_PHONE_HOME         RelPhoneNumber = REL_HOME
@@ -174,5 +173,3 @@ const (
     REL_IN_CIVIL_UNION            RelRelationshipStatus = "in_civil_union"
     REL_RELATIONSHIP_STATUS_OTHER RelRelationshipStatus = REL_OTHER
 )
-
-

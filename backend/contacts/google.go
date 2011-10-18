@@ -12,7 +12,7 @@ import (
 )
 
 type GoogleContactService struct {
-    
+
 }
 
 func (p *GoogleContactService) CanRetrieveAllContacts() bool {
@@ -82,8 +82,6 @@ func (p *GoogleContactService) GroupInfoIncludesContactIds() bool {
 func (p *GoogleContactService) ContactInfoIncludesGroups() bool {
     return true
 }
-
-
 
 func (p *GoogleContactService) RetrieveAllContacts(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId string) ([]*dm.Contact, os.Error) {
     contacts, _, err := p.RetrieveContacts(client, ds, dsocialUserId, nil)
@@ -298,7 +296,7 @@ func (p *GoogleContactService) RetrieveGroups(client oauth2_client.OAuth2Client,
 func (p *GoogleContactService) RetrieveContact(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId string, contactId string) (*dm.Contact, os.Error) {
     googleContact, err := google.RetrieveContact(client, contactId, nil)
     if googleContact == nil || err != nil {
-        return nil,  err
+        return nil, err
     }
     externalServiceId := client.ServiceId()
     userInfo, err := client.RetrieveUserInfo()

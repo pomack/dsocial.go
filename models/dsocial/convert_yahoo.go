@@ -32,7 +32,7 @@ func YahooContactToDsocial(l *yahoo.Contact) *Contact {
                     rel = REL_EMAIL_WORK
                 }
             }
-            emails.PushBack(&Email{Rel:rel, EmailAddress:field.Value.(string)})
+            emails.PushBack(&Email{Rel: rel, EmailAddress: field.Value.(string)})
         case yahoo.YAHOO_FIELD_TYPE_YAHOOID:
             rel := REL_IM_OTHER
             for _, flag := range field.Flags {
@@ -43,7 +43,7 @@ func YahooContactToDsocial(l *yahoo.Contact) *Contact {
                     rel = REL_IM_WORK
                 }
             }
-            ims.PushBack(&IM{Rel:rel, Protocol:REL_IM_PROT_YAHOO_MESSENGER, Handle:field.Value.(string)})
+            ims.PushBack(&IM{Rel: rel, Protocol: REL_IM_PROT_YAHOO_MESSENGER, Handle: field.Value.(string)})
         case yahoo.YAHOO_FIELD_TYPE_OTHERID:
             rel := REL_IM_OTHER
             var prot RelIMProtocol
@@ -93,7 +93,7 @@ func YahooContactToDsocial(l *yahoo.Contact) *Contact {
                     continue
                 }
             }
-            ims.PushBack(&IM{Rel:rel, Protocol:prot, Handle:field.Value.(string)})
+            ims.PushBack(&IM{Rel: rel, Protocol: prot, Handle: field.Value.(string)})
         case yahoo.YAHOO_FIELD_TYPE_PHONE:
             rel := REL_PHONE_OTHER
             for _, flag := range field.Flags {
@@ -118,7 +118,7 @@ func YahooContactToDsocial(l *yahoo.Contact) *Contact {
                     rel = REL_PHONE_WORK
                 }
             }
-            ph := &PhoneNumber{Rel:rel}
+            ph := &PhoneNumber{Rel: rel}
             ParsePhoneNumber(field.Value.(string), ph)
             phones.PushBack(ph)
         case yahoo.YAHOO_FIELD_TYPE_JOBTITLE:
@@ -137,7 +137,7 @@ func YahooContactToDsocial(l *yahoo.Contact) *Contact {
                     rel = REL_URI_GOOGLE_PROFILE
                 }
             }
-            uris.PushBack(Uri{Rel:rel, Uri:field.Value.(string)})
+            uris.PushBack(Uri{Rel: rel, Uri: field.Value.(string)})
         case yahoo.YAHOO_FIELD_TYPE_CUSTOM:
             continue
         case yahoo.YAHOO_FIELD_TYPE_NAME:
@@ -152,7 +152,7 @@ func YahooContactToDsocial(l *yahoo.Contact) *Contact {
             addr := field.Value.(yahoo.Address)
             a := new(PostalAddress)
             a.StreetAddress = addr.Street
-            a.Municipality  = addr.City
+            a.Municipality = addr.City
             a.Region = addr.StateOrProvince
             a.PostalCode = addr.PostalCode
             if addr.CountryCode != "" {
@@ -185,36 +185,35 @@ func YahooContactToDsocial(l *yahoo.Contact) *Contact {
         }
     }
     c.EmailAddresses = make([]*Email, emails.Len())
-    for i, iter := 0, emails.Front(); iter != nil; i, iter = i + 1, iter.Next() {
+    for i, iter := 0, emails.Front(); iter != nil; i, iter = i+1, iter.Next() {
         c.EmailAddresses[i] = iter.Value.(*Email)
     }
     c.PhoneNumbers = make([]*PhoneNumber, phones.Len())
-    for i, iter := 0, phones.Front(); iter != nil; i, iter = i + 1, iter.Next() {
+    for i, iter := 0, phones.Front(); iter != nil; i, iter = i+1, iter.Next() {
         c.PhoneNumbers[i] = iter.Value.(*PhoneNumber)
     }
     c.Uris = make([]*Uri, uris.Len())
-    for i, iter := 0, uris.Front(); iter != nil; i, iter = i + 1, iter.Next() {
+    for i, iter := 0, uris.Front(); iter != nil; i, iter = i+1, iter.Next() {
         c.Uris[i] = iter.Value.(*Uri)
     }
     c.Ims = make([]*IM, ims.Len())
-    for i, iter := 0, ims.Front(); iter != nil; i, iter = i + 1, iter.Next() {
+    for i, iter := 0, ims.Front(); iter != nil; i, iter = i+1, iter.Next() {
         c.Ims[i] = iter.Value.(*IM)
     }
     c.PostalAddresses = make([]*PostalAddress, addresses.Len())
-    for i, iter := 0, addresses.Front(); iter != nil; i, iter = i + 1, iter.Next() {
+    for i, iter := 0, addresses.Front(); iter != nil; i, iter = i+1, iter.Next() {
         c.PostalAddresses[i] = iter.Value.(*PostalAddress)
     }
     return c
 }
-
 
 func DsocialContactToYahoo(c *Contact) *yahoo.Contact {
     y := new(yahoo.Contact)
     fields := list.New()
     if c.Nickname != "" {
         fields.PushBack(&yahoo.ContactField{
-            Type:yahoo.YAHOO_FIELD_TYPE_NICKNAME,
-            Value:c.Nickname,
+            Type:  yahoo.YAHOO_FIELD_TYPE_NICKNAME,
+            Value: c.Nickname,
         })
     }
     for _, email := range c.EmailAddresses {
@@ -231,9 +230,9 @@ func DsocialContactToYahoo(c *Contact) *yahoo.Contact {
             flags[0] = flag
         }
         fields.PushBack(&yahoo.ContactField{
-            Type:yahoo.YAHOO_FIELD_TYPE_EMAIL,
-            Value:email.EmailAddress,
-            Flags:flags,
+            Type:  yahoo.YAHOO_FIELD_TYPE_EMAIL,
+            Value: email.EmailAddress,
+            Flags: flags,
         })
     }
     for _, im := range c.Ims {
@@ -272,9 +271,9 @@ func DsocialContactToYahoo(c *Contact) *yahoo.Contact {
             continue
         }
         fields.PushBack(&yahoo.ContactField{
-            Type:thetype,
-            Value:im.Handle,
-            Flags:[]string(flags),
+            Type:  thetype,
+            Value: im.Handle,
+            Flags: []string(flags),
         })
     }
     for _, phone := range c.PhoneNumbers {
@@ -298,33 +297,33 @@ func DsocialContactToYahoo(c *Contact) *yahoo.Contact {
             flags.Push(yahoo.YAHOO_FIELD_FLAG_WORK)
         }
         fields.PushBack(&yahoo.ContactField{
-            Type:yahoo.YAHOO_FIELD_TYPE_PHONE,
-            Value:phone.FormattedNumber,
-            Flags:[]string(flags),
+            Type:  yahoo.YAHOO_FIELD_TYPE_PHONE,
+            Value: phone.FormattedNumber,
+            Flags: []string(flags),
         })
     }
     if c.Title != "" {
         fields.PushBack(&yahoo.ContactField{
-            Type:yahoo.YAHOO_FIELD_TYPE_JOBTITLE,
-            Value:c.Title,
+            Type:  yahoo.YAHOO_FIELD_TYPE_JOBTITLE,
+            Value: c.Title,
         })
     }
     if c.Company != "" {
         fields.PushBack(&yahoo.ContactField{
-            Type:yahoo.YAHOO_FIELD_TYPE_COMPANY,
-            Value:c.Company,
+            Type:  yahoo.YAHOO_FIELD_TYPE_COMPANY,
+            Value: c.Company,
         })
     }
     if c.Notes != "" {
         fields.PushBack(&yahoo.ContactField{
-            Type:yahoo.YAHOO_FIELD_TYPE_NOTES,
-            Value:c.Notes,
+            Type:  yahoo.YAHOO_FIELD_TYPE_NOTES,
+            Value: c.Notes,
         })
     }
     if c.Company != "" {
         fields.PushBack(&yahoo.ContactField{
-            Type:yahoo.YAHOO_FIELD_TYPE_COMPANY,
-            Value:c.Company,
+            Type:  yahoo.YAHOO_FIELD_TYPE_COMPANY,
+            Value: c.Company,
         })
     }
     for _, uri := range c.Uris {
@@ -336,20 +335,20 @@ func DsocialContactToYahoo(c *Contact) *yahoo.Contact {
             flags.Push(yahoo.YAHOO_FIELD_FLAG_GOOGLE)
         }
         fields.PushBack(&yahoo.ContactField{
-            Type:yahoo.YAHOO_FIELD_TYPE_LINK,
-            Value:uri.Uri,
-            Flags:[]string(flags),
+            Type:  yahoo.YAHOO_FIELD_TYPE_LINK,
+            Value: uri.Uri,
+            Flags: []string(flags),
         })
     }
     if c.Prefix != "" || c.GivenName != "" || c.MiddleName != "" || c.Surname != "" || c.Suffix != "" {
         fields.PushBack(&yahoo.ContactField{
-            Type:yahoo.YAHOO_FIELD_TYPE_LINK,
-            Value:yahoo.Name{
-                Prefix: c.Prefix,
-                GivenName: c.GivenName,
+            Type: yahoo.YAHOO_FIELD_TYPE_LINK,
+            Value: yahoo.Name{
+                Prefix:     c.Prefix,
+                GivenName:  c.GivenName,
                 MiddleName: c.MiddleName,
                 FamilyName: c.Surname,
-                Suffix: c.Suffix,
+                Suffix:     c.Suffix,
             },
         })
     }
@@ -369,46 +368,46 @@ func DsocialContactToYahoo(c *Contact) *yahoo.Contact {
             country = addr.Country
         }
         fields.PushBack(&yahoo.ContactField{
-            Type:yahoo.YAHOO_FIELD_TYPE_ADDRESS,
-            Value:yahoo.Address{
-                Street: addr.StreetAddress,
-                City: addr.Municipality,
+            Type: yahoo.YAHOO_FIELD_TYPE_ADDRESS,
+            Value: yahoo.Address{
+                Street:          addr.StreetAddress,
+                City:            addr.Municipality,
                 StateOrProvince: addr.Region,
-                PostalCode: addr.PostalCode,
-                Country: country,
-                CountryCode: countryCode,
+                PostalCode:      addr.PostalCode,
+                Country:         country,
+                CountryCode:     countryCode,
             },
-            Flags:[]string(flags),
+            Flags: []string(flags),
         })
     }
     if c.Birthday != nil && !c.Birthday.IsEmpty() {
         fields.PushBack(&yahoo.ContactField{
-            Type:yahoo.YAHOO_FIELD_TYPE_BIRTHDAY,
-            Value:yahoo.Date{
-                Year: int(c.Birthday.Year),
+            Type: yahoo.YAHOO_FIELD_TYPE_BIRTHDAY,
+            Value: yahoo.Date{
+                Year:  int(c.Birthday.Year),
                 Month: int(c.Birthday.Month),
-                Day: int(c.Birthday.Day),
+                Day:   int(c.Birthday.Day),
             },
         })
     }
     if c.Anniversary != nil && !c.Anniversary.IsEmpty() {
         fields.PushBack(&yahoo.ContactField{
-            Type:yahoo.YAHOO_FIELD_TYPE_ANNIVERSARY,
-            Value:yahoo.Date{
-                Year: int(c.Anniversary.Year),
+            Type: yahoo.YAHOO_FIELD_TYPE_ANNIVERSARY,
+            Value: yahoo.Date{
+                Year:  int(c.Anniversary.Year),
                 Month: int(c.Anniversary.Month),
-                Day: int(c.Anniversary.Day),
+                Day:   int(c.Anniversary.Day),
             },
         })
     }
     for _, thedate := range c.Dates {
         if thedate.Rel == REL_DATE_ANNIVERSARY {
             fields.PushBack(&yahoo.ContactField{
-                Type:yahoo.YAHOO_FIELD_TYPE_ANNIVERSARY,
-                Value:yahoo.Date{
-                    Year: int(thedate.Value.Year),
+                Type: yahoo.YAHOO_FIELD_TYPE_ANNIVERSARY,
+                Value: yahoo.Date{
+                    Year:  int(thedate.Value.Year),
                     Month: int(thedate.Value.Month),
-                    Day: int(thedate.Value.Day),
+                    Day:   int(thedate.Value.Day),
                 },
             })
         }
@@ -427,4 +426,3 @@ func DsocialContactToYahoo(c *Contact) *yahoo.Contact {
     }
     return y
 }
-

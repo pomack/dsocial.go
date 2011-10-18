@@ -193,6 +193,6 @@ func ParseName(s string, c *Contact) {
     default:
         c.GivenName = nameParts[0]
         c.MiddleName = strings.Join(nameParts[1:len(nameParts)-1], " ")
-        c.Surname = nameParts[len(nameParts) - 1]
+        c.Surname = nameParts[len(nameParts)-1]
     }
 }
