@@ -63,17 +63,17 @@ func (p *ContactReference) GenerateChanges(original, latest DsocialChanger, base
         if ch := compareStrings(old.Text, now.Text, l); ch != nil {
             ch.Path = NewPathComponentFromExisting(basePath, NewPathComponentId(old.Id), NewPathComponentKey("text"))
         }
-        if old.UserId == "" && now.UserId != "" {
+        if now.UserId != "" {
             if ch := compareStrings(old.UserId, now.UserId, l); ch != nil {
                 ch.Path = NewPathComponentFromExisting(basePath, NewPathComponentId(old.Id), NewPathComponentKey("user_id"))
             }
         }
-        if old.ContactId == "" && now.ContactId != "" {
+        if now.ContactId != "" {
             if ch := compareStrings(old.ContactId, now.ContactId, l); ch != nil {
                 ch.Path = NewPathComponentFromExisting(basePath, NewPathComponentId(old.Id), NewPathComponentKey("contact_id"))
             }
         }
-        if old.ReferenceContactId == "" && now.ReferenceContactId != "" {
+        if now.ReferenceContactId != "" {
             if ch := compareStrings(old.ReferenceContactId, now.ReferenceContactId, l); ch != nil {
                 ch.Path = NewPathComponentFromExisting(basePath, NewPathComponentId(old.Id), NewPathComponentKey("reference_contact_id"))
             }
@@ -103,6 +103,180 @@ func (p *ContactReference) ConvertArraysToDsocialChangers(original, latest []*Co
 }
 
 func (p *ContactReference) ArraysAreSame(original, latest []*ContactReference) bool {
+    return arraysAreSame(p.ConvertArraysToDsocialChangers(original, latest))
+}
+
+func (p *ContactRef) IsSimilarOrUpdated(original, latest DsocialChanger) (similar bool, same bool) {
+    if original == nil && latest == nil {
+        return true, true
+    }
+    if original == nil || latest == nil {
+        return
+    }
+    o, ok := original.(*ContactRef)
+    if !ok {
+        return
+    }
+    m, ok := latest.(*ContactRef)
+    if !ok {
+        return
+    }
+    if o.Id == m.Id && o.Id != "" {
+        similar = true
+    }
+    if o.Name != m.Name {
+        return
+    }
+    if o.Id == "" || m.Id == "" {
+        similar = true
+    } else if p.Id == m.Id {
+        similar = true
+        same = true
+    }
+    return
+}
+
+func (p *ContactRef) GenerateChanges(original, latest DsocialChanger, basePath []*PathComponent, l *list.List) {
+    if original == nil {
+        ch := &Change{
+            Path:       basePath,
+            ChangeType: CHANGE_TYPE_ADD,
+            NewValue:   latest,
+        }
+        l.PushBack(ch)
+    } else if latest == nil {
+        old := original.(*ContactRef)
+        ch := &Change{
+            Path:          NewPathComponentFromExisting(basePath, NewPathComponentId(old.Id)),
+            ChangeType:    CHANGE_TYPE_DELETE,
+            OriginalValue: original,
+        }
+        l.PushBack(ch)
+    } else {
+        old := original.(*ContactRef)
+        now := latest.(*ContactRef)
+        if now.Id != "" {
+            if ch := compareStrings(old.Id, now.Id, l); ch != nil {
+                ch.Path = NewPathComponentFromExisting(basePath, NewPathComponentId(old.Id), NewPathComponentKey("id"))
+            }
+        }
+        if now.Name != "" {
+            if ch := compareStrings(old.Name, now.Name, l); ch != nil {
+                ch.Path = NewPathComponentFromExisting(basePath, NewPathComponentId(old.Id), NewPathComponentKey("name"))
+            }
+        }
+    }
+}
+
+func (p *ContactRef) IsEmpty() bool {
+    return p.Id == "" && p.Name == ""
+}
+
+func (p *ContactRef) GenerateArrayChanges(original, latest []*ContactRef, l *list.List, basePath []*PathComponent) {
+    oarr, larr := p.ConvertArraysToDsocialChangers(original, latest)
+    compareDsocialChangersArrays(oarr, larr, basePath, l)
+}
+
+func (p *ContactRef) ConvertArraysToDsocialChangers(original, latest []*ContactRef) ([]DsocialChanger, []DsocialChanger) {
+    oarr := make([]DsocialChanger, len(original))
+    larr := make([]DsocialChanger, len(latest))
+    for i, obj := range original {
+        oarr[i] = obj
+    }
+    for i, obj := range latest {
+        larr[i] = obj
+    }
+    return oarr, larr
+}
+
+func (p *ContactRef) ArraysAreSame(original, latest []*ContactRef) bool {
+    return arraysAreSame(p.ConvertArraysToDsocialChangers(original, latest))
+}
+
+func (p *GroupRef) IsSimilarOrUpdated(original, latest DsocialChanger) (similar bool, same bool) {
+    if original == nil && latest == nil {
+        return true, true
+    }
+    if original == nil || latest == nil {
+        return
+    }
+    o, ok := original.(*GroupRef)
+    if !ok {
+        return
+    }
+    m, ok := latest.(*GroupRef)
+    if !ok {
+        return
+    }
+    if o.Id == m.Id && o.Id != "" {
+        similar = true
+    }
+    if o.Name != m.Name {
+        return
+    }
+    if o.Id == "" || m.Id == "" {
+        similar = true
+    } else if p.Id == m.Id {
+        similar = true
+        same = true
+    }
+    return
+}
+
+func (p *GroupRef) GenerateChanges(original, latest DsocialChanger, basePath []*PathComponent, l *list.List) {
+    if original == nil {
+        ch := &Change{
+            Path:       basePath,
+            ChangeType: CHANGE_TYPE_ADD,
+            NewValue:   latest,
+        }
+        l.PushBack(ch)
+    } else if latest == nil {
+        old := original.(*GroupRef)
+        ch := &Change{
+            Path:          NewPathComponentFromExisting(basePath, NewPathComponentId(old.Id)),
+            ChangeType:    CHANGE_TYPE_DELETE,
+            OriginalValue: original,
+        }
+        l.PushBack(ch)
+    } else {
+        old := original.(*GroupRef)
+        now := latest.(*GroupRef)
+        if now.Id != "" {
+            if ch := compareStrings(old.Id, now.Id, l); ch != nil {
+                ch.Path = NewPathComponentFromExisting(basePath, NewPathComponentId(old.Id), NewPathComponentKey("id"))
+            }
+        }
+        if now.Name != "" {
+            if ch := compareStrings(old.Name, now.Name, l); ch != nil {
+                ch.Path = NewPathComponentFromExisting(basePath, NewPathComponentId(old.Id), NewPathComponentKey("name"))
+            }
+        }
+    }
+}
+
+func (p *GroupRef) IsEmpty() bool {
+    return p.Id == "" && p.Name == ""
+}
+
+func (p *GroupRef) GenerateArrayChanges(original, latest []*GroupRef, l *list.List, basePath []*PathComponent) {
+    oarr, larr := p.ConvertArraysToDsocialChangers(original, latest)
+    compareDsocialChangersArrays(oarr, larr, basePath, l)
+}
+
+func (p *GroupRef) ConvertArraysToDsocialChangers(original, latest []*GroupRef) ([]DsocialChanger, []DsocialChanger) {
+    oarr := make([]DsocialChanger, len(original))
+    larr := make([]DsocialChanger, len(latest))
+    for i, obj := range original {
+        oarr[i] = obj
+    }
+    for i, obj := range latest {
+        larr[i] = obj
+    }
+    return oarr, larr
+}
+
+func (p *GroupRef) ArraysAreSame(original, latest []*GroupRef) bool {
     return arraysAreSame(p.ConvertArraysToDsocialChangers(original, latest))
 }
 
@@ -1773,7 +1947,7 @@ func (p *Contact) GenerateChanges(original, latest DsocialChanger, basePath []*P
         compareContactDetails(old, now, l)
         compareContactExternalIds(old, now, l)
         compareContactInternalIds(old, now, l)
-        compareContactGroupNames(old, now, l)
+        new(GroupRef).GenerateArrayChanges(old.GroupReferences, now.GroupReferences, l, NewPathComponentFromExisting(basePath, NewPathComponentKey("group_references")))
         new(PostalAddress).GenerateArrayChanges(old.PostalAddresses, now.PostalAddresses, l, NewPathComponentFromExisting(basePath, NewPathComponentKey("postal_addresses")))
         new(Education).GenerateArrayChanges(old.Educations, now.Educations, l, NewPathComponentFromExisting(basePath, NewPathComponentKey("educations")))
         new(WorkHistory).GenerateArrayChanges(old.WorkHistories, now.WorkHistories, l, NewPathComponentFromExisting(basePath, NewPathComponentKey("work_histories")))
@@ -2213,10 +2387,6 @@ func compareContactInternalIds(old, now *Contact, l *list.List) {
 
 func compareContactExternalIds(old, now *Contact, l *list.List) {
     compareUnorderedStringArrays(old.ExternalUserIds, now.ExternalUserIds, []*PathComponent{NewPathComponentKey("external_ids")}, l)
-}
-
-func compareContactGroupNames(old, now *Contact, l *list.List) {
-    compareUnorderedStringArrays(old.GroupNames, now.GroupNames, []*PathComponent{NewPathComponentKey("group_names")}, l)
 }
 
 func isSameDate(old, now *Date) bool {

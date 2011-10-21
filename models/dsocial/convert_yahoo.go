@@ -204,6 +204,12 @@ func YahooContactToDsocial(l *yahoo.Contact) *Contact {
     for i, iter := 0, addresses.Front(); iter != nil; i, iter = i+1, iter.Next() {
         c.PostalAddresses[i] = iter.Value.(*PostalAddress)
     }
+    c.GroupReferences = make([]*GroupRef, len(l.Categories))
+    for i, category := range l.Categories {
+        c.GroupReferences[i] = &GroupRef{
+            Name: category.Name,
+        }
+    }
     return c
 }
 
@@ -418,10 +424,10 @@ func DsocialContactToYahoo(c *Contact) *yahoo.Contact {
             y.Fields[i] = *(e.Value.(*yahoo.ContactField))
         }
     }
-    if c.GroupNames != nil && len(c.GroupNames) > 0 {
-        y.Categories = make([]yahoo.Category, len(c.GroupNames))
-        for i, name := range c.GroupNames {
-            y.Categories[i].Name = name
+    if c.GroupReferences != nil && len(c.GroupReferences) > 0 {
+        y.Categories = make([]yahoo.Category, len(c.GroupReferences))
+        for i, groupReference := range c.GroupReferences {
+            y.Categories[i].Name = groupReference.Name
         }
     }
     return y

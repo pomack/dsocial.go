@@ -23,6 +23,16 @@ type ContactReference struct {
     Text                 string `json:"text,omitempty"`
 }
 
+type ContactRef struct {
+    Id              string `json:"id,omitempty"`
+    Name            string `json:"name,omitempty"`
+}
+
+type GroupRef struct {
+    Id              string `json:"id,omitempty"`
+    Name            string `json:"name,omitempty"`
+}
+
 type PostalAddress struct {
     AclPersistableModel `json:"model,omitempty,collapse"`
     Address             string              `json:"address,omitempty"`
@@ -219,7 +229,7 @@ type Contact struct {
     ThumbnailUrl        string                `json:"thumbnail_url,omitempty"`
     InternalUserIds     []string              `json:"internal_user_ids,omitempty"`
     ExternalUserIds     []string              `json:"external_user_ids,omitempty"`
-    GroupNames          []string              `json:"group_names,omitempty"`
+    GroupReferences     []*GroupRef           `json:"group_references,omitempty"`
     PostalAddresses     []*PostalAddress      `json:"postal_addresses,omitempty"`
     Educations          []*Education          `json:"educations,omitempty"`
     WorkHistories       []*WorkHistory        `json:"work_histories,omitempty"`
