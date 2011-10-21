@@ -1,6 +1,8 @@
 package dsocial
 
 const (
+    
+    UTC_DATETIME_FORMAT = "2006-01-02T15:04:05.000Z"
 
     // ChangeType
     CHANGE_TYPE_CREATE ChangeType = "create"
