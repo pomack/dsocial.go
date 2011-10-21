@@ -83,26 +83,26 @@ func (p *GoogleContactService) ContactInfoIncludesGroups() bool {
     return true
 }
 
-func (p *GoogleContactService) RetrieveAllContacts(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId string) ([]*dm.Contact, os.Error) {
+func (p *GoogleContactService) RetrieveAllContacts(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId string) ([]*Contact, os.Error) {
     contacts, _, err := p.RetrieveContacts(client, ds, dsocialUserId, nil)
     return contacts, err
 }
 
-func (p *GoogleContactService) RetrieveAllConnections(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId string) ([]*dm.Contact, os.Error) {
-    return make([]*dm.Contact, 0), nil
+func (p *GoogleContactService) RetrieveAllConnections(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId string) ([]*Contact, os.Error) {
+    return make([]*Contact, 0), nil
 }
 
-func (p *GoogleContactService) RetrieveAllGroups(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId string) ([]*dm.Group, os.Error) {
+func (p *GoogleContactService) RetrieveAllGroups(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId string) ([]*Group, os.Error) {
     groups, _, err := p.RetrieveGroups(client, ds, dsocialUserId, nil)
     return groups, err
 }
 
-func (p *GoogleContactService) RetrieveContacts(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId string, next NextToken) ([]*dm.Contact, NextToken, os.Error) {
+func (p *GoogleContactService) RetrieveContacts(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId string, next NextToken) ([]*Contact, NextToken, os.Error) {
     var m url.Values
     if next == nil {
     } else if s, ok := next.(string); ok {
         if s != "" {
-            if strings.HasPrefix(s, "https://www.google.com/") {
+            if strings.HasPrefix(s, "https://www.google.com/") || strings.HasPrefix(s, "http://www.google.com/") {
                 uri, err := url.Parse(s)
                 if err == nil {
                     q, err := url.ParseQuery(uri.RawQuery)
@@ -166,9 +166,9 @@ func (p *GoogleContactService) RetrieveContacts(client oauth2_client.OAuth2Clien
         }
     }
     if feed == nil || feed.Entries == nil || len(feed.Entries) == 0 || err != nil {
-        return make([]*dm.Contact, 0), theNextToken, err
+        return make([]*Contact, 0), theNextToken, err
     }
-    contacts := make([]*dm.Contact, len(feed.Entries))
+    contacts := make([]*Contact, len(feed.Entries))
     externalServiceId := client.ServiceId()
     userInfo, err := client.RetrieveUserInfo()
     externalUserId := userInfo.Guid()
@@ -176,8 +176,14 @@ func (p *GoogleContactService) RetrieveContacts(client oauth2_client.OAuth2Clien
     for i, googleContact := range feed.Entries {
         dsocialContact := dm.GoogleContactToDsocial(&googleContact)
         dsocialContact.UserId = dsocialUserId
-        contacts[i] = dsocialContact
         externalContactId := googleContact.ContactId()
+        contacts[i] = &Contact{
+            ExternalServiceId: client.ServiceId(),
+            ExternalUserId: googleContact.ContactUserId(),
+            ExternalContactId: externalContactId,
+            DsocialUserId: dsocialUserId,
+            Value: dsocialContact,
+        }
         if len(externalContactId) > 0 {
             dsocialContactId, err := ds.DsocialIdForExternalContactId(externalServiceId, externalUserId, dsocialUserId, externalContactId)
             if err != nil {
@@ -186,6 +192,7 @@ func (p *GoogleContactService) RetrieveContacts(client oauth2_client.OAuth2Clien
             }
             if dsocialContactId != "" {
                 dsocialContact.Id = dsocialContactId
+                contacts[i].DsocialContactId = dsocialContactId
             } else {
                 ds.StoreExternalContact(externalServiceId, externalUserId, dsocialUserId, externalContactId, &googleContact)
             }
@@ -194,11 +201,11 @@ func (p *GoogleContactService) RetrieveContacts(client oauth2_client.OAuth2Clien
     return contacts, theNextToken, useErr
 }
 
-func (p *GoogleContactService) RetrieveConnections(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId string, next NextToken) ([]*dm.Contact, NextToken, os.Error) {
-    return make([]*dm.Contact, 0), nil, nil
+func (p *GoogleContactService) RetrieveConnections(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId string, next NextToken) ([]*Contact, NextToken, os.Error) {
+    return make([]*Contact, 0), nil, nil
 }
 
-func (p *GoogleContactService) RetrieveGroups(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId string, next NextToken) ([]*dm.Group, NextToken, os.Error) {
+func (p *GoogleContactService) RetrieveGroups(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId string, next NextToken) ([]*Group, NextToken, os.Error) {
     var m url.Values
     if next == nil {
     } else if s, ok := next.(string); ok {
@@ -263,18 +270,25 @@ func (p *GoogleContactService) RetrieveGroups(client oauth2_client.OAuth2Client,
         }
     }
     if resp == nil || resp.Feed == nil || resp.Feed.Entries == nil || len(resp.Feed.Entries) == 0 || err != nil {
-        return make([]*dm.Group, 0), theNextToken, err
+        return make([]*Group, 0), theNextToken, err
     }
-    groups := make([]*dm.Group, len(resp.Feed.Entries))
+    groups := make([]*Group, len(resp.Feed.Entries))
     externalServiceId := client.ServiceId()
     userInfo, err := client.RetrieveUserInfo()
     externalUserId := userInfo.Guid()
     var useErr os.Error = nil
     for i, googleGroup := range resp.Feed.Entries {
         var dsocialGroup *dm.Group = dm.GoogleGroupToDsocial(&googleGroup)
-        groups[i] = dsocialGroup
         dsocialGroup.UserId = dsocialUserId
         externalGroupId := googleGroup.GroupId()
+        groups[i].Value = dsocialGroup
+        groups[i] = &Group{
+            ExternalServiceId: client.ServiceId(),
+            ExternalUserId: googleGroup.GroupUserId(),
+            ExternalGroupId: googleGroup.GroupId(),
+            DsocialUserId: dsocialUserId,
+            Value: dsocialGroup,
+        }
         if len(externalGroupId) > 0 {
             dsocialGroupId, err := ds.DsocialIdForExternalGroupId(externalServiceId, externalUserId, dsocialUserId, externalGroupId)
             if err != nil {
@@ -285,6 +299,7 @@ func (p *GoogleContactService) RetrieveGroups(client oauth2_client.OAuth2Client,
             }
             if dsocialGroupId != "" {
                 dsocialGroup.Id = dsocialGroupId
+                groups[i].DsocialGroupId = dsocialGroupId
             } else {
                 ds.StoreExternalGroup(externalServiceId, externalUserId, dsocialUserId, externalGroupId, &googleGroup)
             }
@@ -293,7 +308,7 @@ func (p *GoogleContactService) RetrieveGroups(client oauth2_client.OAuth2Client,
     return groups, theNextToken, useErr
 }
 
-func (p *GoogleContactService) RetrieveContact(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId string, contactId string) (*dm.Contact, os.Error) {
+func (p *GoogleContactService) RetrieveContact(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId string, contactId string) (*Contact, os.Error) {
     googleContact, err := google.RetrieveContact(client, contactId, nil)
     if googleContact == nil || err != nil {
         return nil, err
@@ -305,6 +320,13 @@ func (p *GoogleContactService) RetrieveContact(client oauth2_client.OAuth2Client
     dsocialContact := dm.GoogleContactToDsocial(googleContact)
     dsocialContact.UserId = dsocialUserId
     externalContactId := googleContact.ContactId()
+    contact := &Contact{
+        ExternalServiceId: client.ServiceId(),
+        ExternalUserId: googleContact.ContactUserId(),
+        ExternalContactId: googleContact.ContactId(),
+        DsocialUserId: dsocialUserId,
+        Value: dsocialContact,
+    }
     if len(externalContactId) > 0 {
         dsocialContactId, err := ds.DsocialIdForExternalContactId(externalServiceId, externalUserId, dsocialUserId, contactId)
         if err != nil {
@@ -312,14 +334,15 @@ func (p *GoogleContactService) RetrieveContact(client oauth2_client.OAuth2Client
         }
         if dsocialContactId != "" {
             dsocialContact.Id = dsocialContactId
+            contact.DsocialContactId = dsocialContactId
         } else {
             ds.StoreExternalContact(externalServiceId, externalUserId, dsocialUserId, externalContactId, googleContact)
         }
     }
-    return dsocialContact, useErr
+    return contact, useErr
 }
 
-func (p *GoogleContactService) RetrieveGroup(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId string, groupId string) (*dm.Group, os.Error) {
+func (p *GoogleContactService) RetrieveGroup(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId string, groupId string) (*Group, os.Error) {
     resp, err := google.RetrieveGroup(client, groupId, nil)
     if resp == nil || resp.Entry == nil || err != nil {
         return nil, err
@@ -332,6 +355,13 @@ func (p *GoogleContactService) RetrieveGroup(client oauth2_client.OAuth2Client, 
     var dsocialGroup *dm.Group = dm.GoogleGroupToDsocial(googleGroup)
     dsocialGroup.UserId = dsocialUserId
     externalGroupId := googleGroup.GroupId()
+    group := &Group{
+        ExternalServiceId: client.ServiceId(),
+        ExternalUserId: externalUserId,
+        ExternalGroupId: externalGroupId,
+        DsocialUserId: dsocialUserId,
+        Value: dsocialGroup,
+    }
     if len(externalGroupId) > 0 {
         dsocialGroupId, err := ds.DsocialIdForExternalGroupId(externalServiceId, externalUserId, dsocialUserId, externalGroupId)
         if err != nil {
@@ -341,14 +371,15 @@ func (p *GoogleContactService) RetrieveGroup(client oauth2_client.OAuth2Client, 
         }
         if dsocialGroupId != "" {
             dsocialGroup.Id = dsocialGroupId
+            group.DsocialGroupId = dsocialGroupId
         } else {
             ds.StoreExternalGroup(externalServiceId, externalUserId, dsocialUserId, externalGroupId, googleGroup)
         }
     }
-    return dsocialGroup, useErr
+    return group, useErr
 }
 
-func (p *GoogleContactService) CreateContact(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId string, contact *dm.Contact) (*dm.Contact, os.Error) {
+func (p *GoogleContactService) CreateContact(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId string, contact *dm.Contact) (*Contact, os.Error) {
     if contact == nil {
         return nil, nil
     }
@@ -377,10 +408,18 @@ func (p *GoogleContactService) CreateContact(client oauth2_client.OAuth2Client, 
         dsocialContact.Id = contact.Id
         _, _, err = ds.StoreDsocialExternalContactMapping(client.ServiceId(), userInfo.Guid(), resp.Entry.ContactId(), dsocialUserId, contact.Id)
     }
-    return dsocialContact, err
+    outContact := &Contact{
+        ExternalServiceId: client.ServiceId(),
+        ExternalUserId: resp.Entry.ContactUserId(),
+        ExternalContactId: resp.Entry.ContactId(),
+        DsocialUserId: dsocialUserId,
+        DsocialContactId: dsocialContact.Id,
+        Value: dsocialContact,
+    }
+    return outContact, err
 }
 
-func (p *GoogleContactService) CreateGroup(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId string, group *dm.Group) (*dm.Group, os.Error) {
+func (p *GoogleContactService) CreateGroup(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId string, group *dm.Group) (*Group, os.Error) {
     if group == nil {
         return nil, nil
     }
@@ -409,10 +448,18 @@ func (p *GoogleContactService) CreateGroup(client oauth2_client.OAuth2Client, ds
         dsocialGroup.Id = group.Id
         _, _, err = ds.StoreDsocialExternalContactMapping(client.ServiceId(), userInfo.Guid(), resp.Entry.GroupId(), dsocialUserId, group.Id)
     }
-    return dsocialGroup, err
+    outGroup := &Group{
+        ExternalServiceId: client.ServiceId(),
+        ExternalUserId: resp.Entry.GroupUserId(),
+        ExternalGroupId: resp.Entry.GroupId(),
+        DsocialUserId: dsocialUserId,
+        DsocialGroupId: dsocialGroup.Id,
+        Value: dsocialGroup,
+    }
+    return outGroup, err
 }
 
-func (p *GoogleContactService) UpdateContact(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId string, originalContact, contact *dm.Contact) (*dm.Contact, os.Error) {
+func (p *GoogleContactService) UpdateContact(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId string, originalContact, contact *dm.Contact) (*Contact, os.Error) {
     if contact == nil || originalContact == nil {
         return nil, nil
     }
@@ -439,10 +486,18 @@ func (p *GoogleContactService) UpdateContact(client oauth2_client.OAuth2Client, 
     }
     dsocialContact := dm.GoogleContactToDsocial(resp.Entry)
     dsocialContact.Id = originalContact.Id
-    return dsocialContact, err
+    outContact := &Contact{
+        ExternalServiceId: client.ServiceId(),
+        ExternalUserId: resp.Entry.ContactUserId(),
+        ExternalContactId: resp.Entry.ContactId(),
+        DsocialUserId: dsocialUserId,
+        DsocialContactId: dsocialContact.Id,
+        Value: dsocialContact,
+    }
+    return outContact, err
 }
 
-func (p *GoogleContactService) UpdateGroup(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId string, originalGroup, group *dm.Group) (*dm.Group, os.Error) {
+func (p *GoogleContactService) UpdateGroup(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId string, originalGroup, group *dm.Group) (*Group, os.Error) {
     if group == nil {
         return nil, nil
     }
@@ -467,8 +522,16 @@ func (p *GoogleContactService) UpdateGroup(client oauth2_client.OAuth2Client, ds
     if resp == nil || resp.Entry == nil || err != nil {
         return nil, err
     }
-    var dsocialGroup *dm.Group = dm.GoogleGroupToDsocial(resp.Entry)
-    return dsocialGroup, err
+    dsocialGroup := dm.GoogleGroupToDsocial(resp.Entry)
+    outGroup := &Group{
+        ExternalServiceId: client.ServiceId(),
+        ExternalUserId: resp.Entry.GroupUserId(),
+        ExternalGroupId: resp.Entry.GroupId(),
+        DsocialUserId: dsocialUserId,
+        DsocialGroupId: dsocialGroup.Id,
+        Value: dsocialGroup,
+    }
+    return outGroup, err
 }
 
 func (p *GoogleContactService) DeleteContact(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId, dsocialContactId string) (bool, os.Error) {
