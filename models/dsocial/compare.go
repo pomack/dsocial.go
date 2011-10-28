@@ -2,6 +2,7 @@ package dsocial
 
 import (
     "container/list"
+    //"fmt"
     "sort"
     "strings"
 )
@@ -1486,6 +1487,12 @@ func (p *Group) IsSimilarOrUpdated(original, latest DsocialChanger) (similar boo
     if !ok {
         return
     }
+    if o == nil && m == nil {
+        return true, true
+    }
+    if o == nil || m == nil {
+        return
+    }
     if o.Id == m.Id && o.Id != "" {
         similar = true
     } else if o.Id != "" && m.Id != "" {
@@ -1503,24 +1510,23 @@ func (p *Group) IsSimilarOrUpdated(original, latest DsocialChanger) (similar boo
 }
 
 func (p *Group) GenerateChanges(original, latest DsocialChanger, basePath []*PathComponent, l *list.List) {
-    if original == nil {
+    old := original.(*Group)
+    now := latest.(*Group)
+    if old == nil {
         ch := &Change{
             Path:       basePath,
             ChangeType: CHANGE_TYPE_ADD,
-            NewValue:   latest,
+            NewValue:   now,
         }
         l.PushBack(ch)
-    } else if latest == nil {
-        old := original.(*Group)
+    } else if now == nil {
         ch := &Change{
             Path:          NewPathComponentFromExisting(basePath, NewPathComponentId(old.Id)),
             ChangeType:    CHANGE_TYPE_DELETE,
-            OriginalValue: original,
+            OriginalValue: old,
         }
         l.PushBack(ch)
     } else {
-        old := original.(*Group)
-        now := latest.(*Group)
         if ch := compareStrings(old.Name, now.Name, l); ch != nil {
             ch.Path = NewPathComponentFromExisting(basePath, NewPathComponentId(old.Id), NewPathComponentKey("name"))
         }
@@ -1823,15 +1829,28 @@ func (p *Contact) IsSimilarOrUpdated(original, latest DsocialChanger) (similar b
     if original == nil && latest == nil {
         return true, true
     }
-    if original == nil || latest == nil {
+    if original == nil {
         return
     }
+    if latest == nil {
+        return
+    }
+    //fmt.Printf("original %#v\n\n", original)
+    //fmt.Printf("latest %#v\n\n", latest)
     o, ok := original.(*Contact)
     if !ok {
         return
     }
     m, ok := latest.(*Contact)
     if !ok {
+        return
+    }
+    if o == nil && m == nil {
+        return true, true
+    }
+    if o == nil || m == nil {
+        //fmt.Printf("o %#v\n\n", o)
+        //fmt.Printf("m %#v\n\n", m)
         return
     }
     if o.Id == m.Id && o.Id != "" {
@@ -1926,15 +1945,17 @@ func (p *Contact) IsSimilarOrUpdated(original, latest DsocialChanger) (similar b
 }
 
 func (p *Contact) GenerateChanges(original, latest DsocialChanger, basePath []*PathComponent, l *list.List) {
-    if original == nil {
+    old := original.(*Contact)
+    now := latest.(*Contact)
+    if old == nil {
         ch := &Change{
             Path:       basePath,
             ChangeType: CHANGE_TYPE_ADD,
             NewValue:   latest,
         }
         l.PushBack(ch)
-    } else if latest == nil {
-        old := original.(*ContactReference)
+    } else if now == nil {
+        old := original.(*Contact)
         ch := &Change{
             Path:          NewPathComponentFromExisting(basePath, NewPathComponentId(old.Id)),
             ChangeType:    CHANGE_TYPE_DELETE,
@@ -1942,8 +1963,6 @@ func (p *Contact) GenerateChanges(original, latest DsocialChanger, basePath []*P
         }
         l.PushBack(ch)
     } else {
-        old := original.(*Contact)
-        now := latest.(*Contact)
         compareContactDetails(old, now, l)
         compareContactExternalIds(old, now, l)
         compareContactInternalIds(old, now, l)
