@@ -15,8 +15,12 @@ type GoogleContactService struct {
 
 }
 
+func NewGoogleContactService() *GoogleContactService {
+    return new(GoogleContactService)
+}
+
 func (p *GoogleContactService) CanRetrieveAllContacts() bool {
-    return true
+    return false
 }
 
 func (p *GoogleContactService) CanRetrieveAllConnections() bool {
@@ -24,7 +28,7 @@ func (p *GoogleContactService) CanRetrieveAllConnections() bool {
 }
 
 func (p *GoogleContactService) CanRetrieveAllGroups() bool {
-    return true
+    return false
 }
 
 func (p *GoogleContactService) CanRetrieveContacts() bool {
@@ -281,7 +285,6 @@ func (p *GoogleContactService) RetrieveGroups(client oauth2_client.OAuth2Client,
         var dsocialGroup *dm.Group = dm.GoogleGroupToDsocial(&googleGroup)
         dsocialGroup.UserId = dsocialUserId
         externalGroupId := googleGroup.GroupId()
-        groups[i].Value = dsocialGroup
         groups[i] = &Group{
             ExternalServiceId: client.ServiceId(),
             ExternalUserId: googleGroup.GroupUserId(),
