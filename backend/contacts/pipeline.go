@@ -5,6 +5,7 @@ import (
     dm "github.com/pomack/dsocial.go/models/dsocial"
     "container/list"
     "container/vector"
+    //"fmt"
     "os"
     "time"
 )
@@ -58,6 +59,9 @@ func (p *Pipeline) contactSync(ds DataStoreService, dsocialUserId string, contac
     l := new(list.List)
     emptyContact.GenerateChanges(originalExternalContact, contact.Value, nil, l)
     changes := make([]*dm.Change, l.Len())
+    for i, iter := 0, l.Front(); iter != nil; i, iter = i+1, iter.Next() {
+        changes[i] = iter.Value.(*dm.Change)
+    }
     changeset := &dm.ChangeSet{
         CreatedAt: time.UTC().Format(dm.UTC_DATETIME_FORMAT),
         ChangedBy: contact.ExternalServiceId,
@@ -74,8 +78,12 @@ func (p *Pipeline) contactSync(ds DataStoreService, dsocialUserId string, contac
         if err != nil {
             return matchingContact, err
         }
-        _, err = ds.StoreDsocialContactForExternalContact(contact.ExternalServiceId, contact.ExternalUserId, contact.ExternalContactId, dsocialUserId, contact.Value)
-        return matchingContact, err
+        storedDsocialContact, err := ds.StoreDsocialContactForExternalContact(contact.ExternalServiceId, contact.ExternalUserId, contact.ExternalContactId, dsocialUserId, contact.Value)
+        _, _, err2 := ds.StoreDsocialExternalContactMapping(contact.ExternalServiceId, contact.ExternalUserId, contact.ExternalContactId, dsocialUserId, contact.Value.Id)
+        if err == nil {
+            err = err2
+        }
+        return storedDsocialContact, err
     }
     var storedDsocialContact *dm.Contact = nil
     if contact.DsocialContactId != "" {
@@ -123,13 +131,14 @@ func (p *Pipeline) groupSync(ds DataStoreService, dsocialUserId string, group *G
     if group == nil || group.Value == nil {
         return nil, nil
     }
+    //fmt.Printf("Syncing group: %s\n", group.Value.Name)
     if group.Value.ContactIds == nil {
         group.Value.ContactIds = make([]string, 0, 10)
     }
     if group.Value.ContactNames == nil {
         group.Value.ContactNames = make([]string, 0, 10)
     }
-    if len(group.Value.ContactIds) == 0 || len(group.Value.ContactIds) == 0 && minimumIncludes != nil {
+    if len(group.Value.ContactIds) == 0 && len(group.Value.ContactNames) == 0 && minimumIncludes != nil {
         sv1 := vector.StringVector(group.Value.ContactIds)
         sv2 := vector.StringVector(group.Value.ContactNames)
         sv1.Resize(sv1.Len(), sv1.Len() + minimumIncludes.Len())
@@ -139,7 +148,7 @@ func (p *Pipeline) groupSync(ds DataStoreService, dsocialUserId string, group *G
             sv1.Push(contactRef.Id)
             sv2.Push(contactRef.Name)
         }
-    } else if minimumIncludes == nil {
+    } else if minimumIncludes != nil {
         for iter := minimumIncludes.Front(); iter != nil; iter = iter.Next() {
             contactRef := iter.Value.(*dm.ContactRef)
             refLocation := -1
@@ -184,6 +193,9 @@ func (p *Pipeline) groupSync(ds DataStoreService, dsocialUserId string, group *G
     l := new(list.List)
     emptyGroup.GenerateChanges(originalExternalGroup, group.Value, nil, l)
     changes := make([]*dm.Change, l.Len())
+    for i, iter := 0, l.Front(); iter != nil; i, iter = i+1, iter.Next() {
+        changes[i] = iter.Value.(*dm.Change)
+    }
     changeset := &dm.ChangeSet{
         CreatedAt: time.UTC().Format(dm.UTC_DATETIME_FORMAT),
         ChangedBy: group.ExternalServiceId,
@@ -201,6 +213,10 @@ func (p *Pipeline) groupSync(ds DataStoreService, dsocialUserId string, group *G
             return matchingGroup, err
         }
         storedDsocialGroup, err := ds.StoreDsocialGroupForExternalGroup(group.ExternalServiceId, group.ExternalUserId, group.ExternalGroupId, dsocialUserId, group.Value)
+        _, _, err2 := ds.StoreDsocialExternalGroupMapping(group.ExternalServiceId, group.ExternalUserId, group.ExternalGroupId, dsocialUserId, group.Value.Id)
+        if err == nil {
+            err = err2
+        }
         return storedDsocialGroup, err
     }
     var storedDsocialGroup *dm.Group = nil
@@ -242,7 +258,8 @@ func (p *Pipeline) IncrementalSync(client oauth2_client.OAuth2Client, ds DataSto
     groupMappings := make(map[string]*list.List)
     checkGroupsInContacts := cs.ContactInfoIncludesGroups()
     if cs.CanRetrieveContacts() {
-        for contacts, nextToken, err := cs.RetrieveContacts(client, ds, dsocialUserId, nil); len(contacts) > 0 || nextToken != nil; contacts, nextToken, err = cs.RetrieveContacts(client, ds, dsocialUserId, nextToken) {
+        var nextToken NextToken = "blah"
+        for contacts, useNextToken, err := cs.RetrieveContacts(client, ds, dsocialUserId, nil); len(contacts) > 0 && nextToken != nil; contacts, useNextToken, err = cs.RetrieveContacts(client, ds, dsocialUserId, nextToken) {
             if err != nil {
                 return err
             }
@@ -255,9 +272,11 @@ func (p *Pipeline) IncrementalSync(client oauth2_client.OAuth2Client, ds DataSto
                     return err
                 }
             }
+            nextToken = useNextToken
         }
     } else if cs.CanRetrieveConnections() {
-        for connections, nextToken, err := cs.RetrieveConnections(client, ds, dsocialUserId, nil); len(connections) > 0 || nextToken != nil; connections, nextToken, err = cs.RetrieveConnections(client, ds, dsocialUserId, nextToken) {
+        var nextToken NextToken = "blah"
+        for connections, useNextToken, err := cs.RetrieveConnections(client, ds, dsocialUserId, nil); len(connections) > 0 && nextToken != nil; connections, useNextToken, err = cs.RetrieveConnections(client, ds, dsocialUserId, nextToken) {
             if err != nil {
                 return err
             }
@@ -274,11 +293,12 @@ func (p *Pipeline) IncrementalSync(client oauth2_client.OAuth2Client, ds DataSto
                     return err
                 }
             }
+            nextToken = useNextToken
         }
-        
     }
     if cs.CanRetrieveGroups() {
-        for groups, nextToken, err := cs.RetrieveGroups(client, ds, dsocialUserId, nil); len(groups) > 0 || nextToken != nil; groups, nextToken, err = cs.RetrieveGroups(client, ds, dsocialUserId, nextToken) {
+        var nextToken NextToken = "blah"
+        for groups, useNextToken, err := cs.RetrieveGroups(client, ds, dsocialUserId, nil); len(groups) > 0 && nextToken != nil; groups, useNextToken, err = cs.RetrieveGroups(client, ds, dsocialUserId, nextToken) {
             if err != nil {
                 return err
             }
@@ -288,6 +308,7 @@ func (p *Pipeline) IncrementalSync(client oauth2_client.OAuth2Client, ds DataSto
                     return err
                 }
             }
+            nextToken = useNextToken
         }
     } 
     return nil
