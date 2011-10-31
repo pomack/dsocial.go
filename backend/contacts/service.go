@@ -175,6 +175,16 @@ type DataStoreService interface {
 }
 
 type ContactsService interface {
+    
+    // Convert the external contact for this Contacts Service to a dsocial contact or nil if not convertible or input is nil
+    ConvertToDsocialContact(externalContact interface{}) (dsocialContact *dm.Contact)
+    // Convert the dsocial contact to the external contact for this Contacts Service or nil if input is nil
+    ConvertToExternalContact(dsocialContact *dm.Contact) (externalContact interface{})
+    // Convert the external group for this Contacts Service to a dsocial group or nil if not convertible or input is nil
+    ConvertToDsocialGroup(externalGroup interface{}) (dsocialGroup *dm.Group)
+    // Convert the dsocial group to the external group for this Contacts Service or nil if input is nil
+    ConvertToExternalGroup(dsocialGroup *dm.Group) (externalGroup interface{})
+    
     // Whether this service can retrieve all contacts at once
     CanRetrieveAllContacts() bool
     // Whether this service can retrieve all connections (partial contact info or even just ids) at once

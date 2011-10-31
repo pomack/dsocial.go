@@ -19,6 +19,37 @@ func NewGoogleContactService() *GoogleContactService {
     return new(GoogleContactService)
 }
 
+func (p *GoogleContactService) ConvertToDsocialContact(externalContact interface{}) (dsocialContact *dm.Contact) {
+    if externalContact == nil {
+        return
+    }
+    if extContact, ok := externalContact.(*google.Contact); ok && extContact != nil {
+        dsocialContact = dm.GoogleContactToDsocial(extContact)
+    }
+    return
+}
+
+func (p *GoogleContactService) ConvertToExternalContact(dsocialContact *dm.Contact) (externalContact interface{}) {
+    externalContact = dm.DsocialContactToGoogle(dsocialContact)
+    return
+}
+
+func (p *GoogleContactService) ConvertToDsocialGroup(externalGroup interface{}) (dsocialGroup *dm.Group) {
+    if externalGroup == nil {
+        return
+    }
+    if extGroup, ok := externalGroup.(*google.ContactGroup); ok && extGroup != nil {
+        dsocialGroup = dm.GoogleGroupToDsocial(extGroup)
+    }
+    return
+}
+
+func (p *GoogleContactService) ConvertToExternalGroup(dsocialGroup *dm.Group) (externalGroup interface{}) {
+    externalGroup = dm.DsocialGroupToGoogle(dsocialGroup)
+    return
+}
+
+
 func (p *GoogleContactService) CanRetrieveAllContacts() bool {
     return false
 }
