@@ -2066,6 +2066,7 @@ func arraysAreSame(original, latest []DsocialChanger) bool {
 
 func compareStrings(old, now string, l *list.List) (ch *Change) {
     if old == now {
+        ch = nil
     } else if old == "" {
         ch = &Change{
             ChangeType: CHANGE_TYPE_ADD,
