@@ -17,8 +17,8 @@ type ChangeSet struct {
 }
 
 type Change struct {
-    Id            string           `json:"id"`
-    RecordId      string           `json:"record_id"`
+    Id            string           `json:"id,omitempty"`
+    RecordId      string           `json:"record_id,omitempty"`
     Path          []*PathComponent `json:"path"`
     ChangeType    ChangeType       `json:"change_type"`
     OriginalValue interface{}      `json:"original_value,omitempty"`
@@ -358,12 +358,12 @@ func ApplyUpdateChange(itemToModify interface{}, original interface{}, latest in
                     if isLast {
                         fieldKind := sfield.Type.Kind()
                         if sfield.Type.AssignableTo(latestType) {
-                            if reflect.DeepEqual(vField.Interface(), original) {
+                            //if reflect.DeepEqual(vField.Interface(), original) {
                                 fmt.Sprintf("Changing value from %#v to %#v", vField.Interface(), latestValue)
                                 vField.Set(latestValue)
-                            } else {
-                                panic(fmt.Sprintf("1 cannot update because field %s is %#v not %#v which was expected to update to %#v", sfield.Name, nextV.Interface(), original, latest))
-                            }
+                            //} else {
+                            //    panic(fmt.Sprintf("1 cannot update because field %s is %#v not %#v which was expected to update to %#v", sfield.Name, nextV.Interface(), original, latest))
+                            //}
                         } else if fieldKind == reflect.Array || fieldKind == reflect.Slice {
                             found := false
                             if nextV.IsNil() {
