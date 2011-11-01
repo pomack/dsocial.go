@@ -73,7 +73,7 @@ func googleDateStringToDsocial(s string) (d *Date) {
     return
 }
 
-func googleEmailToDsocial(g *google.Email) *Email {
+func googleEmailToDsocial(g *google.Email, original []*Email) *Email {
     var rel RelEmail
     var label string
     switch g.Rel {
@@ -91,7 +91,17 @@ func googleEmailToDsocial(g *google.Email) *Email {
     if label == "" && rel == "" {
         rel = REL_EMAIL_OTHER
     }
-    return &Email{EmailAddress: g.Address, Label: label, Rel: rel, IsPrimary: g.Primary == "true"}
+    id := ""
+    if original != nil {
+        for _, e := range original {
+            if e != nil && e.EmailAddress == g.Address {
+                id = e.Id
+            }
+        }
+    }
+    e := &Email{EmailAddress: g.Address, Label: label, Rel: rel, IsPrimary: g.Primary == "true"}
+    e.Id = id
+    return e
 }
 
 func findPrimaryEmail(arr []*Email) string {
@@ -106,7 +116,7 @@ func findPrimaryEmail(arr []*Email) string {
     return ""
 }
 
-func googlePhoneNumberToDsocial(g *google.PhoneNumber) *PhoneNumber {
+func googlePhoneNumberToDsocial(g *google.PhoneNumber, original []*PhoneNumber) *PhoneNumber {
     var rel RelPhoneNumber
     var label string
     switch g.Rel {
@@ -160,6 +170,15 @@ func googlePhoneNumberToDsocial(g *google.PhoneNumber) *PhoneNumber {
     }
     ph := &PhoneNumber{Label: label, Rel: rel, IsPrimary: g.Primary == "true"}
     ParsePhoneNumber(g.Value, ph)
+    id := ""
+    if original != nil {
+        for _, o := range original {
+            if o != nil && o.FormattedNumber == g.Value {
+                id = o.Id
+            }
+        }
+    }
+    ph.Id = id
     return ph
 }
 
@@ -175,7 +194,7 @@ func findPrimaryPhoneNumber(arr []*PhoneNumber) string {
     return ""
 }
 
-func googleImToDsocial(g *google.Im) *IM {
+func googleImToDsocial(g *google.Im, original []*IM) *IM {
     var rel RelIM
     var label string
     switch g.Rel {
@@ -217,8 +236,17 @@ func googleImToDsocial(g *google.Im) *IM {
     default:
         protocol = REL_IM_PROT_OTHER
     }
-
-    return &IM{Handle: g.Address, Protocol: protocol, Label: label, Rel: rel, IsPrimary: g.Primary == "true"}
+    id := ""
+    if original != nil {
+        for _, o := range original {
+            if o != nil && o.Protocol == protocol && o.Handle == g.Address {
+                id = o.Id
+            }
+        }
+    }
+    im := &IM{Handle: g.Address, Protocol: protocol, Label: label, Rel: rel, IsPrimary: g.Primary == "true"}
+    im.Id = id
+    return im
 }
 
 func findPrimaryIM(arr []*IM) string {
@@ -233,7 +261,7 @@ func findPrimaryIM(arr []*IM) string {
     return ""
 }
 
-func googlePostalAddressToDsocial(g *google.PostalAddress) *PostalAddress {
+func googlePostalAddressToDsocial(g *google.PostalAddress, original []*PostalAddress) *PostalAddress {
     var rel RelPostalAddress
     var label string
     switch g.Rel {
@@ -251,10 +279,20 @@ func googlePostalAddressToDsocial(g *google.PostalAddress) *PostalAddress {
     if label == "" && rel == "" {
         rel = REL_ADDRESS_OTHER
     }
-    return &PostalAddress{Address: g.Value, Label: label, Rel: rel, IsPrimary: g.Primary == "true", IsCurrent: true}
+    id := ""
+    if original != nil {
+        for _, o := range original {
+            if o != nil && o.Address == g.Value {
+                id = o.Id
+            }
+        }
+    }
+    pa := &PostalAddress{Address: g.Value, Label: label, Rel: rel, IsPrimary: g.Primary == "true", IsCurrent: true}
+    pa.Id = id
+    return pa
 }
 
-func googleStructuredPostalAddressToDsocial(g *google.StructuredPostalAddress) *PostalAddress {
+func googleStructuredPostalAddressToDsocial(g *google.StructuredPostalAddress, original []*PostalAddress) *PostalAddress {
     var rel RelPostalAddress
     var label string
     switch g.Rel {
@@ -282,7 +320,7 @@ func googleStructuredPostalAddressToDsocial(g *google.StructuredPostalAddress) *
     } else if g.HouseName.Value != "" {
         other = g.HouseName.Value
     }
-    return &PostalAddress{Address: g.FormattedAddress.Value,
+    pa := &PostalAddress{Address: g.FormattedAddress.Value,
         StreetAddress: g.Street.Value,
         OtherAddress:  other,
         Municipality:  g.City.Value,
@@ -294,6 +332,16 @@ func googleStructuredPostalAddressToDsocial(g *google.StructuredPostalAddress) *
         IsPrimary:     g.Primary == "true",
         IsCurrent:     true,
     }
+    id := ""
+    if original != nil {
+        for _, o := range original {
+            if o != nil && o.Address == g.FormattedAddress.Value {
+                id = o.Id
+            }
+        }
+    }
+    pa.Id = id
+    return pa
 }
 
 func findPrimaryAddress(arr []*PostalAddress) string {
@@ -344,7 +392,7 @@ func googleEventToDsocial(g *google.Event) (*ContactDate, *ContactDateTime) {
     return nil, value
 }
 
-func googleRelationToDsocial(g *google.Relation) *Relationship {
+func googleRelationToDsocial(g *google.Relation, original []*Relationship) *Relationship {
     var rel RelRelationship
     var label string
     switch g.Rel {
@@ -384,10 +432,20 @@ func googleRelationToDsocial(g *google.Relation) *Relationship {
     if label == "" && rel == "" {
         rel = REL_RELATIONSHIP_OTHER
     }
-    return &Relationship{ContactReferenceName: g.Value, Label: label, Rel: rel}
+    r := &Relationship{ContactReferenceName: g.Value, Label: label, Rel: rel}
+    id := ""
+    if original != nil {
+        for _, o := range original {
+            if o != nil && o.ContactReferenceName == g.Value {
+                id = o.Id
+            }
+        }
+    }
+    r.Id = id
+    return r
 }
 
-func googleWebsiteToDsocial(g *google.Website) *Uri {
+func googleWebsiteToDsocial(g *google.Website, original []*Uri) *Uri {
     var rel RelUri
     var label string
     switch g.Rel {
@@ -413,7 +471,17 @@ func googleWebsiteToDsocial(g *google.Website) *Uri {
     if label == "" && rel == "" {
         rel = REL_URI_OTHER
     }
-    return &Uri{Uri: g.Href, Label: label, Rel: rel, IsPrimary: g.Primary == "true"}
+    u := &Uri{Uri: g.Href, Label: label, Rel: rel, IsPrimary: g.Primary == "true"}
+    id := ""
+    if original != nil {
+        for _, o := range original {
+            if o != nil && o.Uri == g.Href {
+                id = o.Id
+            }
+        }
+    }
+    u.Id = id
+    return u
 }
 
 func findPrimaryUri(arr []*Uri) string {
@@ -428,11 +496,17 @@ func findPrimaryUri(arr []*Uri) string {
     return ""
 }
 
-func GoogleContactToDsocial(g *google.Contact) *Contact {
+func GoogleContactToDsocial(g *google.Contact, o *Contact) *Contact {
     if g == nil {
         return nil
     }
     c := new(Contact)
+    if o != nil {
+        c.Id = o.Id
+        c.UserId = o.UserId
+    } else {
+        o = new(Contact)
+    }
     c.DisplayName = g.Title.Value
     c.Notes = g.Content.Value
     c.Prefix = g.Name.NamePrefix.Value
@@ -468,31 +542,31 @@ func GoogleContactToDsocial(g *google.Contact) *Contact {
     }
     c.EmailAddresses = make([]*Email, len(g.Emails))
     for i, email := range g.Emails {
-        c.EmailAddresses[i] = googleEmailToDsocial(&email)
+        c.EmailAddresses[i] = googleEmailToDsocial(&email, o.EmailAddresses)
     }
     c.PrimaryEmail = findPrimaryEmail(c.EmailAddresses)
 
     c.PhoneNumbers = make([]*PhoneNumber, len(g.PhoneNumbers))
     for i, phoneNumber := range g.PhoneNumbers {
-        c.PhoneNumbers[i] = googlePhoneNumberToDsocial(&phoneNumber)
+        c.PhoneNumbers[i] = googlePhoneNumberToDsocial(&phoneNumber, o.PhoneNumbers)
     }
     c.PrimaryPhoneNumber = findPrimaryPhoneNumber(c.PhoneNumbers)
 
     c.Ims = make([]*IM, len(g.Ims))
     for i, im := range g.Ims {
-        c.Ims[i] = googleImToDsocial(&im)
+        c.Ims[i] = googleImToDsocial(&im, o.Ims)
     }
     c.PrimaryIm = findPrimaryIM(c.Ims)
 
     if len(g.PostalAddresses) > 0 {
         c.PostalAddresses = make([]*PostalAddress, len(g.PostalAddresses))
         for i, addr := range g.PostalAddresses {
-            c.PostalAddresses[i] = googlePostalAddressToDsocial(&addr)
+            c.PostalAddresses[i] = googlePostalAddressToDsocial(&addr, o.PostalAddresses)
         }
     } else if len(g.StructuredPostalAddresses) > 0 {
         c.PostalAddresses = make([]*PostalAddress, len(g.StructuredPostalAddresses))
         for i, addr := range g.StructuredPostalAddresses {
-            c.PostalAddresses[i] = googleStructuredPostalAddressToDsocial(&addr)
+            c.PostalAddresses[i] = googleStructuredPostalAddressToDsocial(&addr, o.PostalAddresses)
         }
     }
     c.PrimaryAddress = findPrimaryAddress(c.PostalAddresses)
@@ -532,30 +606,40 @@ func GoogleContactToDsocial(g *google.Contact) *Contact {
     // TODO group memberships
     c.Relationships = make([]*Relationship, len(g.Relationships))
     for i, relation := range g.Relationships {
-        c.Relationships[i] = googleRelationToDsocial(&relation)
+        c.Relationships[i] = googleRelationToDsocial(&relation, o.Relationships)
     }
     c.Uris = make([]*Uri, len(g.Websites))
     for i, website := range g.Websites {
-        c.Uris[i] = googleWebsiteToDsocial(&website)
+        c.Uris[i] = googleWebsiteToDsocial(&website, o.Uris)
     }
     return c
 }
 
-func GoogleGroupToDsocial(g *google.ContactGroup) *Group {
+func GoogleGroupToDsocial(g *google.ContactGroup, o *Group) *Group {
     if g == nil {
         return nil
     }
     c := new(Group)
+    if o != nil {
+        c.Id = o.Id
+        c.UserId = o.UserId
+    }
     c.Name = g.Title.Value
     c.Description = g.Content.Value
     return c
 }
 
-func DsocialGroupToGoogle(g *Group) *google.ContactGroup {
+func DsocialGroupToGoogle(g *Group, o *google.ContactGroup) *google.ContactGroup {
     if g == nil {
         return nil
     }
     c := new(google.ContactGroup)
+    if o != nil {
+        c.Id.Value = o.Id.Value
+        c.Etag = o.Etag
+        c.Categories = o.Categories
+        c.Updated = o.Updated
+    }
     c.Title.Value = g.Name
     c.Content.Value = g.Description
     c.Xmlns = google.XMLNS_ATOM
@@ -924,11 +1008,15 @@ func dsocialUriToGoogle(c *Uri, g *google.Website) {
     return
 }
 
-func DsocialContactToGoogle(c *Contact) *google.Contact {
+func DsocialContactToGoogle(c *Contact, o *google.Contact) *google.Contact {
     if c == nil {
         return nil
     }
     g := new(google.Contact)
+    if o != nil {
+        g.Id.Value = o.Id.Value
+        g.Etag = o.Etag
+    }
     // not supposed to specify title on output
     //g.Title.Value = c.DisplayName
     g.Content.Value = c.Notes
@@ -936,6 +1024,14 @@ func DsocialContactToGoogle(c *Contact) *google.Contact {
     g.Nickname.Value = c.Nickname
     g.MaidenName.Value = c.MaidenName
     g.Name.FullName.Value = c.DisplayName
+    if c.Title != "" || c.Company != "" || c.Department != "" {
+        g.Organizations = make([]google.Organization, 1)
+        org := &g.Organizations[0]
+        org.OrgTitle.Value = c.Title
+        org.OrgName.Value = c.Company
+        org.OrgDepartment.Value = c.Department
+        org.Primary = "true"
+    }
     switch c.Gender {
     case REL_GENDER_MALE:
         g.Gender.Value = google.GENDER_MALE
@@ -943,19 +1039,29 @@ func DsocialContactToGoogle(c *Contact) *google.Contact {
         g.Gender.Value = google.GENDER_FEMALE
     }
     // skip for now
-    for _, org := range g.Organizations {
-        isPrimary := org.Primary == "true"
-        if isPrimary || org.OrgTitle.Value != "" {
-            c.Title = org.OrgTitle.Value
+    currentWorkHistories := list.New()
+    if c.WorkHistories != nil {
+        for _, workhist := range c.WorkHistories {
+            if workhist != nil && workhist.IsCurrent {
+                currentWorkHistories.PushBack(workhist)
+            }
         }
-        if isPrimary || org.OrgName.Value != "" {
-            c.Company = org.OrgName.Value
-        }
-        if isPrimary || org.OrgDepartment.Value != "" {
-            c.Department = org.OrgDepartment.Value
-        }
-        if isPrimary {
-            break
+    }
+    if currentWorkHistories.Len() > 0 {
+        g.Organizations = make([]google.Organization, currentWorkHistories.Len())
+        for i, iter := 0, currentWorkHistories.Front(); iter != nil; i, iter = i+1, iter.Next() {
+            workhist := iter.Value.(*WorkHistory)
+            org := &g.Organizations[i]
+            org.OrgName.Value = workhist.Company
+            if workhist.Positions != nil {
+                for _, position := range workhist.Positions {
+                    if position != nil && position.IsCurrent {
+                        org.OrgTitle.Value = position.Title
+                        org.OrgDepartment.Value = position.Department
+                        break
+                    }
+                }
+            }
         }
     }
     g.Emails = make([]google.Email, len(c.EmailAddresses))
