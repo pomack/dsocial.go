@@ -13,8 +13,54 @@ import (
 type Pipeline struct {
 }
 
+func NewPipeline() *Pipeline {
+    return new(Pipeline)
+}
+
 func (p *Pipeline) InitialSync(client oauth2_client.OAuth2Client, ds DataStoreService, cs ContactsService, dsocialUserId string) os.Error {
-    return p.IncrementalSync(client, ds, cs, dsocialUserId)
+    return p.Sync(client, ds, cs, dsocialUserId, true, false, false)
+}
+
+func (p *Pipeline) IncrementalSync(client oauth2_client.OAuth2Client, ds DataStoreService, cs ContactsService, dsocialUserId string) os.Error {
+    return p.Sync(client, ds, cs, dsocialUserId, true, true, true)
+}
+
+func (p *Pipeline) removeUnacceptedChanges(l *list.List, allowAdd, allowDelete, allowUpdate bool) (*list.List) {
+    if allowAdd && allowDelete && allowUpdate {
+        return l
+    }
+    n := list.New()
+    for iter := l.Front(); iter != nil; iter = iter.Next() {
+        if iter.Value == nil {
+            //l.Remove(iter)
+            continue
+        }
+        ch, _ := iter.Value.(*dm.Change)
+        if ch == nil {
+            //l.Remove(iter)
+            continue
+        }
+        if !allowAdd && ch.ChangeType == dm.CHANGE_TYPE_ADD {
+            fmt.Printf("Removing add change for path of %#v", ch.Path)
+            //l.Remove(iter)
+        } else if !allowDelete && ch.ChangeType == dm.CHANGE_TYPE_DELETE {
+            fmt.Printf("Removing delete change for path of %#v", ch.Path)
+            //l.Remove(iter)
+        } else if !allowUpdate && ch.ChangeType == dm.CHANGE_TYPE_UPDATE {
+            if !allowAdd || ch.Path == nil || len(ch.Path) <= 1 {
+                fmt.Printf("Removing update for path of %#v and allowAdd %v\n", ch.Path, allowAdd)
+                //l.Remove(iter)
+            } else {
+                fmt.Printf("Changing update to add for path of %#v and allowAdd %v\n", ch.Path, allowAdd)
+                ch.ChangeType = dm.CHANGE_TYPE_ADD
+                ch.OriginalValue = nil
+                n.PushBack(ch)
+            }
+        } else {
+            n.PushBack(ch)
+        }
+    }
+    return n
 }
 
 func (p *Pipeline) findMatchingDsocialContact(ds DataStoreService, dsocialUserId string, contact *Contact) (originalExternalContact *dm.Contact, isSame bool, err os.Error) {
@@ -50,7 +96,7 @@ func (p *Pipeline) findMatchingDsocialContact(ds DataStoreService, dsocialUserId
     return originalExternalContact, isSame, err
 }
 
-func (p *Pipeline) contactImport(cs ContactsService, ds DataStoreService, dsocialUserId string, contact *Contact) (*dm.Contact, os.Error) {
+func (p *Pipeline) contactImport(cs ContactsService, ds DataStoreService, dsocialUserId string, contact *Contact, allowAdd, allowDelete, allowUpdate bool) (*dm.Contact, os.Error) {
     emptyContact := new(dm.Contact)
     if contact == nil || contact.Value == nil {
         return nil, nil
@@ -70,10 +116,11 @@ func (p *Pipeline) contactImport(cs ContactsService, ds DataStoreService, dsocia
             return matchingContact, err
         }
         if matchingContact != nil {
-            extContact := cs.ConvertToExternalContact(matchingContact)
+            extContact := cs.ConvertToExternalContact(matchingContact, nil)
             ds.StoreExternalContact(contact.ExternalServiceId, contact.ExternalUserId, dsocialUserId, contact.ExternalContactId, extContact)
-            originalExternalContact = cs.ConvertToDsocialContact(extContact)
+            originalExternalContact = cs.ConvertToDsocialContact(extContact, matchingContact)
             if originalExternalContact != nil {
+                AddIdsForDsocialContact(originalExternalContact, ds)
                 originalExternalContact, err = ds.StoreDsocialContactForExternalContact(contact.ExternalServiceId, contact.ExternalUserId, contact.ExternalContactId, dsocialUserId, originalExternalContact)
                 if originalExternalContact == nil || err != nil {
                     return matchingContact, err
@@ -102,7 +149,9 @@ func (p *Pipeline) contactImport(cs ContactsService, ds DataStoreService, dsocia
             contact.DsocialContactId = matchingContact.Id
         }
         if contact.DsocialContactId == "" {
-            thecontact, err := ds.StoreDsocialContact(dsocialUserId, "", new(dm.Contact))
+            newContact := &dm.Contact{UserId: dsocialUserId}
+            AddIdsForDsocialContact(newContact, ds)
+            thecontact, err := ds.StoreDsocialContact(dsocialUserId, newContact.Id, newContact)
             if err != nil {
                 return nil, err
             }
@@ -114,6 +163,7 @@ func (p *Pipeline) contactImport(cs ContactsService, ds DataStoreService, dsocia
     }
     l := new(list.List)
     emptyContact.GenerateChanges(originalExternalContact, contact.Value, nil, l)
+    l = p.removeUnacceptedChanges(l, allowAdd, allowDelete, allowUpdate)
     changes := make([]*dm.Change, l.Len())
     for i, iter := 0, l.Front(); iter != nil; i, iter = i+1, iter.Next() {
         changes[i] = iter.Value.(*dm.Change)
@@ -130,7 +180,8 @@ func (p *Pipeline) contactImport(cs ContactsService, ds DataStoreService, dsocia
         return matchingContact, err
     }
     if originalExternalContact == nil {
-        contact.Value, err = ds.StoreDsocialContact(dsocialUserId, "", contact.Value)
+        AddIdsForDsocialContact(contact.Value, ds)
+        contact.Value, err = ds.StoreDsocialContact(dsocialUserId, contact.Value.Id, contact.Value)
         if err != nil {
             return matchingContact, err
         }
@@ -148,13 +199,14 @@ func (p *Pipeline) contactImport(cs ContactsService, ds DataStoreService, dsocia
         }
     }
     if storedDsocialContact == nil {
-        storedDsocialContact = new(dm.Contact)
+        storedDsocialContact = &dm.Contact{UserId: dsocialUserId}
     }
     for j, iter := 0, l.Front(); iter != nil; j, iter = j+1, iter.Next() {
         change := iter.Value.(*dm.Change)
         dm.ApplyChange(storedDsocialContact, change)
         changes[j] = change
     }
+    AddIdsForDsocialContact(storedDsocialContact, ds)
     _, err = ds.StoreDsocialContact(dsocialUserId, contact.DsocialContactId, storedDsocialContact)
     return storedDsocialContact, err
 }
@@ -182,7 +234,7 @@ func (p *Pipeline) findMatchingDsocialGroup(ds DataStoreService, dsocialUserId s
     return originalExternalGroup, isSame, err
 }
 
-func (p *Pipeline) groupImport(cs ContactsService, ds DataStoreService, dsocialUserId string, group *Group, minimumIncludes *list.List) (*dm.Group, os.Error) {
+func (p *Pipeline) groupImport(cs ContactsService, ds DataStoreService, dsocialUserId string, group *Group, minimumIncludes *list.List, allowAdd, allowDelete, allowUpdate bool) (*dm.Group, os.Error) {
     emptyGroup := new(dm.Group)
     if group == nil || group.Value == nil {
         return nil, nil
@@ -250,9 +302,9 @@ func (p *Pipeline) groupImport(cs ContactsService, ds DataStoreService, dsocialU
             return matchingGroup, err
         }
         if matchingGroup != nil {
-            extGroup := cs.ConvertToExternalGroup(matchingGroup)
+            extGroup := cs.ConvertToExternalGroup(matchingGroup, nil)
             ds.StoreExternalGroup(group.ExternalServiceId, group.ExternalUserId, dsocialUserId, group.ExternalGroupId, extGroup)
-            originalExternalGroup = cs.ConvertToDsocialGroup(extGroup)
+            originalExternalGroup = cs.ConvertToDsocialGroup(extGroup, matchingGroup)
             if originalExternalGroup != nil {
                 originalExternalGroup, err = ds.StoreDsocialGroupForExternalGroup(group.ExternalServiceId, group.ExternalUserId, group.ExternalGroupId, dsocialUserId, originalExternalGroup)
                 if originalExternalGroup == nil || err != nil {
@@ -280,6 +332,26 @@ func (p *Pipeline) groupImport(cs ContactsService, ds DataStoreService, dsocialU
     }
     l := new(list.List)
     emptyGroup.GenerateChanges(originalExternalGroup, group.Value, nil, l)
+    p.removeUnacceptedChanges(l, allowAdd, allowDelete, allowUpdate)
+    if !allowAdd || !allowDelete || !allowUpdate {
+        for iter := l.Front(); iter != nil; iter = iter.Next() {
+            ch := iter.Value.(*dm.Change)
+            if !allowAdd && ch.ChangeType == dm.CHANGE_TYPE_ADD {
+                l.Remove(iter)
+            } else if !allowDelete && ch.ChangeType == dm.CHANGE_TYPE_DELETE {
+                l.Remove(iter)
+            } else if !allowUpdate && ch.ChangeType == dm.CHANGE_TYPE_UPDATE {
+                if !allowAdd {
+                    l.Remove(iter)
+                } else if len(ch.Path) > 1 {
+                    ch.ChangeType = dm.CHANGE_TYPE_ADD
+                    ch.OriginalValue = nil
+                } else {
+                    l.Remove(iter)
+                }
+            }
+        }
+    }
     changes := make([]*dm.Change, l.Len())
     for i, iter := 0, l.Front(); iter != nil; i, iter = i+1, iter.Next() {
         changes[i] = iter.Value.(*dm.Change)
@@ -342,7 +414,7 @@ func (p *Pipeline) addContactToGroupMappings(m map[string]*list.List, contact *d
     }
 }
 
-func (p *Pipeline) IncrementalSync(client oauth2_client.OAuth2Client, ds DataStoreService, cs ContactsService, dsocialUserId string) os.Error {
+func (p *Pipeline) Sync(client oauth2_client.OAuth2Client, ds DataStoreService, cs ContactsService, dsocialUserId string, allowAdd, allowDelete, allowUpdate bool) os.Error {
     groupMappings := make(map[string]*list.List)
     checkGroupsInContacts := cs.ContactInfoIncludesGroups()
     if cs.CanRetrieveContacts() {
@@ -352,7 +424,7 @@ func (p *Pipeline) IncrementalSync(client oauth2_client.OAuth2Client, ds DataSto
                 return err
             }
             for _, contact := range contacts {
-                finalContact, err := p.contactImport(cs, ds, dsocialUserId, contact)
+                finalContact, err := p.contactImport(cs, ds, dsocialUserId, contact, allowAdd, allowDelete, allowUpdate)
                 if checkGroupsInContacts && finalContact != nil && finalContact.GroupReferences != nil && len(finalContact.GroupReferences) > 0 {
                     p.addContactToGroupMappings(groupMappings, finalContact)
                 }
@@ -373,7 +445,7 @@ func (p *Pipeline) IncrementalSync(client oauth2_client.OAuth2Client, ds DataSto
                 if err != nil {
                     return err
                 }
-                finalContact, err := p.contactImport(cs, ds, dsocialUserId, contact)
+                finalContact, err := p.contactImport(cs, ds, dsocialUserId, contact, allowAdd, allowDelete, allowUpdate)
                 if checkGroupsInContacts && finalContact != nil && finalContact != nil && finalContact.GroupReferences != nil && len(finalContact.GroupReferences) > 0 {
                     p.addContactToGroupMappings(groupMappings, finalContact)
                 } 
@@ -391,7 +463,7 @@ func (p *Pipeline) IncrementalSync(client oauth2_client.OAuth2Client, ds DataSto
                 return err
             }
             for _, group := range groups {
-                _, err = p.groupImport(cs, ds, dsocialUserId, group, groupMappings[group.Value.Name])
+                _, err = p.groupImport(cs, ds, dsocialUserId, group, groupMappings[group.Value.Name], allowAdd, allowDelete, allowUpdate)
                 if err != nil {
                     return err
                 }
