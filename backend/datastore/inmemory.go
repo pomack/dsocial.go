@@ -391,8 +391,10 @@ func (p *InMemoryDataStore) RetrieveDsocialGroupForExternalGroup(externalService
     //   err : error or nil
 func (p *InMemoryDataStore) StoreDsocialContactForExternalContact(externalServiceId, externalUserId, externalContactId, dsocialUserId string, contact *dm.Contact) (dsocialContact *dm.Contact, err os.Error) {
     k := strings.Join([]string{dsocialUserId, externalServiceId, externalUserId, externalContactId}, "/")
+    bc.AddIdsForDsocialContact(contact, p, dsocialUserId)
     c := new(dm.Contact)
     *c = *contact
+    
     p.store(_INMEMORY_CONTACT_FOR_EXTERNAL_CONTACT_COLLECTION_NAME, k, c)
     dsocialContact = contact
     return
@@ -472,6 +474,7 @@ func (p *InMemoryDataStore) StoreDsocialContact(dsocialUserId, dsocialContactId 
         dsocialContactId = p.GenerateId("contact")
         contact.Id = dsocialContactId
     }
+    bc.AddIdsForDsocialContact(contact, p, dsocialUserId)
     k := strings.Join([]string{dsocialUserId, dsocialContactId}, "/")
     c := new(dm.Contact)
     *c = *contact
