@@ -73,7 +73,7 @@ func googleDateStringToDsocial(s string) (d *Date) {
     return
 }
 
-func googleEmailToDsocial(g *google.Email, original []*Email) *Email {
+func googleEmailToDsocial(g *google.Email, original []*Email, dsocialUserId string) *Email {
     var rel RelEmail
     var label string
     switch g.Rel {
@@ -101,6 +101,7 @@ func googleEmailToDsocial(g *google.Email, original []*Email) *Email {
     }
     e := &Email{EmailAddress: g.Address, Label: label, Rel: rel, IsPrimary: g.Primary == "true"}
     e.Id = id
+    e.Acl.OwnerId = dsocialUserId
     return e
 }
 
@@ -116,7 +117,7 @@ func findPrimaryEmail(arr []*Email) string {
     return ""
 }
 
-func googlePhoneNumberToDsocial(g *google.PhoneNumber, original []*PhoneNumber) *PhoneNumber {
+func googlePhoneNumberToDsocial(g *google.PhoneNumber, original []*PhoneNumber, dsocialUserId string) *PhoneNumber {
     var rel RelPhoneNumber
     var label string
     switch g.Rel {
@@ -179,6 +180,7 @@ func googlePhoneNumberToDsocial(g *google.PhoneNumber, original []*PhoneNumber) 
         }
     }
     ph.Id = id
+    ph.Acl.OwnerId = dsocialUserId
     return ph
 }
 
@@ -194,7 +196,7 @@ func findPrimaryPhoneNumber(arr []*PhoneNumber) string {
     return ""
 }
 
-func googleImToDsocial(g *google.Im, original []*IM) *IM {
+func googleImToDsocial(g *google.Im, original []*IM, dsocialUserId string) *IM {
     var rel RelIM
     var label string
     switch g.Rel {
@@ -246,6 +248,7 @@ func googleImToDsocial(g *google.Im, original []*IM) *IM {
     }
     im := &IM{Handle: g.Address, Protocol: protocol, Label: label, Rel: rel, IsPrimary: g.Primary == "true"}
     im.Id = id
+    im.Acl.OwnerId = dsocialUserId
     return im
 }
 
@@ -261,7 +264,7 @@ func findPrimaryIM(arr []*IM) string {
     return ""
 }
 
-func googlePostalAddressToDsocial(g *google.PostalAddress, original []*PostalAddress) *PostalAddress {
+func googlePostalAddressToDsocial(g *google.PostalAddress, original []*PostalAddress, dsocialUserId string) *PostalAddress {
     var rel RelPostalAddress
     var label string
     switch g.Rel {
@@ -289,10 +292,11 @@ func googlePostalAddressToDsocial(g *google.PostalAddress, original []*PostalAdd
     }
     pa := &PostalAddress{Address: g.Value, Label: label, Rel: rel, IsPrimary: g.Primary == "true", IsCurrent: true}
     pa.Id = id
+    pa.Acl.OwnerId = dsocialUserId
     return pa
 }
 
-func googleStructuredPostalAddressToDsocial(g *google.StructuredPostalAddress, original []*PostalAddress) *PostalAddress {
+func googleStructuredPostalAddressToDsocial(g *google.StructuredPostalAddress, original []*PostalAddress, dsocialUserId string) *PostalAddress {
     var rel RelPostalAddress
     var label string
     switch g.Rel {
@@ -341,6 +345,7 @@ func googleStructuredPostalAddressToDsocial(g *google.StructuredPostalAddress, o
         }
     }
     pa.Id = id
+    pa.Acl.OwnerId = dsocialUserId
     return pa
 }
 
@@ -356,7 +361,7 @@ func findPrimaryAddress(arr []*PostalAddress) string {
     return ""
 }
 
-func googleEventToDsocial(g *google.Event) (*ContactDate, *ContactDateTime) {
+func googleEventToDsocial(g *google.Event, dsocialUserId string) (*ContactDate, *ContactDateTime) {
     dt := googleDateTimeStringToDsocial(g.When.StartTime)
     if dt == nil {
         return nil, nil
@@ -382,6 +387,7 @@ func googleEventToDsocial(g *google.Event) (*ContactDate, *ContactDateTime) {
             Label: label,
             Value: &Date{Year: dt.Year, Month: dt.Month, Day: dt.Day},
         }
+        value.Acl.OwnerId = dsocialUserId
         return value, nil
     }
     value := &ContactDateTime{
@@ -389,10 +395,11 @@ func googleEventToDsocial(g *google.Event) (*ContactDate, *ContactDateTime) {
         Label: label,
         Value: dt,
     }
+    value.Acl.OwnerId = dsocialUserId
     return nil, value
 }
 
-func googleRelationToDsocial(g *google.Relation, original []*Relationship) *Relationship {
+func googleRelationToDsocial(g *google.Relation, original []*Relationship, dsocialUserId string) *Relationship {
     var rel RelRelationship
     var label string
     switch g.Rel {
@@ -442,10 +449,11 @@ func googleRelationToDsocial(g *google.Relation, original []*Relationship) *Rela
         }
     }
     r.Id = id
+    r.Acl.OwnerId = dsocialUserId
     return r
 }
 
-func googleWebsiteToDsocial(g *google.Website, original []*Uri) *Uri {
+func googleWebsiteToDsocial(g *google.Website, original []*Uri, dsocialUserId string) *Uri {
     var rel RelUri
     var label string
     switch g.Rel {
@@ -481,6 +489,7 @@ func googleWebsiteToDsocial(g *google.Website, original []*Uri) *Uri {
         }
     }
     u.Id = id
+    u.Acl.OwnerId = dsocialUserId
     return u
 }
 
@@ -496,7 +505,7 @@ func findPrimaryUri(arr []*Uri) string {
     return ""
 }
 
-func GoogleContactToDsocial(g *google.Contact, o *Contact) *Contact {
+func GoogleContactToDsocial(g *google.Contact, o *Contact, dsocialUserId string) *Contact {
     if g == nil {
         return nil
     }
@@ -507,6 +516,8 @@ func GoogleContactToDsocial(g *google.Contact, o *Contact) *Contact {
     } else {
         o = new(Contact)
     }
+    c.UserId = dsocialUserId
+    c.Acl.OwnerId = dsocialUserId
     c.DisplayName = g.Title.Value
     c.Notes = g.Content.Value
     c.Prefix = g.Name.NamePrefix.Value
@@ -542,31 +553,31 @@ func GoogleContactToDsocial(g *google.Contact, o *Contact) *Contact {
     }
     c.EmailAddresses = make([]*Email, len(g.Emails))
     for i, email := range g.Emails {
-        c.EmailAddresses[i] = googleEmailToDsocial(&email, o.EmailAddresses)
+        c.EmailAddresses[i] = googleEmailToDsocial(&email, o.EmailAddresses, dsocialUserId)
     }
     c.PrimaryEmail = findPrimaryEmail(c.EmailAddresses)
 
     c.PhoneNumbers = make([]*PhoneNumber, len(g.PhoneNumbers))
     for i, phoneNumber := range g.PhoneNumbers {
-        c.PhoneNumbers[i] = googlePhoneNumberToDsocial(&phoneNumber, o.PhoneNumbers)
+        c.PhoneNumbers[i] = googlePhoneNumberToDsocial(&phoneNumber, o.PhoneNumbers, dsocialUserId)
     }
     c.PrimaryPhoneNumber = findPrimaryPhoneNumber(c.PhoneNumbers)
 
     c.Ims = make([]*IM, len(g.Ims))
     for i, im := range g.Ims {
-        c.Ims[i] = googleImToDsocial(&im, o.Ims)
+        c.Ims[i] = googleImToDsocial(&im, o.Ims, dsocialUserId)
     }
     c.PrimaryIm = findPrimaryIM(c.Ims)
 
     if len(g.PostalAddresses) > 0 {
         c.PostalAddresses = make([]*PostalAddress, len(g.PostalAddresses))
         for i, addr := range g.PostalAddresses {
-            c.PostalAddresses[i] = googlePostalAddressToDsocial(&addr, o.PostalAddresses)
+            c.PostalAddresses[i] = googlePostalAddressToDsocial(&addr, o.PostalAddresses, dsocialUserId)
         }
     } else if len(g.StructuredPostalAddresses) > 0 {
         c.PostalAddresses = make([]*PostalAddress, len(g.StructuredPostalAddresses))
         for i, addr := range g.StructuredPostalAddresses {
-            c.PostalAddresses[i] = googleStructuredPostalAddressToDsocial(&addr, o.PostalAddresses)
+            c.PostalAddresses[i] = googleStructuredPostalAddressToDsocial(&addr, o.PostalAddresses, dsocialUserId)
         }
     }
     c.PrimaryAddress = findPrimaryAddress(c.PostalAddresses)
@@ -575,7 +586,7 @@ func GoogleContactToDsocial(g *google.Contact, o *Contact) *Contact {
     dates := list.New()
     datetimes := list.New()
     for _, event := range g.Events {
-        thedate, thedatetime := googleEventToDsocial(&event)
+        thedate, thedatetime := googleEventToDsocial(&event, dsocialUserId)
         if thedate != nil {
             dates.PushBack(thedate)
             if event.Rel == google.REL_EVENT_ANNIVERSARY {
@@ -606,16 +617,16 @@ func GoogleContactToDsocial(g *google.Contact, o *Contact) *Contact {
     // TODO group memberships
     c.Relationships = make([]*Relationship, len(g.Relationships))
     for i, relation := range g.Relationships {
-        c.Relationships[i] = googleRelationToDsocial(&relation, o.Relationships)
+        c.Relationships[i] = googleRelationToDsocial(&relation, o.Relationships, dsocialUserId)
     }
     c.Uris = make([]*Uri, len(g.Websites))
     for i, website := range g.Websites {
-        c.Uris[i] = googleWebsiteToDsocial(&website, o.Uris)
+        c.Uris[i] = googleWebsiteToDsocial(&website, o.Uris, dsocialUserId)
     }
     return c
 }
 
-func GoogleGroupToDsocial(g *google.ContactGroup, o *Group) *Group {
+func GoogleGroupToDsocial(g *google.ContactGroup, o *Group, dsocialUserId string) *Group {
     if g == nil {
         return nil
     }
@@ -624,6 +635,8 @@ func GoogleGroupToDsocial(g *google.ContactGroup, o *Group) *Group {
         c.Id = o.Id
         c.UserId = o.UserId
     }
+    c.UserId = dsocialUserId
+    c.Acl.OwnerId = dsocialUserId
     c.Name = g.Title.Value
     c.Description = g.Content.Value
     return c

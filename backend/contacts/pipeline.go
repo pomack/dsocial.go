@@ -116,11 +116,11 @@ func (p *Pipeline) contactImport(cs ContactsService, ds DataStoreService, dsocia
             return matchingContact, err
         }
         if matchingContact != nil {
-            extContact := cs.ConvertToExternalContact(matchingContact, nil)
+            extContact := cs.ConvertToExternalContact(matchingContact, nil, dsocialUserId)
             ds.StoreExternalContact(contact.ExternalServiceId, contact.ExternalUserId, dsocialUserId, contact.ExternalContactId, extContact)
-            originalExternalContact = cs.ConvertToDsocialContact(extContact, matchingContact)
+            originalExternalContact = cs.ConvertToDsocialContact(extContact, matchingContact, dsocialUserId)
             if originalExternalContact != nil {
-                AddIdsForDsocialContact(originalExternalContact, ds)
+                AddIdsForDsocialContact(originalExternalContact, ds, dsocialUserId)
                 originalExternalContact, err = ds.StoreDsocialContactForExternalContact(contact.ExternalServiceId, contact.ExternalUserId, contact.ExternalContactId, dsocialUserId, originalExternalContact)
                 if originalExternalContact == nil || err != nil {
                     return matchingContact, err
@@ -150,7 +150,7 @@ func (p *Pipeline) contactImport(cs ContactsService, ds DataStoreService, dsocia
         }
         if contact.DsocialContactId == "" {
             newContact := &dm.Contact{UserId: dsocialUserId}
-            AddIdsForDsocialContact(newContact, ds)
+            AddIdsForDsocialContact(newContact, ds, dsocialUserId)
             thecontact, err := ds.StoreDsocialContact(dsocialUserId, newContact.Id, newContact)
             if err != nil {
                 return nil, err
@@ -180,7 +180,7 @@ func (p *Pipeline) contactImport(cs ContactsService, ds DataStoreService, dsocia
         return matchingContact, err
     }
     if originalExternalContact == nil {
-        AddIdsForDsocialContact(contact.Value, ds)
+        AddIdsForDsocialContact(contact.Value, ds, dsocialUserId)
         contact.Value, err = ds.StoreDsocialContact(dsocialUserId, contact.Value.Id, contact.Value)
         if err != nil {
             return matchingContact, err
@@ -206,7 +206,7 @@ func (p *Pipeline) contactImport(cs ContactsService, ds DataStoreService, dsocia
         dm.ApplyChange(storedDsocialContact, change)
         changes[j] = change
     }
-    AddIdsForDsocialContact(storedDsocialContact, ds)
+    AddIdsForDsocialContact(storedDsocialContact, ds, dsocialUserId)
     _, err = ds.StoreDsocialContact(dsocialUserId, contact.DsocialContactId, storedDsocialContact)
     return storedDsocialContact, err
 }
@@ -302,9 +302,9 @@ func (p *Pipeline) groupImport(cs ContactsService, ds DataStoreService, dsocialU
             return matchingGroup, err
         }
         if matchingGroup != nil {
-            extGroup := cs.ConvertToExternalGroup(matchingGroup, nil)
+            extGroup := cs.ConvertToExternalGroup(matchingGroup, nil, dsocialUserId)
             ds.StoreExternalGroup(group.ExternalServiceId, group.ExternalUserId, dsocialUserId, group.ExternalGroupId, extGroup)
-            originalExternalGroup = cs.ConvertToDsocialGroup(extGroup, matchingGroup)
+            originalExternalGroup = cs.ConvertToDsocialGroup(extGroup, matchingGroup, dsocialUserId)
             if originalExternalGroup != nil {
                 originalExternalGroup, err = ds.StoreDsocialGroupForExternalGroup(group.ExternalServiceId, group.ExternalUserId, group.ExternalGroupId, dsocialUserId, originalExternalGroup)
                 if originalExternalGroup == nil || err != nil {
