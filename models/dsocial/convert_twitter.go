@@ -43,6 +43,10 @@ func DsocialContactToTwitter(c *Contact, o *twitter.User) *twitter.User {
         return nil
     }
     t := new(twitter.User)
+    if o != nil {
+        t.Id = o.Id
+        t.IdStr = o.IdStr
+    }
     t.Name = c.DisplayName
     if c.Ims != nil {
         for _, im := range c.Ims {
