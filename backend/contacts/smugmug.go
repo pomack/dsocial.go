@@ -1,1 +1,301 @@
 package contacts
+
+import (
+    "github.com/pomack/oauth2_client.go/oauth2_client"
+    "github.com/pomack/contacts.go/smugmug"
+    dm "github.com/pomack/dsocial.go/models/dsocial"
+    "container/list"
+    "os"
+)
+
+
+type SmugMugContactService struct {
+
+}
+
+func NewSmugMugContactService() *SmugMugContactService {
+    return new(SmugMugContactService)
+}
+
+func (p *SmugMugContactService) ConvertToDsocialContact(externalContact interface{}, originalDsocialContact *dm.Contact, dsocialUserId string) (dsocialContact *dm.Contact) {
+    if externalContact == nil {
+        return
+    }
+    if extContact, ok := externalContact.(*smugmug.PersonReference); ok && extContact != nil {
+        dsocialContact = dm.SmugMugUserToDsocial(extContact, originalDsocialContact, dsocialUserId)
+    }
+    return
+}
+
+func (p *SmugMugContactService) ConvertToExternalContact(dsocialContact *dm.Contact, originalExternalContact interface{}, dsocialUserId string) (externalContact interface{}) {
+    var origSmugMugContact *smugmug.PersonReference = nil
+    if originalExternalContact != nil {
+        origSmugMugContact, _ = originalExternalContact.(*smugmug.PersonReference)
+    }
+    externalContact = dm.DsocialContactToSmugMug(dsocialContact, origSmugMugContact)
+    return
+}
+
+func (p *SmugMugContactService) ConvertToDsocialGroup(externalGroup interface{}, originalDsocialGroup *dm.Group, dsocialUserId string) (dsocialGroup *dm.Group) {
+    return
+}
+
+func (p *SmugMugContactService) ConvertToExternalGroup(dsocialGroup *dm.Group, originalExternalGroup interface{}, dsocialUserId string) (externalGroup interface{}) {
+    return
+}
+
+
+func (p *SmugMugContactService) CanRetrieveAllContacts() bool {
+    return false
+}
+
+func (p *SmugMugContactService) CanRetrieveAllConnections() bool {
+    return false
+}
+
+func (p *SmugMugContactService) CanRetrieveAllGroups() bool {
+    return false
+}
+
+func (p *SmugMugContactService) CanRetrieveContacts() bool {
+    return true
+}
+
+func (p *SmugMugContactService) CanRetrieveConnections() bool {
+    return false
+}
+
+func (p *SmugMugContactService) CanRetrieveGroups() bool {
+    return false
+}
+
+func (p *SmugMugContactService) CanRetrieveContact(selfContact bool) bool {
+    return true
+}
+
+func (p *SmugMugContactService) CanCreateContact(selfContact bool) bool {
+    return false
+}
+
+func (p *SmugMugContactService) CanUpdateContact(selfContact bool) bool {
+    return false
+}
+
+func (p *SmugMugContactService) CanDeleteContact(selfContact bool) bool {
+    return false
+}
+
+func (p *SmugMugContactService) CanRetrieveGroup(selfContact bool) bool {
+    return false
+}
+
+func (p *SmugMugContactService) CanCreateGroup(selfContact bool) bool {
+    return false
+}
+
+func (p *SmugMugContactService) CanUpdateGroup(selfContact bool) bool {
+    return false
+}
+
+func (p *SmugMugContactService) CanDeleteGroup(selfContact bool) bool {
+    return false
+}
+
+func (p *SmugMugContactService) GroupListIncludesContactIds() bool {
+    return false
+}
+
+func (p *SmugMugContactService) GroupInfoIncludesContactIds() bool {
+    return false
+}
+
+func (p *SmugMugContactService) ContactInfoIncludesGroups() bool {
+    return false
+}
+
+func (p *SmugMugContactService) RetrieveAllContacts(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId string) ([]*Contact, os.Error) {
+    contacts, nextToken, err := p.RetrieveContacts(client, ds, dsocialUserId, nil)
+    if contacts == nil || len(contacts) == 0 || nextToken == nil || err != nil {
+        return contacts, err
+    }
+    l := list.New()
+    for contacts != nil && len(contacts) > 0 {
+        for _, c := range contacts {
+            l.PushBack(c)
+        }
+        if err != nil {
+            break
+        }
+        contacts, nextToken, err = p.RetrieveContacts(client, ds, dsocialUserId, nextToken)
+    }
+    contacts = make([]*Contact, l.Len())
+    for i, e := 0, l.Front(); e != nil; i, e = i + 1, e.Next() {
+        contacts[i] = e.Value.(*Contact)
+    }
+    return contacts, err
+}
+
+func (p *SmugMugContactService) RetrieveAllConnections(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId string) ([]*Contact, os.Error) {
+    return make([]*Contact, 0), nil
+}
+
+func (p *SmugMugContactService) RetrieveAllGroups(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId string) ([]*Group, os.Error) {
+    return make([]*Group, 0), nil
+}
+
+func (p *SmugMugContactService) listToContacts(l *list.List) []*Contact {
+    if l == nil {
+        return make([]*Contact, 0)
+    }
+    arr := make([]*Contact, l.Len())
+    for i, e := 0, l.Front(); e != nil; i, e = i + 1, e.Next() {
+        if c, ok := e.Value.(*Contact); ok {
+            arr[i] = c
+        }
+    }
+    return arr
+}
+
+func (p *SmugMugContactService) RetrieveContacts(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId string, next NextToken) ([]*Contact, NextToken, os.Error) {
+    l := list.New()
+    var useErr os.Error
+    famResp, err := smugmug.RetrieveFamily(client, nil)
+    if err != nil {
+        useErr = err
+    }
+    if famResp != nil && famResp.Family != nil {
+        for _, u := range famResp.Family {
+            contact, err := p.handleRetrievedContact(client, ds, dsocialUserId, u.NickName, &u)
+            if contact != nil {
+                l.PushBack(contact)
+            }
+            if err != nil && useErr == nil {
+                useErr = err
+            }
+        }
+    }
+    if useErr != nil {
+        return p.listToContacts(l), nil, useErr
+    }
+    fansResp, err := smugmug.RetrieveFans(client, nil)
+    if err != nil {
+        useErr = err
+    }
+    if fansResp != nil && fansResp.Fans != nil {
+        for _, u := range fansResp.Fans {
+            contact, err := p.handleRetrievedContact(client, ds, dsocialUserId, u.NickName, &u)
+            if contact != nil {
+                l.PushBack(contact)
+            }
+            if err != nil && useErr == nil {
+                useErr = err
+            }
+        }
+    }
+    if useErr != nil {
+        return p.listToContacts(l), nil, useErr
+    }
+    userInfo, err := client.RetrieveUserInfo()
+    if err != nil {
+        return p.listToContacts(l), nil, err
+    }
+    userResp, err := smugmug.RetrieveUserInfo(client, userInfo.Username(), nil)
+    if err != nil {
+        useErr = err
+    }
+    if userResp != nil {
+        contact, err := p.handleRetrievedContact(client, ds, dsocialUserId, userResp.User.NickName, &userResp.User)
+        if contact != nil {
+            l.PushBack(contact)
+        }
+        if err != nil && useErr == nil {
+            useErr = err
+        }
+    }
+    return p.listToContacts(l), nil, useErr
+}
+
+func (p *SmugMugContactService) RetrieveConnections(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId string, next NextToken) ([]*Contact, NextToken, os.Error) {
+    return make([]*Contact, 0), nil, nil
+}
+
+func (p *SmugMugContactService) RetrieveGroups(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId string, next NextToken) ([]*Group, NextToken, os.Error) {
+    return make([]*Group, 0), nil, nil
+}
+
+func (p *SmugMugContactService) RetrieveContact(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId string, contactId string) (*Contact, os.Error) {
+    extContact, err := smugmug.RetrieveUserInfo(client, contactId, nil)
+    if extContact == nil || err != nil {
+        return nil, err
+    }
+    return p.handleRetrievedContact(client, ds, dsocialUserId, contactId, &extContact.User)
+}
+
+func (p *SmugMugContactService) handleRetrievedContact(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId string, contactId string, extContact *smugmug.PersonReference) (contact *Contact, err os.Error) {
+    if extContact == nil {
+        return nil, nil
+    }
+    externalServiceId := client.ServiceId()
+    userInfo, err := client.RetrieveUserInfo()
+    externalUserId := userInfo.Guid()
+    var useErr os.Error = nil
+    dsocialContactId := ""
+    var origDsocialContact *dm.Contact = nil
+    externalContactId := extContact.NickName
+    if len(externalContactId) > 0 {
+        dsocialContactId, err = ds.DsocialIdForExternalContactId(externalServiceId, externalUserId, dsocialUserId, contactId)
+        if err != nil {
+            useErr = err
+        }
+        if dsocialContactId != "" {
+            origDsocialContact, _, err = ds.RetrieveDsocialContactForExternalContact(externalServiceId, externalUserId, externalContactId, dsocialUserId)
+            if err != nil && useErr == nil {
+                useErr = err
+            }
+        } else {
+            ds.StoreExternalContact(externalServiceId, externalUserId, dsocialUserId, externalContactId, extContact)
+        }
+    }
+    dsocialContact := dm.SmugMugUserToDsocial(extContact, origDsocialContact, dsocialUserId)
+    contact = &Contact{
+        ExternalServiceId: client.ServiceId(),
+        ExternalUserId: externalUserId,
+        ExternalContactId: externalContactId,
+        DsocialUserId: dsocialUserId,
+        DsocialContactId: dsocialContactId,
+        Value: dsocialContact,
+    }
+    return contact, useErr
+}
+
+func (p *SmugMugContactService) RetrieveGroup(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId string, groupId string) (*Group, os.Error) {
+    return nil, nil
+}
+
+func (p *SmugMugContactService) CreateContact(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId string, contact *dm.Contact) (*Contact, os.Error) {
+    return nil, nil
+}
+
+func (p *SmugMugContactService) CreateGroup(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId string, group *dm.Group) (*Group, os.Error) {
+    return nil, nil
+}
+
+func (p *SmugMugContactService) UpdateContact(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId string, originalContact, contact *dm.Contact) (*Contact, os.Error) {
+    return nil, nil
+}
+
+func (p *SmugMugContactService) UpdateGroup(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId string, originalGroup, group *dm.Group) (*Group, os.Error) {
+    return nil, nil
+}
+
+func (p *SmugMugContactService) DeleteContact(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId, dsocialContactId string) (bool, os.Error) {
+    return false, nil
+}
+
+func (p *SmugMugContactService) DeleteGroup(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId, dsocialGroupId string) (bool, os.Error) {
+    return false, nil
+}
+
+func (p *SmugMugContactService) ContactsService() ContactsService {
+    return p
+}
