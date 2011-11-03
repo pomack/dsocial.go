@@ -1,1 +1,207 @@
 package contacts
+
+import (
+    "github.com/pomack/oauth2_client.go/oauth2_client"
+    "github.com/pomack/contacts.go/googleplus"
+    dm "github.com/pomack/dsocial.go/models/dsocial"
+    "os"
+)
+
+type GooglePlusContactService struct {
+
+}
+
+func NewGooglePlusContactService() *GooglePlusContactService {
+    return new(GooglePlusContactService)
+}
+
+func (p *GooglePlusContactService) ConvertToDsocialContact(externalContact interface{}, originalDsocialContact *dm.Contact, dsocialUserId string) (dsocialContact *dm.Contact) {
+    if externalContact == nil {
+        return
+    }
+    if extContact, ok := externalContact.(*googleplus.Person); ok && extContact != nil {
+        dsocialContact = dm.GooglePlusPersonToDsocial(extContact, originalDsocialContact, dsocialUserId)
+    }
+    return
+}
+
+func (p *GooglePlusContactService) ConvertToExternalContact(dsocialContact *dm.Contact, originalExternalContact interface{}, dsocialUserId string) (externalContact interface{}) {
+    var origGooglePlusContact *googleplus.Person = nil
+    if originalExternalContact != nil {
+        origGooglePlusContact, _ = originalExternalContact.(*googleplus.Person)
+    }
+    externalContact = dm.DsocialContactToGooglePlus(dsocialContact, origGooglePlusContact)
+    return
+}
+
+func (p *GooglePlusContactService) ConvertToDsocialGroup(externalGroup interface{}, originalDsocialGroup *dm.Group, dsocialUserId string) (dsocialGroup *dm.Group) {
+    return
+}
+
+func (p *GooglePlusContactService) ConvertToExternalGroup(dsocialGroup *dm.Group, originalExternalGroup interface{}, dsocialUserId string) (externalGroup interface{}) {
+    return
+}
+
+
+func (p *GooglePlusContactService) CanRetrieveAllContacts() bool {
+    return false
+}
+
+func (p *GooglePlusContactService) CanRetrieveAllConnections() bool {
+    return false
+}
+
+func (p *GooglePlusContactService) CanRetrieveAllGroups() bool {
+    return false
+}
+
+func (p *GooglePlusContactService) CanRetrieveContacts() bool {
+    return false
+}
+
+func (p *GooglePlusContactService) CanRetrieveConnections() bool {
+    return false
+}
+
+func (p *GooglePlusContactService) CanRetrieveGroups() bool {
+    return false
+}
+
+func (p *GooglePlusContactService) CanRetrieveContact(selfContact bool) bool {
+    return true
+}
+
+func (p *GooglePlusContactService) CanCreateContact(selfContact bool) bool {
+    return false
+}
+
+func (p *GooglePlusContactService) CanUpdateContact(selfContact bool) bool {
+    return false
+}
+
+func (p *GooglePlusContactService) CanDeleteContact(selfContact bool) bool {
+    return false
+}
+
+func (p *GooglePlusContactService) CanRetrieveGroup(selfContact bool) bool {
+    return false
+}
+
+func (p *GooglePlusContactService) CanCreateGroup(selfContact bool) bool {
+    return false
+}
+
+func (p *GooglePlusContactService) CanUpdateGroup(selfContact bool) bool {
+    return false
+}
+
+func (p *GooglePlusContactService) CanDeleteGroup(selfContact bool) bool {
+    return false
+}
+
+func (p *GooglePlusContactService) GroupListIncludesContactIds() bool {
+    return false
+}
+
+func (p *GooglePlusContactService) GroupInfoIncludesContactIds() bool {
+    return false
+}
+
+func (p *GooglePlusContactService) ContactInfoIncludesGroups() bool {
+    return false
+}
+
+func (p *GooglePlusContactService) RetrieveAllContacts(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId string) ([]*Contact, os.Error) {
+    contacts, _, err := p.RetrieveContacts(client, ds, dsocialUserId, nil)
+    return contacts, err
+}
+
+func (p *GooglePlusContactService) RetrieveAllConnections(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId string) ([]*Contact, os.Error) {
+    return make([]*Contact, 0), nil
+}
+
+func (p *GooglePlusContactService) RetrieveAllGroups(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId string) ([]*Group, os.Error) {
+    return make([]*Group, 0), nil
+}
+
+func (p *GooglePlusContactService) RetrieveContacts(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId string, next NextToken) ([]*Contact, NextToken, os.Error) {
+    return make([]*Contact, 0), nil, nil
+}
+
+func (p *GooglePlusContactService) RetrieveConnections(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId string, next NextToken) ([]*Contact, NextToken, os.Error) {
+    return make([]*Contact, 0), nil, nil
+}
+
+func (p *GooglePlusContactService) RetrieveGroups(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId string, next NextToken) ([]*Group, NextToken, os.Error) {
+    return make([]*Group, 0), nil, nil
+}
+
+func (p *GooglePlusContactService) RetrieveContact(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId string, contactId string) (*Contact, os.Error) {
+    googleplusContact, err := googleplus.RetrieveContact(client, contactId, nil)
+    if googleplusContact == nil || err != nil {
+        return nil, err
+    }
+    externalServiceId := client.ServiceId()
+    userInfo, err := client.RetrieveUserInfo()
+    externalUserId := userInfo.Guid()
+    useErr := err
+    dsocialContactId := ""
+    var origDsocialContact *dm.Contact = nil
+    externalContactId := googleplusContact.Id
+    if len(externalContactId) > 0 {
+        dsocialContactId, err = ds.DsocialIdForExternalContactId(externalServiceId, externalUserId, dsocialUserId, contactId)
+        if err != nil {
+            useErr = err
+        }
+        if dsocialContactId != "" {
+            origDsocialContact, _, err = ds.RetrieveDsocialContactForExternalContact(externalServiceId, externalUserId, externalContactId, dsocialUserId)
+            if err != nil && useErr == nil {
+                useErr = err
+            }
+        } else {
+            ds.StoreExternalContact(externalServiceId, externalUserId, dsocialUserId, externalContactId, googleplusContact)
+        }
+    }
+    dsocialContact := dm.GooglePlusPersonToDsocial(googleplusContact, origDsocialContact, dsocialUserId)
+    contact := &Contact{
+        ExternalServiceId: client.ServiceId(),
+        ExternalUserId: externalUserId,
+        ExternalContactId: googleplusContact.Id,
+        DsocialUserId: dsocialUserId,
+        DsocialContactId: dsocialContactId,
+        Value: dsocialContact,
+    }
+    return contact, useErr
+}
+
+func (p *GooglePlusContactService) RetrieveGroup(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId string, groupId string) (*Group, os.Error) {
+    return nil, nil
+}
+
+func (p *GooglePlusContactService) CreateContact(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId string, contact *dm.Contact) (*Contact, os.Error) {
+    return nil, nil
+}
+
+func (p *GooglePlusContactService) CreateGroup(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId string, group *dm.Group) (*Group, os.Error) {
+    return nil, nil
+}
+
+func (p *GooglePlusContactService) UpdateContact(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId string, originalContact, contact *dm.Contact) (*Contact, os.Error) {
+    return nil, nil
+}
+
+func (p *GooglePlusContactService) UpdateGroup(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId string, originalGroup, group *dm.Group) (*Group, os.Error) {
+    return nil, nil
+}
+
+func (p *GooglePlusContactService) DeleteContact(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId, dsocialContactId string) (bool, os.Error) {
+    return false, nil
+}
+
+func (p *GooglePlusContactService) DeleteGroup(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId, dsocialGroupId string) (bool, os.Error) {
+    return false, nil
+}
+
+func (p *GooglePlusContactService) ContactsService() ContactsService {
+    return p
+}
