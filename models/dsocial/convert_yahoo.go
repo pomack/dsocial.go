@@ -6,11 +6,16 @@ import (
     "container/vector"
 )
 
-func YahooContactToDsocial(l *yahoo.Contact) *Contact {
+func YahooContactToDsocial(l *yahoo.Contact, o *Contact, dsocialUserId string) *Contact {
     if l == nil {
         return nil
     }
     c := new(Contact)
+    if o != nil {
+        c.Id = o.Id
+    }
+    c.UserId = dsocialUserId
+    c.Acl.OwnerId = dsocialUserId
     emails := list.New()
     phones := list.New()
     uris := list.New()
@@ -213,8 +218,43 @@ func YahooContactToDsocial(l *yahoo.Contact) *Contact {
     return c
 }
 
-func DsocialContactToYahoo(c *Contact) *yahoo.Contact {
+func YahooCategoryToDsocial(g *yahoo.Category, o *Group, dsocialUserId string) *Group {
+    if g == nil {
+        return nil
+    }
+    c := new(Group)
+    if o != nil {
+        c.Id = o.Id
+    }
+    c.UserId = dsocialUserId
+    c.Acl.OwnerId = dsocialUserId
+    c.Name = g.Name
+    return c
+}
+
+func DsocialGroupToYahoo(g *Group, o *yahoo.Category) *yahoo.Category {
+    if g == nil {
+        return nil
+    }
+    c := new(yahoo.Category)
+    if o != nil {
+        c.Id = o.Id
+        c.Created = o.Created
+        c.Updated = o.Updated
+        c.Uri = o.Uri
+    }
+    c.Name = g.Name
+    return c
+}
+
+func DsocialContactToYahoo(c *Contact, o *yahoo.Contact) *yahoo.Contact {
+    if c == nil {
+        return nil
+    }
     y := new(yahoo.Contact)
+    if o != nil {
+        y.Id = o.Id
+    }
     fields := list.New()
     if c.Nickname != "" {
         fields.PushBack(&yahoo.ContactField{
