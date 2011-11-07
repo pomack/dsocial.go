@@ -33,14 +33,14 @@ type DataStoreService interface {
     SearchForDsocialContacts(dsocialUserId string, contact *dm.Contact) (contacts []*dm.Contact, err os.Error)
     SearchForDsocialGroups(dsocialUserId string, groupName string) (groups []*dm.Group, err os.Error)
     
-    StoreContactChangeSet(changeset *dm.ChangeSet) (*dm.ChangeSet, os.Error)
+    StoreContactChangeSet(dsocialUserId string, changeset *dm.ChangeSet) (*dm.ChangeSet, os.Error)
     RetrieveContactChangeSets(dsocialId string, after *time.Time) ([]*dm.ChangeSet, NextToken, os.Error)
     
-    StoreGroupChangeSet(changeset *dm.ChangeSet) (*dm.ChangeSet, os.Error)
+    StoreGroupChangeSet(dsocialUserId string, changeset *dm.ChangeSet) (*dm.ChangeSet, os.Error)
     RetrieveGroupChangeSets(dsocialId string, after *time.Time) ([]*dm.ChangeSet, NextToken, os.Error)
     
     // Generates a new unique id for the specified collection name
-    GenerateId(collectionName string) string
+    GenerateId(dsocialUserId, collectionName string) string
     
     // Retrieve the dsocial contact id for the specified external service/user id/contact id combo
     // Returns:
@@ -307,7 +307,7 @@ func addIdForAclPersistableModel(m *dm.AclPersistableModel, ds DataStoreService,
         m.Acl.OwnerId = ownerId
     }
     if m.Id == "" {
-        m.Id = ds.GenerateId(collectionName)
+        m.Id = ds.GenerateId(ownerId, collectionName)
     }
 }
 
@@ -318,83 +318,83 @@ func AddIdsForDsocialContact(c *dm.Contact, ds DataStoreService, dsocialUserId s
     }
     if c.UserId == "" { c.UserId = dsocialUserId }
     if c.Acl.OwnerId == "" { c.Acl.OwnerId = dsocialUserId }
-    if c.Id == "" { c.Id = ds.GenerateId("contact") }
+    if c.Id == "" { c.Id = ds.GenerateId(dsocialUserId, "contact") }
     if c.PostalAddresses != nil {
         for _, addr := range c.PostalAddresses {
             if addr.Acl.OwnerId == "" { addr.Acl.OwnerId = dsocialUserId }
-            if addr.Id == "" { addr.Id = ds.GenerateId("address") }
+            if addr.Id == "" { addr.Id = ds.GenerateId(dsocialUserId, "address") }
         }
     }
     if c.Educations != nil {
         for _, ed := range c.Educations {
             if ed.Acl.OwnerId == "" { ed.Acl.OwnerId = dsocialUserId }
-            if ed.Id == "" { ed.Id = ds.GenerateId("education") }
+            if ed.Id == "" { ed.Id = ds.GenerateId(dsocialUserId, "education") }
         }
     }
     if c.WorkHistories != nil {
         for _, wh := range c.WorkHistories {
             if wh.Acl.OwnerId == "" { wh.Acl.OwnerId = dsocialUserId }
-            if wh.Id == "" { wh.Id = ds.GenerateId("workhistory") }
+            if wh.Id == "" { wh.Id = ds.GenerateId(dsocialUserId, "workhistory") }
         }
     }
     if c.PhoneNumbers != nil {
         for _, p := range c.PhoneNumbers {
             if p.Acl.OwnerId == "" { p.Acl.OwnerId = dsocialUserId }
-            if p.Id == "" { p.Id = ds.GenerateId("phone") }
+            if p.Id == "" { p.Id = ds.GenerateId(dsocialUserId, "phone") }
         }
     }
     if c.EmailAddresses != nil {
         for _, e := range c.EmailAddresses {
             if e.Acl.OwnerId == "" { e.Acl.OwnerId = dsocialUserId }
-            if e.Id == "" { e.Id = ds.GenerateId("email") }
+            if e.Id == "" { e.Id = ds.GenerateId(dsocialUserId, "email") }
         }
     }
     if c.Uris != nil {
         for _, u := range c.Uris {
             if u.Acl.OwnerId == "" { u.Acl.OwnerId = dsocialUserId }
-            if u.Id == "" { u.Id = ds.GenerateId("uri") }
+            if u.Id == "" { u.Id = ds.GenerateId(dsocialUserId, "uri") }
         }
     }
     if c.Ims != nil {
         for _, im := range c.Ims {
             if im.Acl.OwnerId == "" { im.Acl.OwnerId = dsocialUserId }
-            if im.Id == "" { im.Id = ds.GenerateId("im") }
+            if im.Id == "" { im.Id = ds.GenerateId(dsocialUserId, "im") }
         }
     }
     if c.Relationships != nil {
         for _, r := range c.Relationships {
             if r.Acl.OwnerId == "" { r.Acl.OwnerId = dsocialUserId }
-            if r.Id == "" { r.Id = ds.GenerateId("relationship") }
+            if r.Id == "" { r.Id = ds.GenerateId(dsocialUserId, "relationship") }
         }
     }
     if c.Dates != nil {
         for _, d := range c.Dates {
             if d.Acl.OwnerId == "" { d.Acl.OwnerId = dsocialUserId }
-            if d.Id == "" { d.Id = ds.GenerateId("date") }
+            if d.Id == "" { d.Id = ds.GenerateId(dsocialUserId, "date") }
         }
     }
     if c.DateTimes != nil {
         for _, d := range c.DateTimes {
             if d.Acl.OwnerId == "" { d.Acl.OwnerId = dsocialUserId }
-            if d.Id == "" { d.Id = ds.GenerateId("datetime") }
+            if d.Id == "" { d.Id = ds.GenerateId(dsocialUserId, "datetime") }
         }
     }
     if c.Certifications != nil {
         for _, cert := range c.Certifications {
             if cert.Acl.OwnerId == "" { cert.Acl.OwnerId = dsocialUserId }
-            if cert.Id == "" { cert.Id = ds.GenerateId("certification") }
+            if cert.Id == "" { cert.Id = ds.GenerateId(dsocialUserId, "certification") }
         }
     }
     if c.Skills != nil {
         for _, s := range c.Skills {
             if s.Acl.OwnerId == "" { s.Acl.OwnerId = dsocialUserId }
-            if s.Id == "" { s.Id = ds.GenerateId("skill") }
+            if s.Id == "" { s.Id = ds.GenerateId(dsocialUserId, "skill") }
         }
     }
     if c.Languages != nil {
         for _, l := range c.Languages {
             if l.Acl.OwnerId == "" { l.Acl.OwnerId = dsocialUserId }
-            if l.Id == "" { l.Id = ds.GenerateId("language") }
+            if l.Id == "" { l.Id = ds.GenerateId(dsocialUserId, "language") }
         }
     }
     return

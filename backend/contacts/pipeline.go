@@ -175,7 +175,7 @@ func (p *Pipeline) contactImport(cs ContactsService, ds DataStoreService, dsocia
         RecordId: contact.DsocialContactId,
         Changes: changes,
     }
-    _, err = ds.StoreContactChangeSet(changeset)
+    _, err = ds.StoreContactChangeSet(dsocialUserId, changeset)
     if err != nil {
         return matchingContact, err
     }
@@ -363,7 +363,7 @@ func (p *Pipeline) groupImport(cs ContactsService, ds DataStoreService, dsocialU
         RecordId: group.DsocialGroupId,
         Changes: changes,
     }
-    _, err = ds.StoreContactChangeSet(changeset)
+    _, err = ds.StoreContactChangeSet(dsocialUserId, changeset)
     if err != nil {
         return matchingGroup, nil
     }
