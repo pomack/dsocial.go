@@ -5,6 +5,7 @@ import (
     dm "github.com/pomack/dsocial.go/models/dsocial"
     bc "github.com/pomack/dsocial.go/backend/contacts"
     "container/list"
+    "fmt"
     "io"
     "json"
     "os"
@@ -26,7 +27,6 @@ const (
     _INMEMORY_INTERNAL_TO_EXTERNAL_CONTACT_MAPPING_COLLECTION_NAME = "internal_to_external_contact_mappings"
     _INMEMORY_EXTERNAL_TO_INTERNAL_GROUP_MAPPING_COLLECTION_NAME = "external_to_internal_group_mappings"
     _INMEMORY_INTERNAL_TO_EXTERNAL_GROUP_MAPPING_COLLECTION_NAME = "internal_to_external_group_mappings"
-    _INMEMORY_CHANGESETS_TO_APPLY_COLLECTION_NAME = "changesets_to_apply"
 )
 
 type inMemoryObject interface{}
@@ -246,11 +246,13 @@ func (p *InMemoryDataStore) DsocialIdForExternalGroupId(externalServiceId, exter
     //   externalContactId : the dsocial contact id if it exists or empty if not found
     //   err : error or nil
 func (p *InMemoryDataStore) ExternalContactIdForDsocialId(externalServiceId, externalUserId, dsocialUserId, dsocialContactId string) (externalContactId string, err os.Error) {
-    k := strings.Join([]string{externalServiceId, externalUserId, dsocialContactId}, "|")
-    id := dsocialUserId + "/" + k
-    v, ok := p.retrieve(_INMEMORY_INTERNAL_TO_EXTERNAL_CONTACT_MAPPING_COLLECTION_NAME, id)
+    id := strings.Join([]string{externalServiceId, externalUserId}, "|")
+    v, ok := p.retrieve(_INMEMORY_INTERNAL_TO_EXTERNAL_CONTACT_MAPPING_COLLECTION_NAME, dsocialContactId)
     if ok {
-        externalContactId, _ = v.(string)
+        m, _ := v.(map[string]string)
+        if m != nil {
+            externalContactId, _ = m[id]
+        }
     }
     return
 }
@@ -259,11 +261,13 @@ func (p *InMemoryDataStore) ExternalContactIdForDsocialId(externalServiceId, ext
     //   externalGroupId : the dsocial group id if it exists or empty if not found
     //   err : error or nil
 func (p *InMemoryDataStore) ExternalGroupIdForDsocialId(externalServiceId, externalUserId, dsocialUserId, dsocialGroupId string) (externalGroupId string, err os.Error) {
-    k := strings.Join([]string{externalServiceId, externalUserId, dsocialGroupId}, "|")
-    id := dsocialUserId + "/" + k
-    v, ok := p.retrieve(_INMEMORY_INTERNAL_TO_EXTERNAL_GROUP_MAPPING_COLLECTION_NAME, id)
+    id := strings.Join([]string{externalServiceId, externalUserId}, "|")
+    v, ok := p.retrieve(_INMEMORY_INTERNAL_TO_EXTERNAL_GROUP_MAPPING_COLLECTION_NAME, dsocialGroupId)
     if ok {
-        externalGroupId, _ = v.(string)
+        m, _ := v.(map[string]string)
+        if m != nil {
+            externalGroupId, _ = m[id]
+        }
     }
     return
 }
@@ -274,16 +278,30 @@ func (p *InMemoryDataStore) ExternalGroupIdForDsocialId(externalServiceId, exter
     //   err : error or nil
 func (p *InMemoryDataStore) StoreDsocialExternalContactMapping(externalServiceId, externalUserId, externalContactId, dsocialUserId, dsocialContactId string) (externalExisted, dsocialExisted bool, err os.Error) {
     k1 := strings.Join([]string{externalServiceId, externalUserId, externalContactId}, "|")
-    k2 := strings.Join([]string{externalServiceId, externalUserId, dsocialContactId}, "|")
+    k2 := strings.Join([]string{externalServiceId, externalUserId}, "|")
     id1 := dsocialUserId + "/" + k1
-    id2 := dsocialUserId + "/" + k2
     v1, externalExisted := p.retrieve(_INMEMORY_EXTERNAL_TO_INTERNAL_CONTACT_MAPPING_COLLECTION_NAME, id1)
-    v2, dsocialExisted := p.retrieve(_INMEMORY_INTERNAL_TO_EXTERNAL_CONTACT_MAPPING_COLLECTION_NAME, id2)
+    v2, dsocialExisted := p.retrieve(_INMEMORY_INTERNAL_TO_EXTERNAL_CONTACT_MAPPING_COLLECTION_NAME, dsocialContactId)
     if v1 != dsocialContactId {
+        //fmt.Printf("[DS]: Storing %s %v -> %v\n", _INMEMORY_EXTERNAL_TO_INTERNAL_CONTACT_MAPPING_COLLECTION_NAME, id1, dsocialContactId)
         p.store(dsocialUserId, _INMEMORY_EXTERNAL_TO_INTERNAL_CONTACT_MAPPING_COLLECTION_NAME, id1, dsocialContactId)
     }
-    if v2 != externalContactId {
-        p.store(dsocialUserId, _INMEMORY_INTERNAL_TO_EXTERNAL_CONTACT_MAPPING_COLLECTION_NAME, id2, externalContactId)
+    if v2 == nil {
+        v2 = make(map[string]string)
+    }
+    if m, ok := v2.(map[string]string); ok {
+        currentExternalContactId, _ := m[k2]
+        if currentExternalContactId != externalContactId {
+            //fmt.Printf("[DS]: Storing %s %v -> %v -> %v\n", _INMEMORY_INTERNAL_TO_EXTERNAL_CONTACT_MAPPING_COLLECTION_NAME, dsocialContactId, k2, externalContactId)
+            m[k2] = externalContactId
+            p.store(dsocialUserId, _INMEMORY_INTERNAL_TO_EXTERNAL_CONTACT_MAPPING_COLLECTION_NAME, dsocialContactId, m)
+        }
+    }
+    if strings.HasPrefix(externalContactId, "testname/contact/") {
+        panic(fmt.Sprintf("Invalid externalContactId: %v for key: %v", externalContactId, k1))
+    }
+    if !strings.HasPrefix(dsocialContactId, "testname/contact/") {
+        panic(fmt.Sprintf("Invalid dsocialContactId: %v for key: %v", dsocialContactId, k1))
     }
     return
 }
@@ -294,16 +312,27 @@ func (p *InMemoryDataStore) StoreDsocialExternalContactMapping(externalServiceId
     //   err : error or nil
 func (p *InMemoryDataStore) StoreDsocialExternalGroupMapping(externalServiceId, externalUserId, externalGroupId, dsocialUserId, dsocialGroupId string) (externalExisted, dsocialExisted bool, err os.Error) {
     k1 := strings.Join([]string{externalServiceId, externalUserId, externalGroupId}, "|")
-    k2 := strings.Join([]string{externalServiceId, externalUserId, dsocialGroupId}, "|")
+    k2 := strings.Join([]string{externalServiceId, externalUserId}, "|")
     id1 := dsocialUserId + "/" + k1
-    id2 := dsocialUserId + "/" + k2
     v1, externalExisted := p.retrieve(_INMEMORY_EXTERNAL_TO_INTERNAL_GROUP_MAPPING_COLLECTION_NAME, id1)
-    v2, dsocialExisted := p.retrieve(_INMEMORY_INTERNAL_TO_EXTERNAL_GROUP_MAPPING_COLLECTION_NAME, id2)
+    v2, dsocialExisted := p.retrieve(_INMEMORY_INTERNAL_TO_EXTERNAL_GROUP_MAPPING_COLLECTION_NAME, dsocialGroupId)
     if v1 != dsocialGroupId {
+        //fmt.Printf("[DS]: Storing %s %v -> %v\n", _INMEMORY_EXTERNAL_TO_INTERNAL_GROUP_MAPPING_COLLECTION_NAME, id1, dsocialGroupId)
         p.store(dsocialUserId, _INMEMORY_EXTERNAL_TO_INTERNAL_GROUP_MAPPING_COLLECTION_NAME, id1, dsocialGroupId)
     }
-    if v2 != externalGroupId {
-        p.store(dsocialUserId, _INMEMORY_INTERNAL_TO_EXTERNAL_GROUP_MAPPING_COLLECTION_NAME, id2, externalGroupId)
+    if v2 == nil {
+        v2 = make(map[string]string)
+    }
+    if m, ok := v2.(map[string]string); ok {
+        currentExternalGroupId, _ := m[k2]
+        if currentExternalGroupId != externalGroupId {
+            //fmt.Printf("[DS]: Storing %s %v -> %v -> %v\n", _INMEMORY_INTERNAL_TO_EXTERNAL_GROUP_MAPPING_COLLECTION_NAME, dsocialGroupId, k2, externalGroupId)
+            m[k2] = externalGroupId
+            p.store(dsocialUserId, _INMEMORY_INTERNAL_TO_EXTERNAL_GROUP_MAPPING_COLLECTION_NAME, dsocialGroupId, m)
+        }
+    }
+    if !strings.HasPrefix(dsocialGroupId, "testname/group/") {
+        panic(fmt.Sprintf("Invalid dsocialGroupId: %v for key: %v", dsocialGroupId, k1))
     }
     return
 }
@@ -339,6 +368,9 @@ func (p *InMemoryDataStore) StoreExternalContact(externalServiceId, externalUser
     k := strings.Join([]string{externalServiceId, externalUserId, externalContactId}, "|")
     id = dsocialUserId + "/" + k
     p.store(dsocialUserId, _INMEMORY_EXTERNAL_CONTACT_COLLECTION_NAME, id, contact)
+    if strings.HasPrefix(externalContactId, "testname/contact/") {
+        panic(fmt.Sprintf("Storing external contact with invalid externalContactId: %v\n", externalContactId))
+    }
     return
 }
     // Stores external group
@@ -350,6 +382,9 @@ func (p *InMemoryDataStore) StoreExternalGroup(externalServiceId, externalUserId
     k := strings.Join([]string{externalServiceId, externalUserId, externalGroupId}, "|")
     id = dsocialUserId + "/" + k
     p.store(dsocialUserId, _INMEMORY_EXTERNAL_GROUP_COLLECTION_NAME, id, group)
+    if strings.HasPrefix(externalGroupId, "testname/group/") {
+        panic(fmt.Sprintf("Storing external group with invalid externalGroupId: %v\n", externalGroupId))
+    }
     return
 }
     // Deletes external contact
@@ -420,11 +455,10 @@ func (p *InMemoryDataStore) StoreDsocialContactForExternalContact(externalServic
     //k := strings.Join([]string{dsocialUserId, externalServiceId, externalUserId, externalContactId}, "/")
     k := strings.Join([]string{externalServiceId, externalUserId, externalContactId}, "|")
     extid := dsocialUserId + "/" + k
-    contact.Id = extid
     bc.AddIdsForDsocialContact(contact, p, dsocialUserId)
     c := new(dm.Contact)
     *c = *contact
-    
+    c.Id = extid
     p.store(dsocialUserId, _INMEMORY_CONTACT_FOR_EXTERNAL_CONTACT_COLLECTION_NAME, extid, c)
     dsocialContact = contact
     return
@@ -437,10 +471,11 @@ func (p *InMemoryDataStore) StoreDsocialGroupForExternalGroup(externalServiceId,
     //k := strings.Join([]string{dsocialUserId, externalServiceId, externalUserId, externalGroupId}, "/")
     k := strings.Join([]string{externalServiceId, externalUserId, externalGroupId}, "|")
     extid := dsocialUserId + "/" + k
-    group.Id = extid
     bc.AddIdsForDsocialGroup(group, p, dsocialUserId)
     g := new(dm.Group)
     *g = *group
+    g.Id = extid
+    fmt.Printf("[DS]: Storing %s with id %v for %s\n", _INMEMORY_GROUP_FOR_EXTERNAL_GROUP_COLLECTION_NAME, extid, g.Name)
     p.store(dsocialUserId, _INMEMORY_GROUP_FOR_EXTERNAL_GROUP_COLLECTION_NAME, extid, g)
     dsocialGroup = group
     return
@@ -510,7 +545,10 @@ func (p *InMemoryDataStore) RetrieveDsocialGroup(dsocialUserId, dsocialGroupId s
 func (p *InMemoryDataStore) StoreDsocialContact(dsocialUserId, dsocialContactId string, contact *dm.Contact) (dsocialContact *dm.Contact, err os.Error) {
     if dsocialContactId == "" {
         dsocialContactId = p.GenerateId(dsocialUserId, "contact")
+        fmt.Printf("[DS]: Generated Id for storing dsocial contact: %v\n", dsocialContactId)
         contact.Id = dsocialContactId
+    } else {
+        fmt.Printf("[DS]: Using existing contact id: %v\n", dsocialContactId)
     }
     bc.AddIdsForDsocialContact(contact, p, dsocialUserId)
     //k := strings.Join([]string{dsocialUserId, dsocialContactId}, "/")
@@ -527,7 +565,10 @@ func (p *InMemoryDataStore) StoreDsocialContact(dsocialUserId, dsocialContactId 
 func (p *InMemoryDataStore) StoreDsocialGroup(dsocialUserId, dsocialGroupId string, group *dm.Group) (dsocialGroup *dm.Group, err os.Error) {
     if dsocialGroupId == "" {
         dsocialGroupId = p.GenerateId(dsocialUserId, "group")
+        fmt.Printf("[DS]: Generated Id for storing dsocial group: %v\n", dsocialGroupId)
         group.Id = dsocialGroupId
+    } else {
+        fmt.Printf("[DS]: Using existing group id: %v\n", dsocialGroupId)
     }
     //k := strings.Join([]string{dsocialUserId, dsocialGroupId}, "/")
     g := new(dm.Group)
