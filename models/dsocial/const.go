@@ -1,5 +1,9 @@
 package dsocial
 
+import (
+    "github.com/pomack/contacts.go/facebook"
+)
+
 const (
     
     UTC_DATETIME_FORMAT = "2006-01-02T15:04:05.000Z"
@@ -175,3 +179,60 @@ const (
     REL_IN_CIVIL_UNION            RelRelationshipStatus = "in_civil_union"
     REL_RELATIONSHIP_STATUS_OTHER RelRelationshipStatus = REL_OTHER
 )
+
+var (
+    facebookToRelationshipStatusMap map[string]RelRelationshipStatus
+    relationshipStatusToFacebookMap map[RelRelationshipStatus]string
+    facebookToGenderMap map[string]RelGender
+    genderToFacebookMap map[RelGender]string
+    facebookToEducationRelMap map[string]RelEducation
+    educationRelToFacebookMap map[RelEducation]string
+)
+
+func init() {
+    facebookToRelationshipStatusMap = map[string]RelRelationshipStatus{
+        facebook.REL_RELATIONSHIP_SINGLE: REL_SINGLE,
+        facebook.REL_RELATIONSHIP_IN_A_RELATIONSHIP: REL_IN_A_RELATIONSHIP,
+        facebook.REL_RELATIONSHIP_ENGAGED: REL_ENGAGED,
+        facebook.REL_RELATIONSHIP_MARRIED: REL_MARRIED,
+        facebook.REL_RELATIONSHIP_ITS_COMPLICATED: REL_ITS_COMPLICATED,
+        facebook.REL_RELATIONSHIP_OPEN_RELATIONSHIP: REL_OPEN_RELATIONSHIP,
+        facebook.REL_RELATIONSHIP_WIDOWED: REL_WIDOWED,
+        facebook.REL_RELATIONSHIP_SEPARATED: REL_SEPARATED,
+        facebook.REL_RELATIONSHIP_DIVORCED: REL_DIVORCED,
+        facebook.REL_RELATIONSHIP_IN_CIVIL_UNION: REL_IN_CIVIL_UNION,
+        facebook.REL_RELATIONSHIP_IN_DOMESTIC_PARTNERSHIP: REL_IN_DOMESTIC_PARTNERSHIP,
+    }
+    relationshipStatusToFacebookMap = make(map[RelRelationshipStatus]string)
+    for k, v := range facebookToRelationshipStatusMap {
+        relationshipStatusToFacebookMap[v] = k
+    }
+    facebookToGenderMap = map[string]RelGender{
+        facebook.REL_GENDER_MALE: REL_GENDER_MALE,
+        facebook.REL_GENDER_FEMALE: REL_GENDER_FEMALE,
+    }
+    genderToFacebookMap = map[RelGender]string{
+        REL_GENDER_MALE: facebook.REL_GENDER_MALE,
+        REL_GENDER_FEMALE: facebook.REL_GENDER_FEMALE,
+    }
+    facebookToEducationRelMap = map[string]RelEducation{
+        facebook.REL_EDUCATION_ELEMENTARY_SCHOOL: REL_EDUCATION_ELEMENTARY_SCHOOL,
+        facebook.REL_EDUCATION_MIDDLE_SCHOOL: REL_EDUCATION_MIDDLE_SCHOOL,
+        facebook.REL_EDUCATION_HIGH_SCHOOL: REL_EDUCATION_HIGH_SCHOOL,
+        facebook.REL_EDUCATION_COLLEGE: REL_EDUCATION_COLLEGE,
+        facebook.REL_EDUCATION_GRADUATE_SCHOOL: REL_EDUCATION_GRADUATE_SCHOOL,
+        facebook.REL_EDUCATION_VOCATIONAL: REL_EDUCATION_VOCATIONAL,
+    }
+    educationRelToFacebookMap = map[RelEducation]string{
+        REL_EDUCATION_ELEMENTARY_SCHOOL: facebook.REL_EDUCATION_ELEMENTARY_SCHOOL,
+        REL_EDUCATION_MIDDLE_SCHOOL: facebook.REL_EDUCATION_MIDDLE_SCHOOL,
+        REL_EDUCATION_HIGH_SCHOOL: facebook.REL_EDUCATION_HIGH_SCHOOL,
+        REL_EDUCATION_COLLEGE: facebook.REL_EDUCATION_COLLEGE,
+        REL_EDUCATION_GRADUATE_SCHOOL: facebook.REL_EDUCATION_GRADUATE_SCHOOL,
+        REL_EDUCATION_VOCATIONAL: facebook.REL_EDUCATION_VOCATIONAL,
+    }
+    
+}
+
+
+
