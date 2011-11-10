@@ -400,3 +400,13 @@ func AddIdsForDsocialContact(c *dm.Contact, ds DataStoreService, dsocialUserId s
     }
     return
 }
+
+func AddIdsForDsocialGroup(g *dm.Group, ds DataStoreService, dsocialUserId string) (err os.Error) {
+    if g == nil {
+        return
+    }
+    if g.UserId == "" { g.UserId = dsocialUserId }
+    if g.Acl.OwnerId == "" { g.Acl.OwnerId = dsocialUserId }
+    if g.Id == "" { g.Id = ds.GenerateId(dsocialUserId, "group") }
+    return
+}
