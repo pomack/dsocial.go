@@ -41,17 +41,17 @@ func (p *Pipeline) removeUnacceptedChanges(l *list.List, allowAdd, allowDelete, 
             continue
         }
         if !allowAdd && ch.ChangeType == dm.CHANGE_TYPE_ADD {
-            fmt.Printf("Removing add change for path of %#v", ch.Path)
+            fmt.Printf("[PIPELINE]: Removing add change for path of %#v\n", ch.Path)
             //l.Remove(iter)
         } else if !allowDelete && ch.ChangeType == dm.CHANGE_TYPE_DELETE {
-            fmt.Printf("Removing delete change for path of %#v", ch.Path)
+            fmt.Printf("[PIPELINE]: Removing delete change for path of %#v\n", ch.Path)
             //l.Remove(iter)
         } else if !allowUpdate && ch.ChangeType == dm.CHANGE_TYPE_UPDATE {
             if !allowAdd || ch.Path == nil || len(ch.Path) <= 1 {
-                fmt.Printf("Removing update for path of %#v and allowAdd %v\n", ch.Path, allowAdd)
+                fmt.Printf("[PIPELINE]: Removing update for path of %#v and allowAdd %v\n", ch.Path, allowAdd)
                 //l.Remove(iter)
             } else {
-                fmt.Printf("Changing update to add for path of %#v and allowAdd %v\n", ch.Path, allowAdd)
+                fmt.Printf("[PIPELINE]: Changing update to add for path of %#v and allowAdd %v\n", ch.Path, allowAdd)
                 ch.ChangeType = dm.CHANGE_TYPE_ADD
                 ch.OriginalValue = nil
                 n.PushBack(ch)
@@ -63,16 +63,16 @@ func (p *Pipeline) removeUnacceptedChanges(l *list.List, allowAdd, allowDelete, 
     return n
 }
 
-func (p *Pipeline) findMatchingDsocialContact(ds DataStoreService, dsocialUserId string, contact *Contact) (originalExternalContact *dm.Contact, isSame bool, err os.Error) {
+func (p *Pipeline) findMatchingDsocialContact(ds DataStoreService, dsocialUserId string, contact *Contact) (extDsocialContact *dm.Contact, isSame bool, err os.Error) {
     emptyContact := new(dm.Contact)
     if contact.DsocialContactId != "" {
-        originalExternalContact, _, _ = ds.RetrieveDsocialContact(dsocialUserId, contact.DsocialContactId)
-        if originalExternalContact != nil {
-            _, isSame = emptyContact.IsSimilarOrUpdated(originalExternalContact, contact.Value)
-            fmt.Printf("findMatchingDsocialContact for %s with based on existing contact id will use %s and isSame %v\n", contact.Value.DisplayName, originalExternalContact.DisplayName, isSame)
+        extDsocialContact, _, _ = ds.RetrieveDsocialContact(dsocialUserId, contact.DsocialContactId)
+        if extDsocialContact != nil {
+            _, isSame = emptyContact.IsSimilarOrUpdated(extDsocialContact, contact.Value)
+            fmt.Printf("[PIPELINE]: findMatchingDsocialContact for %s with based on existing contact id will use %s and isSame %v\n", contact.Value.DisplayName, extDsocialContact.DisplayName, isSame)
         }
     }
-    if originalExternalContact == nil {
+    if extDsocialContact == nil {
         // this is a new contact from an existing service
         potentialMatches, err := ds.SearchForDsocialContacts(dsocialUserId, contact.Value)
         if err != nil {
@@ -81,19 +81,19 @@ func (p *Pipeline) findMatchingDsocialContact(ds DataStoreService, dsocialUserId
         for _, potentialMatch := range potentialMatches {
             var isSimilar bool
             if isSimilar, isSame = emptyContact.IsSimilarOrUpdated(potentialMatch, contact.Value); isSimilar {
-                originalExternalContact = potentialMatch
+                extDsocialContact = potentialMatch
                 break
             }
         }
-        if originalExternalContact != nil {
-            fmt.Printf("findMatchingDsocialContact for %s was %s and isSame %v\nStoring mapping: %s/%s/%s -> %s/%s\n", contact.Value.DisplayName, originalExternalContact.DisplayName, isSame, contact.ExternalServiceId, contact.ExternalUserId, contact.ExternalContactId, dsocialUserId, originalExternalContact.Id)
-            _, _, err = ds.StoreDsocialExternalContactMapping(contact.ExternalServiceId, contact.ExternalUserId, contact.ExternalContactId, dsocialUserId, originalExternalContact.Id)
-            contact.DsocialContactId = originalExternalContact.Id
+        if extDsocialContact != nil {
+            fmt.Printf("[PIPELINE]: findMatchingDsocialContact for %s was %s and isSame %v\n\tStoring mapping: %s/%s/%s -> %s\n", contact.Value.DisplayName, extDsocialContact.DisplayName, isSame, contact.ExternalServiceId, contact.ExternalUserId, contact.ExternalContactId, extDsocialContact.Id)
+            _, _, err = ds.StoreDsocialExternalContactMapping(contact.ExternalServiceId, contact.ExternalUserId, contact.ExternalContactId, dsocialUserId, extDsocialContact.Id)
+            contact.DsocialContactId = extDsocialContact.Id
         } else {
-            fmt.Printf("findMatchingDsocialContact cannot find similar for %s\n", contact.Value.DisplayName)
+            fmt.Printf("[PIPELINE]: findMatchingDsocialContact cannot find similar for %s\n", contact.Value.DisplayName)
         }
     }
-    return originalExternalContact, isSame, err
+    return extDsocialContact, isSame, err
 }
 
 func (p *Pipeline) contactImport(cs ContactsService, ds DataStoreService, dsocialUserId string, contact *Contact, allowAdd, allowDelete, allowUpdate bool) (*dm.Contact, os.Error) {
@@ -101,36 +101,58 @@ func (p *Pipeline) contactImport(cs ContactsService, ds DataStoreService, dsocia
     if contact == nil || contact.Value == nil {
         return nil, nil
     }
-    originalExternalContact, _, err := ds.RetrieveDsocialContactForExternalContact(contact.ExternalServiceId, contact.ExternalUserId, contact.ExternalContactId, dsocialUserId)
+    fmt.Printf("[PIPELINE]: Importing contact with ExternalServiceId = %v, ExternalUserId = %v, ExternalContactId = %v, DsocialUserId = %v, DsocialContactId = %v\n", contact.ExternalServiceId, contact.ExternalUserId, contact.ExternalContactId, contact.DsocialUserId, contact.DsocialContactId)
+    extDsocialContact, _, err := ds.RetrieveDsocialContactForExternalContact(contact.ExternalServiceId, contact.ExternalUserId, contact.ExternalContactId, dsocialUserId)
     if err != nil {
         return nil, err
     }
     var matchingContact *dm.Contact
     var isSame bool
-    if originalExternalContact == nil {
+    if extDsocialContact == nil {
         // We don't have a mapping for this external contact to an internal contact mapping
         // meaning we've never imported this contact previously from THIS service, but we may
         // already have the contact in our system, so let's see if we can find it
         matchingContact, isSame, err = p.findMatchingDsocialContact(ds, dsocialUserId, contact)
-        if isSame || err != nil {
+        if err != nil {
             return matchingContact, err
         }
-        if matchingContact != nil {
-            extContact := cs.ConvertToExternalContact(matchingContact, nil, dsocialUserId)
-            ds.StoreExternalContact(contact.ExternalServiceId, contact.ExternalUserId, dsocialUserId, contact.ExternalContactId, extContact)
-            originalExternalContact = cs.ConvertToDsocialContact(extContact, matchingContact, dsocialUserId)
-            if originalExternalContact != nil {
-                AddIdsForDsocialContact(originalExternalContact, ds, dsocialUserId)
-                originalExternalContact, err = ds.StoreDsocialContactForExternalContact(contact.ExternalServiceId, contact.ExternalUserId, contact.ExternalContactId, dsocialUserId, originalExternalContact)
-                if originalExternalContact == nil || err != nil {
+        if isSame {
+            /*
+            existingExtContact, extContactId, err := ds.RetrieveExternalContact(group.ExternalServiceId, group.ExternalUserId, dsocialUserId, group.ExternalContactId)
+            if err != nil {
+                return matchingContact, err
+            }
+            if existingExtContact != nil && extContactId != "" {
+                if extDsocialContact != nil {
+                    fmt.Printf("[PIPELINE]: contactImport() found existing external contact id %v\n", extContactId)
                     return matchingContact, err
                 }
-                if _, _, err = ds.StoreDsocialExternalContactMapping(contact.ExternalServiceId, contact.ExternalUserId, contact.ExternalContactId, dsocialUserId, originalExternalContact.Id); err != nil {
+            }
+            */
+        }
+        
+        if matchingContact != nil {
+            contact.DsocialContactId = matchingContact.Id
+            extContact := cs.ConvertToExternalContact(matchingContact, nil, dsocialUserId)
+            ds.StoreExternalContact(contact.ExternalServiceId, contact.ExternalUserId, dsocialUserId, contact.ExternalContactId, extContact)
+            extDsocialContact = cs.ConvertToDsocialContact(extContact, matchingContact, dsocialUserId)
+            if extDsocialContact != nil {
+                AddIdsForDsocialContact(extDsocialContact, ds, dsocialUserId)
+                //contact.ExternalContactId = extDsocialContact.Id
+                extDsocialContact, err = ds.StoreDsocialContactForExternalContact(contact.ExternalServiceId, contact.ExternalUserId, contact.ExternalContactId, dsocialUserId, extDsocialContact)
+                if extDsocialContact == nil || err != nil {
                     return matchingContact, err
+                }
+                if contact.DsocialContactId != "" {
+                    if _, _, err = ds.StoreDsocialExternalContactMapping(contact.ExternalServiceId, contact.ExternalUserId, contact.ExternalContactId, dsocialUserId, contact.DsocialContactId); err != nil {
+                        return matchingContact, err
+                    }
                 }
             }
         }
     } else {
+        // we have a mapping for this external contact to an internal contact mapping
+        // from THIS service, therefore let's use it
         if contact.DsocialContactId == "" {
             contact.DsocialContactId, err = ds.DsocialIdForExternalContactId(contact.ExternalServiceId, contact.ExternalUserId, dsocialUserId, contact.ExternalContactId)
             if err != nil {
@@ -144,9 +166,11 @@ func (p *Pipeline) contactImport(cs ContactsService, ds DataStoreService, dsocia
             }
         }
     }
+    // ensure we have a contact Id
     if contact.DsocialContactId == "" {
         if matchingContact != nil {
             contact.DsocialContactId = matchingContact.Id
+            fmt.Printf("[PIPELINE]: Will be using matchingContact Id: %v\n", matchingContact.Id)
         }
         if contact.DsocialContactId == "" {
             newContact := &dm.Contact{UserId: dsocialUserId}
@@ -158,11 +182,11 @@ func (p *Pipeline) contactImport(cs ContactsService, ds DataStoreService, dsocia
             contact.DsocialContactId = thecontact.Id
         }
     }
-    if _, isSame = emptyContact.IsSimilarOrUpdated(originalExternalContact, contact.Value); isSame {
+    if _, isSame = emptyContact.IsSimilarOrUpdated(extDsocialContact, contact.Value); isSame {
         return matchingContact, nil
     }
     l := new(list.List)
-    emptyContact.GenerateChanges(originalExternalContact, contact.Value, nil, l)
+    emptyContact.GenerateChanges(extDsocialContact, contact.Value, nil, l)
     l = p.removeUnacceptedChanges(l, allowAdd, allowDelete, allowUpdate)
     changes := make([]*dm.Change, l.Len())
     for i, iter := 0, l.Front(); iter != nil; i, iter = i+1, iter.Next() {
@@ -179,14 +203,18 @@ func (p *Pipeline) contactImport(cs ContactsService, ds DataStoreService, dsocia
     if err != nil {
         return matchingContact, err
     }
-    if originalExternalContact == nil {
+    if extDsocialContact == nil {
+        fmt.Printf("[PIPELINE]: OriginalExternalContact is nil and contact.DsocialContactId is %v and contact.Value.Id was %v\n", contact.DsocialContactId, contact.Value.Id)
+        contact.Value.Id = contact.DsocialContactId
         AddIdsForDsocialContact(contact.Value, ds, dsocialUserId)
-        contact.Value, err = ds.StoreDsocialContact(dsocialUserId, contact.Value.Id, contact.Value)
+        contact.Value, err = ds.StoreDsocialContact(dsocialUserId, contact.DsocialContactId, contact.Value)
+        fmt.Printf("[PIPELINE]: After storing contact.Value, contact.Value.Id is %v\n", contact.Value.Id)
         if err != nil {
             return matchingContact, err
         }
         storedDsocialContact, err := ds.StoreDsocialContactForExternalContact(contact.ExternalServiceId, contact.ExternalUserId, contact.ExternalContactId, dsocialUserId, contact.Value)
-        _, _, err2 := ds.StoreDsocialExternalContactMapping(contact.ExternalServiceId, contact.ExternalUserId, contact.ExternalContactId, dsocialUserId, contact.Value.Id)
+        fmt.Printf("[PIPELINE]: After storing external contact, contact.Value.Id is %v\n", contact.Value.Id)
+        _, _, err2 := ds.StoreDsocialExternalContactMapping(contact.ExternalServiceId, contact.ExternalUserId, contact.ExternalContactId, dsocialUserId, contact.DsocialContactId)
         if err == nil {
             err = err2
         }
@@ -199,7 +227,7 @@ func (p *Pipeline) contactImport(cs ContactsService, ds DataStoreService, dsocia
         }
     }
     if storedDsocialContact == nil {
-        storedDsocialContact = &dm.Contact{UserId: dsocialUserId}
+        storedDsocialContact = new(dm.Contact)
     }
     for j, iter := 0, l.Front(); iter != nil; j, iter = j+1, iter.Next() {
         change := iter.Value.(*dm.Change)
@@ -211,9 +239,16 @@ func (p *Pipeline) contactImport(cs ContactsService, ds DataStoreService, dsocia
     return storedDsocialContact, err
 }
 
-func (p *Pipeline) findMatchingDsocialGroup(ds DataStoreService, dsocialUserId string, group *Group) (originalExternalGroup *dm.Group, isSame bool, err os.Error) {
+func (p *Pipeline) findMatchingDsocialGroup(ds DataStoreService, dsocialUserId string, group *Group) (extDsocialGroup *dm.Group, isSame bool, err os.Error) {
     emptyGroup := new(dm.Group)
-    if group.DsocialGroupId == "" {
+    if group.DsocialGroupId != "" {
+        extDsocialGroup, _, _ = ds.RetrieveDsocialGroup(dsocialUserId, group.DsocialGroupId)
+        if extDsocialGroup != nil {
+            _, isSame = emptyGroup.IsSimilarOrUpdated(extDsocialGroup, group.Value)
+            fmt.Printf("[PIPELINE]: findMatchingDsocialGroup for %s with based on existing group id will use %s and isSame %v\n", group.Value.Name, extDsocialGroup.Name, isSame)
+        }
+    }
+    if extDsocialGroup == nil {
         // this is a new group from an existing service
         potentialMatches, err := ds.SearchForDsocialGroups(dsocialUserId, group.Value.Name)
         if err != nil {
@@ -222,16 +257,19 @@ func (p *Pipeline) findMatchingDsocialGroup(ds DataStoreService, dsocialUserId s
         for _, potentialMatch := range potentialMatches {
             var isSimilar bool
             if isSimilar, isSame = emptyGroup.IsSimilarOrUpdated(potentialMatch, group.Value); isSimilar {
-                originalExternalGroup = potentialMatch
+                extDsocialGroup = potentialMatch
                 break
             }
         }
-        if originalExternalGroup != nil {
-            _, _, err = ds.StoreDsocialExternalGroupMapping(group.ExternalServiceId, group.ExternalUserId, group.ExternalGroupId, dsocialUserId, originalExternalGroup.Id)
-            group.DsocialGroupId = originalExternalGroup.Id
+        if extDsocialGroup != nil {
+            fmt.Printf("[PIPELINE]: findMatchingDsocialGroup for %s was %s and isSame %v\n\tStoring mapping: %s/%s/%s -> %s\n", group.Value.Name, extDsocialGroup.Name, isSame, group.ExternalServiceId, group.ExternalUserId, group.ExternalGroupId, extDsocialGroup.Id)
+            _, _, err = ds.StoreDsocialExternalGroupMapping(group.ExternalServiceId, group.ExternalUserId, group.ExternalGroupId, dsocialUserId, extDsocialGroup.Id)
+            group.DsocialGroupId = extDsocialGroup.Id
+        } else {
+            fmt.Printf("[PIPELINE]: findMatchingDsocialGroup cannot find similar for %s\n", group.Value.Name)
         }
     }
-    return originalExternalGroup, isSame, err
+    return extDsocialGroup, isSame, err
 }
 
 func (p *Pipeline) groupImport(cs ContactsService, ds DataStoreService, dsocialUserId string, group *Group, minimumIncludes *list.List, allowAdd, allowDelete, allowUpdate bool) (*dm.Group, os.Error) {
@@ -239,7 +277,7 @@ func (p *Pipeline) groupImport(cs ContactsService, ds DataStoreService, dsocialU
     if group == nil || group.Value == nil {
         return nil, nil
     }
-    //fmt.Printf("Syncing group: %s\n", group.Value.Name)
+    //fmt.Printf("[PIPELINE]: Syncing group: %s\n", group.Value.Name)
     if group.Value.ContactIds == nil {
         group.Value.ContactIds = make([]string, 0, 10)
     }
@@ -287,71 +325,93 @@ func (p *Pipeline) groupImport(cs ContactsService, ds DataStoreService, dsocialU
             }
         }
     }
-    originalExternalGroup, _, err := ds.RetrieveDsocialGroupForExternalGroup(group.ExternalServiceId, group.ExternalUserId, group.ExternalGroupId, dsocialUserId)
+    extDsocialGroup, _, err := ds.RetrieveDsocialGroupForExternalGroup(group.ExternalServiceId, group.ExternalUserId, group.ExternalGroupId, dsocialUserId)
     if err != nil {
         return nil, err
     }
     var matchingGroup *dm.Group
     var isSame bool
-    if originalExternalGroup == nil {
+    if extDsocialGroup == nil {
         // We don't have a mapping for this external group to an internal group mapping
         // meaning we've never imported this group previously from THIS service, but we may
         // already have the group in our system, so let's see if we can find it
         matchingGroup, isSame, err = p.findMatchingDsocialGroup(ds, dsocialUserId, group)
-        if isSame || err != nil {
+        if err != nil {
             return matchingGroup, err
         }
-        if matchingGroup != nil {
-            extGroup := cs.ConvertToExternalGroup(matchingGroup, nil, dsocialUserId)
-            ds.StoreExternalGroup(group.ExternalServiceId, group.ExternalUserId, dsocialUserId, group.ExternalGroupId, extGroup)
-            originalExternalGroup = cs.ConvertToDsocialGroup(extGroup, matchingGroup, dsocialUserId)
-            if originalExternalGroup != nil {
-                originalExternalGroup, err = ds.StoreDsocialGroupForExternalGroup(group.ExternalServiceId, group.ExternalUserId, group.ExternalGroupId, dsocialUserId, originalExternalGroup)
-                if originalExternalGroup == nil || err != nil {
+        if isSame {
+            /*
+            existingExtGroup, extGroupId, err := ds.RetrieveExternalGroup(group.ExternalServiceId, group.ExternalUserId, dsocialUserId, group.ExternalGroupId)
+            if err != nil {
+                return matchingGroup, err
+            }
+            if existingExtGroup != nil && extGroupId != "" {
+                if extDsocialGroup != nil {
+                    fmt.Printf("[PIPELINE]: groupImport() found existing external group id %v\n", extGroupId)
                     return matchingGroup, err
                 }
-                if _, _, err = ds.StoreDsocialExternalGroupMapping(group.ExternalServiceId, group.ExternalUserId, group.ExternalGroupId, dsocialUserId, originalExternalGroup.Id); err != nil {
+            }
+            */
+        }
+        if matchingGroup != nil {
+            group.DsocialGroupId = matchingGroup.Id
+            extGroup := cs.ConvertToExternalGroup(matchingGroup, nil, dsocialUserId)
+            ds.StoreExternalGroup(group.ExternalServiceId, group.ExternalUserId, dsocialUserId, group.ExternalGroupId, extGroup)
+            extDsocialGroup = cs.ConvertToDsocialGroup(extGroup, matchingGroup, dsocialUserId)
+            if extDsocialGroup != nil {
+                AddIdsForDsocialGroup(extDsocialGroup, ds, dsocialUserId)
+                fmt.Printf("[PIPELINE]: groupImport() before store dsoc group ExternalGroupId: %v and extDsocialGroup.Id %v matchingGroup.Id %v\n", group.ExternalGroupId, extDsocialGroup.Id, matchingGroup.Id)
+                //group.ExternalGroupId = extDsocialGroup.Id
+                //extDsocialGroup.Id = group.DsocialGroupId
+                extDsocialGroup, err = ds.StoreDsocialGroupForExternalGroup(group.ExternalServiceId, group.ExternalUserId, group.ExternalGroupId, dsocialUserId, extDsocialGroup)
+                if extDsocialGroup == nil || err != nil {
+                    return matchingGroup, err
+                }
+                //extDsocialGroup.Id = group.DsocialGroupId
+                fmt.Printf("[PIPELINE]: groupImport() before store mapping ExternalGroupId: %v and DsocialGroupId %v\n", group.ExternalGroupId, group.DsocialGroupId)
+                if _, _, err = ds.StoreDsocialExternalGroupMapping(group.ExternalServiceId, group.ExternalUserId, group.ExternalGroupId, dsocialUserId, group.DsocialGroupId); err != nil {
                     return matchingGroup, err
                 }
             }
         }
     } else {
-        dsocialId, err := ds.DsocialIdForExternalGroupId(group.ExternalServiceId, group.ExternalUserId, dsocialUserId, group.ExternalGroupId)
-        if err != nil {
-            return nil, err
+        // we have a mapping for this external group to an internal group mapping
+        // from THIS service, therefore let's use it
+        if group.DsocialGroupId == "" {
+            group.DsocialGroupId, err = ds.DsocialIdForExternalGroupId(group.ExternalServiceId, group.ExternalUserId, dsocialUserId, group.ExternalGroupId)
+            if err != nil {
+                return nil, err
+            }
         }
-        if dsocialId != "" {
-            matchingGroup, _, err = ds.RetrieveDsocialGroup(dsocialUserId, dsocialId)
+        if group.DsocialGroupId != "" {
+            matchingGroup, _, err = ds.RetrieveDsocialGroup(dsocialUserId, group.DsocialGroupId)
             if err != nil {
                 return nil, err
             }
         }
     }
-    if _, isSame = emptyGroup.IsSimilarOrUpdated(originalExternalGroup, group.Value); isSame {
+    // ensure we have a contact Id
+    if group.DsocialGroupId == "" {
+        if matchingGroup != nil {
+            group.DsocialGroupId = matchingGroup.Id
+            fmt.Printf("[PIPELINE]: Will be using matchingGroup Id: %v\n", matchingGroup.Id)
+        }
+        if group.DsocialGroupId == "" {
+            newGroup := &dm.Group{UserId: dsocialUserId}
+            AddIdsForDsocialGroup(newGroup, ds, dsocialUserId)
+            thegroup, err := ds.StoreDsocialGroup(dsocialUserId, newGroup.Id, newGroup)
+            if err != nil {
+                return nil, err
+            }
+            group.DsocialGroupId = thegroup.Id
+        }
+    }
+    if _, isSame = emptyGroup.IsSimilarOrUpdated(extDsocialGroup, group.Value); isSame {
         return matchingGroup, nil
     }
     l := new(list.List)
-    emptyGroup.GenerateChanges(originalExternalGroup, group.Value, nil, l)
-    p.removeUnacceptedChanges(l, allowAdd, allowDelete, allowUpdate)
-    if !allowAdd || !allowDelete || !allowUpdate {
-        for iter := l.Front(); iter != nil; iter = iter.Next() {
-            ch := iter.Value.(*dm.Change)
-            if !allowAdd && ch.ChangeType == dm.CHANGE_TYPE_ADD {
-                l.Remove(iter)
-            } else if !allowDelete && ch.ChangeType == dm.CHANGE_TYPE_DELETE {
-                l.Remove(iter)
-            } else if !allowUpdate && ch.ChangeType == dm.CHANGE_TYPE_UPDATE {
-                if !allowAdd {
-                    l.Remove(iter)
-                } else if len(ch.Path) > 1 {
-                    ch.ChangeType = dm.CHANGE_TYPE_ADD
-                    ch.OriginalValue = nil
-                } else {
-                    l.Remove(iter)
-                }
-            }
-        }
-    }
+    emptyGroup.GenerateChanges(extDsocialGroup, group.Value, nil, l)
+    l = p.removeUnacceptedChanges(l, allowAdd, allowDelete, allowUpdate)
     changes := make([]*dm.Change, l.Len())
     for i, iter := 0, l.Front(); iter != nil; i, iter = i+1, iter.Next() {
         changes[i] = iter.Value.(*dm.Change)
@@ -363,17 +423,20 @@ func (p *Pipeline) groupImport(cs ContactsService, ds DataStoreService, dsocialU
         RecordId: group.DsocialGroupId,
         Changes: changes,
     }
-    _, err = ds.StoreContactChangeSet(dsocialUserId, changeset)
+    _, err = ds.StoreGroupChangeSet(dsocialUserId, changeset)
     if err != nil {
         return matchingGroup, nil
     }
-    if originalExternalGroup == nil {
-        group.Value, err = ds.StoreDsocialGroup(dsocialUserId, "", group.Value)
+    if extDsocialGroup == nil {
+        fmt.Printf("[PIPELINE]: OriginalExternalGroup is nil and group.DsocialGroupId is %v and group.Value.Id was %v\n", group.DsocialGroupId, group.Value.Id)
+        group.Value.Id = group.DsocialGroupId
+        AddIdsForDsocialGroup(group.Value, ds, dsocialUserId)
+        group.Value, err = ds.StoreDsocialGroup(dsocialUserId, group.DsocialGroupId, group.Value)
         if err != nil {
             return matchingGroup, err
         }
         storedDsocialGroup, err := ds.StoreDsocialGroupForExternalGroup(group.ExternalServiceId, group.ExternalUserId, group.ExternalGroupId, dsocialUserId, group.Value)
-        _, _, err2 := ds.StoreDsocialExternalGroupMapping(group.ExternalServiceId, group.ExternalUserId, group.ExternalGroupId, dsocialUserId, group.Value.Id)
+        _, _, err2 := ds.StoreDsocialExternalGroupMapping(group.ExternalServiceId, group.ExternalUserId, group.ExternalGroupId, dsocialUserId, group.DsocialGroupId)
         if err == nil {
             err = err2
         }
@@ -393,6 +456,7 @@ func (p *Pipeline) groupImport(cs ContactsService, ds DataStoreService, dsocialU
         dm.ApplyChange(storedDsocialGroup, change)
         changes[j] = change
     }
+    AddIdsForDsocialGroup(storedDsocialGroup, ds, dsocialUserId)
     _, err = ds.StoreDsocialGroup(dsocialUserId, group.DsocialGroupId, storedDsocialGroup)
     return storedDsocialGroup, err
 }
