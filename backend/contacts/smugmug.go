@@ -17,6 +17,10 @@ func NewSmugMugContactService() *SmugMugContactService {
     return new(SmugMugContactService)
 }
 
+func (p *SmugMugContactService) ServiceId() string {
+    return "www.smugmug.com"
+}
+
 func (p *SmugMugContactService) ConvertToDsocialContact(externalContact interface{}, originalDsocialContact *dm.Contact, dsocialUserId string) (dsocialContact *dm.Contact) {
     if externalContact == nil {
         return
@@ -235,7 +239,7 @@ func (p *SmugMugContactService) handleRetrievedContact(client oauth2_client.OAut
     if extContact == nil {
         return nil, nil
     }
-    externalServiceId := client.ServiceId()
+    externalServiceId := p.ServiceId()
     userInfo, err := client.RetrieveUserInfo()
     externalUserId := userInfo.Guid()
     var useErr os.Error = nil
@@ -258,7 +262,7 @@ func (p *SmugMugContactService) handleRetrievedContact(client oauth2_client.OAut
     }
     dsocialContact := dm.SmugMugUserToDsocial(extContact, origDsocialContact, dsocialUserId)
     contact = &Contact{
-        ExternalServiceId: client.ServiceId(),
+        ExternalServiceId: p.ServiceId(),
         ExternalUserId: externalUserId,
         ExternalContactId: externalContactId,
         DsocialUserId: dsocialUserId,

@@ -18,6 +18,10 @@ func NewYahooContactService() *YahooContactService {
     return new(YahooContactService)
 }
 
+func (p *YahooContactService) ServiceId() string {
+    return "www.yahoo.com"
+}
+
 func (p *YahooContactService) ConvertToDsocialContact(externalContact interface{}, originalDsocialContact *dm.Contact, dsocialUserId string) (dsocialContact *dm.Contact) {
     if externalContact == nil {
         return
@@ -152,7 +156,7 @@ func (p *YahooContactService) RetrieveContacts(client oauth2_client.OAuth2Client
         return make([]*Contact, 0), nil, err
     }
     contacts := make([]*Contact, len(resp.Contacts.Contacts))
-    externalServiceId := client.ServiceId()
+    externalServiceId := p.ServiceId()
     userInfo, err := client.RetrieveUserInfo()
     externalUserId := userInfo.Guid()
     var useErr os.Error = nil
@@ -178,7 +182,7 @@ func (p *YahooContactService) RetrieveContacts(client oauth2_client.OAuth2Client
         }
         dsocialContact := dm.YahooContactToDsocial(&yahooContact, origDsocialContact, dsocialUserId)
         contacts[i] = &Contact{
-            ExternalServiceId: client.ServiceId(),
+            ExternalServiceId: p.ServiceId(),
             ExternalUserId: externalUserId,
             ExternalContactId: externalContactId,
             DsocialUserId: dsocialUserId,
@@ -206,7 +210,7 @@ func (p *YahooContactService) RetrieveGroups(client oauth2_client.OAuth2Client, 
         return make([]*Group, 0), nil, err
     }
     groups := make([]*Group, len(resp.Categories.Categories))
-    externalServiceId := client.ServiceId()
+    externalServiceId := p.ServiceId()
     userInfo, err := client.RetrieveUserInfo()
     externalUserId := userInfo.Guid()
     var useErr os.Error = nil
@@ -239,7 +243,7 @@ func (p *YahooContactService) RetrieveGroups(client oauth2_client.OAuth2Client, 
         }
         var dsocialGroup *dm.Group = dm.YahooCategoryToDsocial(&yahooGroup, origDsocialGroup, dsocialUserId)
         groups[i] = &Group{
-            ExternalServiceId: client.ServiceId(),
+            ExternalServiceId: p.ServiceId(),
             ExternalUserId: externalUserId,
             ExternalGroupId: externalGroupId,
             DsocialUserId: dsocialUserId,
@@ -256,7 +260,7 @@ func (p *YahooContactService) RetrieveContact(client oauth2_client.OAuth2Client,
         return nil, err
     }
     yahooContact := &resp.Contact
-    externalServiceId := client.ServiceId()
+    externalServiceId := p.ServiceId()
     userInfo, err := client.RetrieveUserInfo()
     externalUserId := userInfo.Guid()
     useErr := err
@@ -282,7 +286,7 @@ func (p *YahooContactService) RetrieveContact(client oauth2_client.OAuth2Client,
     }
     dsocialContact := dm.YahooContactToDsocial(yahooContact, origDsocialContact, dsocialUserId)
     contact := &Contact{
-        ExternalServiceId: client.ServiceId(),
+        ExternalServiceId: p.ServiceId(),
         ExternalUserId: externalUserId,
         ExternalContactId: externalContactId,
         DsocialUserId: dsocialUserId,
@@ -298,7 +302,7 @@ func (p *YahooContactService) RetrieveGroup(client oauth2_client.OAuth2Client, d
         return nil, err
     }
     yahooGroup := &resp.Category
-    externalServiceId := client.ServiceId()
+    externalServiceId := p.ServiceId()
     userInfo, err := client.RetrieveUserInfo()
     externalUserId := userInfo.Guid()
     useErr := err
@@ -326,7 +330,7 @@ func (p *YahooContactService) RetrieveGroup(client oauth2_client.OAuth2Client, d
     }
     var dsocialGroup *dm.Group = dm.YahooCategoryToDsocial(yahooGroup, origDsocialGroup, dsocialUserId)
     group := &Group{
-        ExternalServiceId: client.ServiceId(),
+        ExternalServiceId: p.ServiceId(),
         ExternalUserId: externalUserId,
         ExternalGroupId: externalGroupId,
         DsocialUserId: dsocialUserId,
@@ -345,7 +349,7 @@ func (p *YahooContactService) CreateContact(client oauth2_client.OAuth2Client, d
         return nil, err
     }
     externalUserId := userInfo.Guid()
-    yContactId, err := ds.ExternalContactIdForDsocialId(client.ServiceId(), userInfo.Guid(), dsocialUserId, contact.Id)
+    yContactId, err := ds.ExternalContactIdForDsocialId(p.ServiceId(), userInfo.Guid(), dsocialUserId, contact.Id)
     if err != nil {
         return nil, err
     }
@@ -364,10 +368,10 @@ func (p *YahooContactService) CreateContact(client oauth2_client.OAuth2Client, d
     dsocialContact := dm.YahooContactToDsocial(yContact, contact, dsocialUserId)
     yContactId = strconv.Itoa64(yContact.Id)
     if contact.Id != "" {
-        _, _, err = ds.StoreDsocialExternalContactMapping(client.ServiceId(), userInfo.Guid(), yContactId, dsocialUserId, contact.Id)
+        _, _, err = ds.StoreDsocialExternalContactMapping(p.ServiceId(), userInfo.Guid(), yContactId, dsocialUserId, contact.Id)
     }
     outContact := &Contact{
-        ExternalServiceId: client.ServiceId(),
+        ExternalServiceId: p.ServiceId(),
         ExternalUserId: externalUserId,
         ExternalContactId: yContactId,
         DsocialUserId: dsocialUserId,
@@ -390,14 +394,14 @@ func (p *YahooContactService) UpdateContact(client oauth2_client.OAuth2Client, d
         return nil, err
     }
     externalUserId := userInfo.Guid()
-    yContactId, err := ds.ExternalContactIdForDsocialId(client.ServiceId(), userInfo.Guid(), dsocialUserId, originalContact.Id)
+    yContactId, err := ds.ExternalContactIdForDsocialId(p.ServiceId(), userInfo.Guid(), dsocialUserId, originalContact.Id)
     if err != nil {
         return nil, err
     }
     if yContactId == "" {
         return p.CreateContact(client, ds, dsocialUserId, contact)
     }
-    originalYContact, _, err := ds.RetrieveExternalContact(client.ServiceId(), userInfo.Guid(), dsocialUserId, yContactId)
+    originalYContact, _, err := ds.RetrieveExternalContact(p.ServiceId(), userInfo.Guid(), dsocialUserId, yContactId)
     if err != nil {
         return nil, err
     }
@@ -410,7 +414,7 @@ func (p *YahooContactService) UpdateContact(client oauth2_client.OAuth2Client, d
     dsocialContact := dm.YahooContactToDsocial(yContact, contact, dsocialUserId)
     dsocialContact.Id = originalContact.Id
     outContact := &Contact{
-        ExternalServiceId: client.ServiceId(),
+        ExternalServiceId: p.ServiceId(),
         ExternalUserId: externalUserId,
         ExternalContactId: yContactId,
         DsocialUserId: dsocialUserId,
@@ -432,7 +436,7 @@ func (p *YahooContactService) DeleteContact(client oauth2_client.OAuth2Client, d
     if err != nil {
         return true, err
     }
-    yContactId, err := ds.ExternalContactIdForDsocialId(client.ServiceId(), userInfo.Guid(), dsocialUserId, dsocialContactId)
+    yContactId, err := ds.ExternalContactIdForDsocialId(p.ServiceId(), userInfo.Guid(), dsocialUserId, dsocialContactId)
     if yContactId == "" || err != nil {
         return false, err
     }

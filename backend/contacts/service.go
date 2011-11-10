@@ -178,6 +178,7 @@ type DataStoreService interface {
 }
 
 type ContactsService interface {
+    ServiceId() string
     
     // Convert the external contact for this Contacts Service to a dsocial contact or nil if not convertible or input is nil
     ConvertToDsocialContact(externalContact interface{}, originalDsocialContact *dm.Contact, dsocialUserId string) (dsocialContact *dm.Contact)

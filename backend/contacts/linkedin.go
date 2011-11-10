@@ -23,6 +23,10 @@ func NewLinkedInContactService() *LinkedInContactService {
     return new(LinkedInContactService)
 }
 
+func (p *LinkedInContactService) ServiceId() string {
+    return "www.linkedin.com"
+}
+
 func (p *LinkedInContactService) ConvertToDsocialContact(externalContact interface{}, originalDsocialContact *dm.Contact, dsocialUserId string) (dsocialContact *dm.Contact) {
     if externalContact == nil {
         return
@@ -199,7 +203,7 @@ func (p *LinkedInContactService) handleRetrievedContact(client oauth2_client.OAu
     if extContact == nil {
         return nil, nil
     }
-    externalServiceId := client.ServiceId()
+    externalServiceId := p.ServiceId()
     userInfo, err := client.RetrieveUserInfo()
     externalUserId := userInfo.Guid()
     var useErr os.Error = nil
@@ -222,7 +226,7 @@ func (p *LinkedInContactService) handleRetrievedContact(client oauth2_client.OAu
     }
     dsocialContact := dm.LinkedInContactToDsocial(extContact, origDsocialContact, dsocialUserId)
     contact = &Contact{
-        ExternalServiceId: client.ServiceId(),
+        ExternalServiceId: p.ServiceId(),
         ExternalUserId: externalUserId,
         ExternalContactId: extContact.Id,
         DsocialUserId: dsocialUserId,

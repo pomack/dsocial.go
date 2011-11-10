@@ -15,6 +15,10 @@ func NewGooglePlusContactService() *GooglePlusContactService {
     return new(GooglePlusContactService)
 }
 
+func (p *GooglePlusContactService) ServiceId() string {
+    return "plus.google.com"
+}
+
 func (p *GooglePlusContactService) ConvertToDsocialContact(externalContact interface{}, originalDsocialContact *dm.Contact, dsocialUserId string) (dsocialContact *dm.Contact) {
     if externalContact == nil {
         return
@@ -141,7 +145,7 @@ func (p *GooglePlusContactService) RetrieveContact(client oauth2_client.OAuth2Cl
     if googleplusContact == nil || err != nil {
         return nil, err
     }
-    externalServiceId := client.ServiceId()
+    externalServiceId := p.ServiceId()
     userInfo, err := client.RetrieveUserInfo()
     externalUserId := userInfo.Guid()
     useErr := err
@@ -164,7 +168,7 @@ func (p *GooglePlusContactService) RetrieveContact(client oauth2_client.OAuth2Cl
     }
     dsocialContact := dm.GooglePlusPersonToDsocial(googleplusContact, origDsocialContact, dsocialUserId)
     contact := &Contact{
-        ExternalServiceId: client.ServiceId(),
+        ExternalServiceId: p.ServiceId(),
         ExternalUserId: externalUserId,
         ExternalContactId: googleplusContact.Id,
         DsocialUserId: dsocialUserId,
