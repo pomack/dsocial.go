@@ -1,6 +1,7 @@
 package contacts
 
 import (
+    "github.com/pomack/jsonhelper.go/jsonhelper"
     "github.com/pomack/oauth2_client.go/oauth2_client"
     "github.com/pomack/contacts.go/yahoo"
     dm "github.com/pomack/dsocial.go/models/dsocial"
@@ -20,6 +21,12 @@ func NewYahooContactService() *YahooContactService {
 
 func (p *YahooContactService) ServiceId() string {
     return "www.yahoo.com"
+}
+
+func (p *YahooContactService) CreateOAuth2Client(settings jsonhelper.JSONObject) (client oauth2_client.OAuth2Client, err os.Error) {
+    client = oauth2_client.NewYahooClient()
+    client.Initialize(settings)
+    return
 }
 
 func (p *YahooContactService) ConvertToDsocialContact(externalContact interface{}, originalDsocialContact *dm.Contact, dsocialUserId string) (dsocialContact *dm.Contact) {

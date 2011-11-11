@@ -1,6 +1,7 @@
 package contacts
 
 import (
+    "github.com/pomack/jsonhelper.go/jsonhelper"
     "github.com/pomack/oauth2_client.go/oauth2_client"
     "github.com/pomack/contacts.go/google"
     dm "github.com/pomack/dsocial.go/models/dsocial"
@@ -21,6 +22,12 @@ func NewGoogleContactService() *GoogleContactService {
 
 func (p *GoogleContactService) ServiceId() string {
     return "www.google.com"
+}
+
+func (p *GoogleContactService) CreateOAuth2Client(settings jsonhelper.JSONObject) (client oauth2_client.OAuth2Client, err os.Error) {
+    client = oauth2_client.NewGoogleClient()
+    client.Initialize(settings)
+    return
 }
 
 func (p *GoogleContactService) ConvertToDsocialContact(externalContact interface{}, originalDsocialContact *dm.Contact, dsocialUserId string) (dsocialContact *dm.Contact) {

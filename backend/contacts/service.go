@@ -1,6 +1,7 @@
 package contacts
 
 import (
+    "github.com/pomack/jsonhelper.go/jsonhelper"
     "github.com/pomack/oauth2_client.go/oauth2_client"
     dm "github.com/pomack/dsocial.go/models/dsocial"
     "os"
@@ -25,6 +26,15 @@ type Group struct {
     Value *dm.Group
 }
 
+type ContactsServiceSettings interface {
+    Id() string
+    DsocialUserId() string
+    ContactsServiceId() string
+    ClientProperties() jsonhelper.JSONObject
+    SetId(id string)
+    SetDsocialUserId(dsocialUserId string)
+    SetClientProperties(obj jsonhelper.JSONObject)
+}
 
 type NextToken interface{}
 
@@ -179,7 +189,8 @@ type DataStoreService interface {
 
 type ContactsService interface {
     ServiceId() string
-    
+    // Create an OAuth2Client based on the specified settings for this contacts service
+    CreateOAuth2Client(settings jsonhelper.JSONObject) (client oauth2_client.OAuth2Client, err os.Error)
     // Convert the external contact for this Contacts Service to a dsocial contact or nil if not convertible or input is nil
     ConvertToDsocialContact(externalContact interface{}, originalDsocialContact *dm.Contact, dsocialUserId string) (dsocialContact *dm.Contact)
     // Convert the dsocial contact to the external contact for this Contacts Service or nil if input is nil

@@ -1,6 +1,7 @@
 package contacts
 
 import (
+    "github.com/pomack/jsonhelper.go/jsonhelper"
     "github.com/pomack/oauth2_client.go/oauth2_client"
     "github.com/pomack/contacts.go/facebook"
     dm "github.com/pomack/dsocial.go/models/dsocial"
@@ -19,6 +20,12 @@ func NewFacebookContactService() *FacebookContactService {
 
 func (p *FacebookContactService) ServiceId() string {
     return "www.facebook.com"
+}
+
+func (p *FacebookContactService) CreateOAuth2Client(settings jsonhelper.JSONObject) (client oauth2_client.OAuth2Client, err os.Error) {
+    client = oauth2_client.NewFacebookClient()
+    client.Initialize(settings)
+    return
 }
 
 func (p *FacebookContactService) ConvertToDsocialContact(externalContact interface{}, originalDsocialContact *dm.Contact, dsocialUserId string) (dsocialContact *dm.Contact) {

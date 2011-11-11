@@ -1,6 +1,7 @@
 package contacts
 
 import (
+    "github.com/pomack/jsonhelper.go/jsonhelper"
     "github.com/pomack/oauth2_client.go/oauth2_client"
     "github.com/pomack/contacts.go/linkedin"
     dm "github.com/pomack/dsocial.go/models/dsocial"
@@ -25,6 +26,12 @@ func NewLinkedInContactService() *LinkedInContactService {
 
 func (p *LinkedInContactService) ServiceId() string {
     return "www.linkedin.com"
+}
+
+func (p *LinkedInContactService) CreateOAuth2Client(settings jsonhelper.JSONObject) (client oauth2_client.OAuth2Client, err os.Error) {
+    client = oauth2_client.NewLinkedInClient()
+    client.Initialize(settings)
+    return
 }
 
 func (p *LinkedInContactService) ConvertToDsocialContact(externalContact interface{}, originalDsocialContact *dm.Contact, dsocialUserId string) (dsocialContact *dm.Contact) {
