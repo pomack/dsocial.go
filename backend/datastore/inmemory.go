@@ -27,6 +27,7 @@ const (
     _INMEMORY_INTERNAL_TO_EXTERNAL_CONTACT_MAPPING_COLLECTION_NAME = "internal_to_external_contact_mappings"
     _INMEMORY_EXTERNAL_TO_INTERNAL_GROUP_MAPPING_COLLECTION_NAME = "external_to_internal_group_mappings"
     _INMEMORY_INTERNAL_TO_EXTERNAL_GROUP_MAPPING_COLLECTION_NAME = "internal_to_external_group_mappings"
+    _INMEMORY_USER_TO_CONTACT_SETTINGS_COLLECTION_NAME = "user_to_contact_settings"
 )
 
 type inMemoryObject interface{}
@@ -105,6 +106,90 @@ func (p *InMemoryDataStore) retrieve(collectionName, id string) (interface{}, bo
     }
     v, ok := p.retrieveCollection(collectionName).Data[id]
     return v, ok
+}
+
+
+    
+func (p *InMemoryDataStore) RetrieveAllContactsServiceSettingsForUser(dsocialUserId string) (settings []bc.ContactsServiceSettings, err os.Error) {
+    v, ok := p.retrieve(_INMEMORY_USER_TO_CONTACT_SETTINGS_COLLECTION_NAME, dsocialUserId)
+    if v == nil || !ok {
+        settings = make([]bc.ContactsServiceSettings, 0)
+    } else {
+        settings = v.([]bc.ContactsServiceSettings)
+    }
+    return
+}
+
+func (p *InMemoryDataStore) RetrieveContactsServiceSettingsForService(dsocialUserId, contactsServiceId string) (settings []bc.ContactsServiceSettings, err os.Error) {
+    allSettings, _ := p.RetrieveAllContactsServiceSettingsForUser(dsocialUserId)
+    arr := make([]bc.ContactsServiceSettings, len(allSettings))
+    i := 0
+    for _, s := range allSettings {
+        if s.ContactsServiceId() == contactsServiceId {
+            arr[i] = s
+            i++
+        }
+    }
+    settings = arr[0:i]
+    return
+}
+
+func (p *InMemoryDataStore) RetrieveContactsServiceSettings(dsocialUserId, contactsServiceId, id string) (settings bc.ContactsServiceSettings, err os.Error) {
+    allSettings, _ := p.RetrieveAllContactsServiceSettingsForUser(dsocialUserId)
+    for _, s := range allSettings {
+        if s.Id() == id && s.ContactsServiceId() == contactsServiceId {
+            settings = s
+            break
+        }
+    }
+    return
+}
+
+func (p *InMemoryDataStore) SetContactsServiceSettings(settings bc.ContactsServiceSettings) (id string, err os.Error) {
+    if settings == nil {
+        return
+    }
+    dsocialUserId := settings.DsocialUserId()
+    id = settings.Id()
+    if id == "" {
+        id = p.GenerateId(dsocialUserId, _INMEMORY_USER_TO_CONTACT_SETTINGS_COLLECTION_NAME)
+        settings.SetId(id)
+    }
+    v, _ := p.retrieve(_INMEMORY_USER_TO_CONTACT_SETTINGS_COLLECTION_NAME, dsocialUserId)
+    var arr []bc.ContactsServiceSettings
+    if v == nil {
+        arr = []bc.ContactsServiceSettings{settings}
+    } else {
+        arr = v.([]bc.ContactsServiceSettings)
+        found := false
+        for i, s := range arr {
+            if s.Id() == id {
+                found = true
+                arr[i] = settings
+            }
+        }
+        if !found {
+            arr2 := make([]bc.ContactsServiceSettings, len(arr) + 1)
+            copy(arr2, arr)
+            arr2[len(arr)] = settings
+            arr = arr2
+        }
+    }
+    p.store(dsocialUserId, _INMEMORY_USER_TO_CONTACT_SETTINGS_COLLECTION_NAME, dsocialUserId, arr)
+    return
+}
+
+func (p *InMemoryDataStore) DeleteContactsServiceSettings(dsocialUserId, contactsServiceId, id string) (err os.Error) {
+    allSettings, _ := p.RetrieveAllContactsServiceSettingsForUser(dsocialUserId)
+    l := len(allSettings)
+    for i, s := range allSettings {
+        if s.Id() == id && s.ContactsServiceId() == contactsServiceId {
+            copy(allSettings[i:l], allSettings[i+1:l])
+            p.store(dsocialUserId, _INMEMORY_USER_TO_CONTACT_SETTINGS_COLLECTION_NAME, dsocialUserId, allSettings[0:l-1])
+            break
+        }
+    }
+    return
 }
 
 

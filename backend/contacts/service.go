@@ -40,6 +40,12 @@ type NextToken interface{}
 
 type DataStoreService interface {
     
+    RetrieveAllContactsServiceSettingsForUser(dsocialUserId string) (settings []ContactsServiceSettings, err os.Error)
+    RetrieveContactsServiceSettingsForService(dsocialUserId, contactsServiceId string) (settings []ContactsServiceSettings, err os.Error)
+    RetrieveContactsServiceSettings(dsocialUserId, contactsServiceId, id string) (settings ContactsServiceSettings, err os.Error)
+    SetContactsServiceSettings(settings ContactsServiceSettings) (id string, err os.Error)
+    DeleteContactsServiceSettings(dsocialUserId, contactsServiceId, id string) (err os.Error)
+    
     SearchForDsocialContacts(dsocialUserId string, contact *dm.Contact) (contacts []*dm.Contact, err os.Error)
     SearchForDsocialGroups(dsocialUserId string, groupName string) (groups []*dm.Group, err os.Error)
     
