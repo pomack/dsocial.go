@@ -25,6 +25,15 @@ type Change struct {
     NewValue      interface{}      `json:"new_value,omitempty"`
 }
 
+type ChangeSetsToApply struct {
+    Id                  string      `json:"id,omitempty"`
+    UserId              string      `json:"user_id,omitempty"`
+    RecordType          string      `json:"record_type,omitempty"`
+    ServiceId           string      `json:"service_id,omitempty"`
+    ServiceName         string      `json:"service_name,omitempty"`
+    ChangeSetIds        []string    `json:"changeset_ids,omitempty"`
+}
+
 type ChangeType string
 
 type PathComponent struct {

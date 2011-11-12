@@ -55,6 +55,21 @@ type DataStoreService interface {
     StoreGroupChangeSet(dsocialUserId string, changeset *dm.ChangeSet) (*dm.ChangeSet, os.Error)
     RetrieveGroupChangeSets(dsocialId string, after *time.Time) ([]*dm.ChangeSet, NextToken, os.Error)
     
+    AddContactChangeSetsToApply(dsocialUserId, serviceId, serviceName string, changesetIds []string) (id string, err os.Error)
+    AddGroupChangeSetsToApply(dsocialUserId, serviceId, serviceName string, changesetIds []string) (id string, err os.Error)
+    AddContactChangeSetsNotCurrentlyApplyable(dsocialUserId, serviceId, serviceName string, changesetIds []string) (id string, err os.Error)
+    AddGroupChangeSetsNotCurrentlyApplyable(dsocialUserId, serviceId, serviceName string, changesetIds []string) (id string, err os.Error)
+    
+    RetrieveContactChangeSetsToApply(dsocialUserId, serviceId, serviceName string) ([]*dm.ChangeSetsToApply, map[string]*dm.ChangeSet, os.Error)
+    RetrieveGroupChangeSetsToApply(dsocialUserId, serviceId, serviceName string) ([]*dm.ChangeSetsToApply, map[string]*dm.ChangeSet, os.Error)
+    RetrieveContactChangeSetsNotCurrentlyApplyable(dsocialUserId, serviceId, serviceName string) ([]*dm.ChangeSetsToApply, map[string]*dm.ChangeSet, os.Error)
+    RetrieveGroupChangeSetsNotCurrentlyApplyable(dsocialUserId, serviceId, serviceName string) ([]*dm.ChangeSetsToApply, map[string]*dm.ChangeSet, os.Error)
+    
+    RemoveContactChangeSetsToApply(dsocialUserId string, changeSetIdsToApply []string) (os.Error)
+    RemoveGroupChangeSetsToApply(dsocialUserId string, changeSetIdsToApply []string) (err os.Error)
+    RemoveContactChangeSetsNotCurrentlyApplyable(dsocialUserId string, changeSetIdsToApply []string) (err os.Error)
+    RemoveGroupChangeSetsNotCurrentlyApplyable(dsocialUserId string, changeSetIdsToApply []string) (err os.Error)
+    
     // Generates a new unique id for the specified collection name
     GenerateId(dsocialUserId, collectionName string) string
     
