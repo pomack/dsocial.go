@@ -17,12 +17,12 @@ func NewPipeline() *Pipeline {
     return new(Pipeline)
 }
 
-func (p *Pipeline) InitialSync(client oauth2_client.OAuth2Client, ds DataStoreService, cs ContactsService, csSettings ContactsServiceSettings, dsocialUserId string) os.Error {
-    return p.Sync(client, ds, cs, csSettings, dsocialUserId, true, false, false)
+func (p *Pipeline) InitialSync(client oauth2_client.OAuth2Client, ds DataStoreService, cs ContactsService, csSettings ContactsServiceSettings, dsocialUserId, meContactId string) os.Error {
+    return p.Sync(client, ds, cs, csSettings, dsocialUserId, meContactId, true, false, false)
 }
 
-func (p *Pipeline) IncrementalSync(client oauth2_client.OAuth2Client, ds DataStoreService, cs ContactsService, csSettings ContactsServiceSettings, dsocialUserId string) os.Error {
-    return p.Sync(client, ds, cs, csSettings, dsocialUserId, true, true, true)
+func (p *Pipeline) IncrementalSync(client oauth2_client.OAuth2Client, ds DataStoreService, cs ContactsService, csSettings ContactsServiceSettings, dsocialUserId, meContactId string) os.Error {
+    return p.Sync(client, ds, cs, csSettings, dsocialUserId, meContactId, true, true, true)
 }
 
 func (p *Pipeline) removeUnacceptedChanges(l *list.List, allowAdd, allowDelete, allowUpdate bool) (*list.List) {
@@ -478,7 +478,16 @@ func (p *Pipeline) addContactToGroupMappings(m map[string]*list.List, contact *d
     }
 }
 
-func (p *Pipeline) Sync(client oauth2_client.OAuth2Client, ds DataStoreService, cs ContactsService, csSettings ContactsServiceSettings, dsocialUserId string, allowAdd, allowDelete, allowUpdate bool) (err os.Error) {
+func (p *Pipeline) Sync(client oauth2_client.OAuth2Client, ds DataStoreService, cs ContactsService, csSettings ContactsServiceSettings, dsocialUserId, meContactId string, allowAdd, allowDelete, allowUpdate bool) (err os.Error) {
+    err = p.Import(client, ds, cs, csSettings, dsocialUserId, meContactId, allowAdd, allowDelete, allowUpdate)
+    if err != nil {
+        return err
+    }
+    err = p.Export(client, ds, cs, csSettings, dsocialUserId, meContactId, allowAdd, allowDelete, allowUpdate)
+    return
+}
+
+func (p *Pipeline) Import(client oauth2_client.OAuth2Client, ds DataStoreService, cs ContactsService, csSettings ContactsServiceSettings, dsocialUserId, meContactId string, allowAdd, allowDelete, allowUpdate bool) (err os.Error) {
     groupMappings := make(map[string]*list.List)
     checkGroupsInContacts := cs.ContactInfoIncludesGroups()
     contactChangesetIds := make(vector.StringVector, 0)
@@ -587,6 +596,123 @@ func (p *Pipeline) Sync(client oauth2_client.OAuth2Client, ds DataStoreService, 
                         err = err2
                     }
                     break
+                }
+            }
+        }
+    }
+    return
+}
+
+func (p *Pipeline) Export(client oauth2_client.OAuth2Client, ds DataStoreService, cs ContactsService, csSettings ContactsServiceSettings, dsocialUserId, meContactId string, allowAdd, allowDelete, allowUpdate bool) (err os.Error) {
+    if !cs.CanCreateContact(false) && !cs.CanCreateContact(true) && !cs.CanUpdateContact(false) && !cs.CanUpdateContact(true) && !cs.CanDeleteContact(false) && !cs.CanDeleteContact(true) &&
+            !cs.CanCreateGroup(false) && !cs.CanCreateGroup(true) && !cs.CanUpdateGroup(false) && !cs.CanUpdateGroup(true) && !cs.CanDeleteGroup(false) && !cs.CanDeleteGroup(true) {
+        return
+    }
+    if err != nil {
+        return
+    }
+    applyable, changesets, err := ds.RetrieveContactChangeSetsToApply(dsocialUserId, csSettings.Id(), csSettings.ContactsServiceId())
+    if err != nil {
+        return
+    }
+    changesetIdsNotApplyable := make(vector.StringVector, 0)
+    externalServiceId := csSettings.ContactsServiceId()
+    externalUserId := csSettings.ExternalUserId()
+    for _, toApply := range applyable {
+        for _, changesetId := range toApply.ChangeSetIds {
+            changeset, _ := changesets[changesetId]
+            if changeset != nil {
+                isMe := changeset.RecordId == meContactId
+                canCreate, canUpdate, canDelete := cs.CanCreateContact(isMe), cs.CanUpdateContact(isMe), cs.CanDeleteContact(isMe)
+                if !canCreate && !canUpdate && !canDelete {
+                    changesetIdsNotApplyable.Push(changeset.Id)
+                    continue
+                }
+                isCreate, isUpdate, isDelete := false, false, false
+                if len(changeset.Changes) > 1 {
+                    isUpdate = true
+                } else if len(changeset.Changes) == 1 {
+                    switch changeset.Changes[0].ChangeType {
+                        case dm.CHANGE_TYPE_CREATE, dm.CHANGE_TYPE_ADD:
+                            isCreate = true
+                        case dm.CHANGE_TYPE_UPDATE:
+                            isUpdate = true
+                        case dm.CHANGE_TYPE_DELETE:
+                            isDelete = true
+                    }
+                }
+                if !(isCreate && canCreate) && !(isUpdate && canUpdate) && !(isDelete && canDelete) {
+                    changesetIdsNotApplyable.Push(changeset.Id)
+                    continue
+                }
+                dsocialContactId := changeset.RecordId
+                if isDelete {
+                    externalContactId, err := ds.ExternalContactIdForDsocialId(csSettings.ContactsServiceId(), csSettings.ExternalUserId(), dsocialUserId, dsocialContactId)
+                    if err != nil {
+                        break
+                    }
+                    if externalContactId == "" {
+                        // nothing to delete
+                        continue
+                    }
+                    _, err = DeleteContactOnExternalService(client, cs, ds, dsocialUserId, dsocialContactId)
+                    if err != nil {
+                        break
+                    }
+                    continue
+                } else if isCreate {
+                    // don't have it locally
+                    dsocContact, _, err := ds.RetrieveDsocialContact(dsocialUserId, dsocialContactId)
+                    if err != nil {
+                        break
+                    }
+                    if dsocContact == nil {
+                        // can't create what doesn't exist anymore...ignore
+                        continue
+                    }
+                    _, err = CreateContactOnExternalService(client, cs, ds, dsocialUserId, dsocContact)
+                    if err != nil {
+                        break
+                    }
+                } else {
+                    // must be update
+                    externalContactId, err := ds.ExternalContactIdForDsocialId(externalServiceId, externalUserId, dsocialUserId, dsocialContactId)
+                    if err != nil {
+                        break
+                    }
+                    if externalContactId != "" {
+                        dsocExternalContact, _, err := ds.RetrieveDsocialContactForExternalContact(externalServiceId, externalUserId, externalContactId, dsocialUserId)
+                        if err != nil {
+                            break
+                        }
+                        if dsocExternalContact != nil {
+                            for _, change := range changeset.Changes {
+                                dm.ApplyChange(dsocExternalContact, change)
+                            }
+                        }
+                        origDsocExternalContact, _, err := ds.RetrieveDsocialContactForExternalContact(externalServiceId, externalUserId, externalContactId, dsocialUserId)
+                        if err != nil {
+                            break
+                        }
+                        _, err = UpdateContactOnExternalService(client, cs, ds, dsocialUserId, origDsocExternalContact, dsocExternalContact)
+                        if err != nil {
+                            break
+                        }
+                    } else {
+                        // don't have it locally
+                        dsocContact, _, err := ds.RetrieveDsocialContact(dsocialUserId, dsocialContactId)
+                        if err != nil {
+                            break
+                        }
+                        if dsocContact == nil {
+                            // can't create what doesn't exist anymore...ignore
+                            continue
+                        }
+                        _, err = CreateContactOnExternalService(client, cs, ds, dsocialUserId, dsocContact)
+                        if err != nil {
+                            break
+                        }
+                    }
                 }
             }
         }
