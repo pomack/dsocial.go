@@ -464,54 +464,6 @@ func (p *GoogleContactService) CreateContactOnExternalService(client oauth2_clie
     return resp.Entry, resp.Entry.ContactId(), err
 }
 
-
-func (p *GoogleContactService) CreateContact(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId string, contact *dm.Contact) (*Contact, os.Error) {
-    if contact == nil {
-        return nil, nil
-    }
-    userInfo, err := client.RetrieveUserInfo()
-    if err != nil {
-        return nil, err
-    }
-    externalServiceId := p.ServiceId()
-    externalUserId := userInfo.Guid()
-    gContactId, err := ds.ExternalContactIdForDsocialId(externalServiceId, externalUserId, dsocialUserId, contact.Id)
-    if err != nil {
-        return nil, err
-    }
-    if gContactId != "" {
-        originalContact, _, err := ds.RetrieveDsocialContact(dsocialUserId, contact.Id)
-        if err != nil {
-            return nil, err
-        }
-        return p.UpdateContact(client, ds, dsocialUserId, originalContact, contact)
-    }
-    gContact := dm.DsocialContactToGoogle(contact, nil)
-    resp, err := google.CreateContact(client, "", "", gContact)
-    if resp == nil || resp.Entry == nil || err != nil {
-        return nil, err
-    }
-    externalContactId, err := ds.StoreExternalContact(externalServiceId, externalUserId, dsocialUserId, resp.Entry.ContactId(), resp.Entry)
-    if err != nil {
-        return nil, err
-    }
-    dsocialContact := dm.GoogleContactToDsocial(resp.Entry, contact, dsocialUserId)
-    dsocialContact, err = ds.StoreDsocialContactForExternalContact(externalServiceId, externalUserId, externalContactId, dsocialUserId, dsocialContact)
-    if err != nil {
-        return nil, err
-    }
-    _, _, err = ds.StoreDsocialExternalContactMapping(externalServiceId, externalUserId, externalContactId, dsocialUserId, dsocialContact.Id)
-    outContact := &Contact{
-        ExternalServiceId: externalServiceId,
-        ExternalUserId: externalUserId,
-        ExternalContactId: externalContactId,
-        DsocialUserId: dsocialUserId,
-        DsocialContactId: dsocialContact.Id,
-        Value: dsocialContact,
-    }
-    return outContact, err
-}
-
 func (p *GoogleContactService) CreateGroupOnExternalService(client oauth2_client.OAuth2Client, externalGroup interface{}) (externalGroupResult interface{}, externalGroupId string, err os.Error) {
     if externalGroup == nil {
         return nil, "", nil
@@ -522,45 +474,6 @@ func (p *GoogleContactService) CreateGroupOnExternalService(client oauth2_client
         return nil, "", err
     }
     return resp.Entry, resp.Entry.GroupId(), err
-}
-
-func (p *GoogleContactService) CreateGroup(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId string, group *dm.Group) (*Group, os.Error) {
-    if group == nil {
-        return nil, nil
-    }
-    userInfo, err := client.RetrieveUserInfo()
-    if err != nil {
-        return nil, err
-    }
-    gGroupId, err := ds.ExternalContactIdForDsocialId(p.ServiceId(), userInfo.Guid(), dsocialUserId, group.Id)
-    if err != nil {
-        return nil, err
-    }
-    if gGroupId != "" {
-        originalGroup, _, err := ds.RetrieveDsocialGroup(dsocialUserId, group.Id)
-        if err != nil {
-            return nil, err
-        }
-        return p.UpdateGroup(client, ds, dsocialUserId, originalGroup, group)
-    }
-    var gGroup *google.ContactGroup = dm.DsocialGroupToGoogle(group, nil)
-    resp, err := google.CreateGroup(client, "", "", gGroup)
-    if resp == nil || resp.Entry == nil || err != nil {
-        return nil, err
-    }
-    var dsocialGroup *dm.Group = dm.GoogleGroupToDsocial(resp.Entry, group, dsocialUserId)
-    if group.Id != "" {
-        _, _, err = ds.StoreDsocialExternalContactMapping(p.ServiceId(), userInfo.Guid(), resp.Entry.GroupId(), dsocialUserId, group.Id)
-    }
-    outGroup := &Group{
-        ExternalServiceId: p.ServiceId(),
-        ExternalUserId: resp.Entry.GroupUserId(),
-        ExternalGroupId: resp.Entry.GroupId(),
-        DsocialUserId: dsocialUserId,
-        DsocialGroupId: dsocialGroup.Id,
-        Value: dsocialGroup,
-    }
-    return outGroup, err
 }
 
 func (p *GoogleContactService) UpdateContactOnExternalService(client oauth2_client.OAuth2Client, originalContact, latestContact interface{}) (externalContactResult interface{}, externalContactId string, err os.Error) {
@@ -577,44 +490,6 @@ func (p *GoogleContactService) UpdateContactOnExternalService(client oauth2_clie
     return resp.Entry, resp.Entry.ContactId(), err
 }
 
-func (p *GoogleContactService) UpdateContact(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId string, originalContact, contact *dm.Contact) (*Contact, os.Error) {
-    if contact == nil || originalContact == nil {
-        return nil, nil
-    }
-    userInfo, err := client.RetrieveUserInfo()
-    if err != nil {
-        return nil, err
-    }
-    gContactId, err := ds.ExternalContactIdForDsocialId(p.ServiceId(), userInfo.Guid(), dsocialUserId, originalContact.Id)
-    if err != nil {
-        return nil, err
-    }
-    if gContactId == "" {
-        return p.CreateContact(client, ds, dsocialUserId, contact)
-    }
-    originalGContact, _, err := ds.RetrieveExternalContact(p.ServiceId(), userInfo.Guid(), dsocialUserId, gContactId)
-    if err != nil {
-        return nil, err
-    }
-    gContact := dm.DsocialContactToGoogle(contact, nil)
-    gContact.SetContactId(gContactId)
-    resp, err := google.UpdateContact(client, "", "", originalGContact.(*google.Contact), gContact)
-    if resp == nil || resp.Entry == nil || err != nil {
-        return nil, err
-    }
-    dsocialContact := dm.GoogleContactToDsocial(resp.Entry, contact, dsocialUserId)
-    dsocialContact.Id = originalContact.Id
-    outContact := &Contact{
-        ExternalServiceId: p.ServiceId(),
-        ExternalUserId: resp.Entry.ContactUserId(),
-        ExternalContactId: resp.Entry.ContactId(),
-        DsocialUserId: dsocialUserId,
-        DsocialContactId: dsocialContact.Id,
-        Value: dsocialContact,
-    }
-    return outContact, err
-}
-
 func (p *GoogleContactService) UpdateGroupOnExternalService(client oauth2_client.OAuth2Client, originalGroup, latestGroup interface{}) (externalGroupResult interface{}, externalGroupId string, err os.Error) {
     if originalGroup == nil || latestGroup == nil {
         return nil, "", nil
@@ -629,43 +504,6 @@ func (p *GoogleContactService) UpdateGroupOnExternalService(client oauth2_client
     return resp.Entry, resp.Entry.GroupId(), err
 }
 
-func (p *GoogleContactService) UpdateGroup(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId string, originalGroup, group *dm.Group) (*Group, os.Error) {
-    if group == nil {
-        return nil, nil
-    }
-    userInfo, err := client.RetrieveUserInfo()
-    if err != nil {
-        return nil, err
-    }
-    gGroupId, err := ds.ExternalContactIdForDsocialId(p.ServiceId(), userInfo.Guid(), dsocialUserId, originalGroup.Id)
-    if err != nil {
-        return nil, err
-    }
-    if gGroupId == "" {
-        return p.CreateGroup(client, ds, dsocialUserId, group)
-    }
-    originalGGroup, _, err := ds.RetrieveExternalGroup(p.ServiceId(), userInfo.Guid(), dsocialUserId, gGroupId)
-    if err != nil {
-        return nil, err
-    }
-    var gGroup *google.ContactGroup = dm.DsocialGroupToGoogle(group, nil)
-    gGroup.SetGroupId(gGroupId)
-    resp, err := google.UpdateGroup(client, "", "", originalGGroup.(*google.ContactGroup), gGroup)
-    if resp == nil || resp.Entry == nil || err != nil {
-        return nil, err
-    }
-    dsocialGroup := dm.GoogleGroupToDsocial(resp.Entry, group, dsocialUserId)
-    outGroup := &Group{
-        ExternalServiceId: p.ServiceId(),
-        ExternalUserId: resp.Entry.GroupUserId(),
-        ExternalGroupId: resp.Entry.GroupId(),
-        DsocialUserId: dsocialUserId,
-        DsocialGroupId: dsocialGroup.Id,
-        Value: dsocialGroup,
-    }
-    return outGroup, err
-}
-
 func (p *GoogleContactService) DeleteContactOnExternalService(client oauth2_client.OAuth2Client, originalContact interface{}) (bool, os.Error) {
     if originalContact == nil {
         return false, nil
@@ -675,52 +513,12 @@ func (p *GoogleContactService) DeleteContactOnExternalService(client oauth2_clie
     return true, err
 }
 
-func (p *GoogleContactService) DeleteContact(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId, dsocialContactId string) (bool, os.Error) {
-    if dsocialContactId == "" || dsocialUserId == "" {
-        return false, nil
-    }
-    userInfo, err := client.RetrieveUserInfo()
-    if err != nil {
-        return true, err
-    }
-    gContactId, err := ds.ExternalContactIdForDsocialId(p.ServiceId(), userInfo.Guid(), dsocialUserId, dsocialContactId)
-    if gContactId == "" || err != nil {
-        return false, err
-    }
-    original, _, err := ds.RetrieveExternalContact(p.ServiceId(), userInfo.Guid(), dsocialUserId, gContactId)
-    if err != nil {
-        return true, err
-    }
-    err = google.DeleteContact(client, "", "", original.(*google.Contact))
-    return true, err
-}
-
 func (p *GoogleContactService) DeleteGroupOnExternalService(client oauth2_client.OAuth2Client, originalGroup interface{}) (bool, os.Error) {
     if originalGroup == nil {
         return false, nil
     }
     originalGGroup := originalGroup.(*google.ContactGroup)
     err := google.DeleteGroup(client, "", "", originalGGroup)
-    return true, err
-}
-
-func (p *GoogleContactService) DeleteGroup(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId, dsocialGroupId string) (bool, os.Error) {
-    if dsocialGroupId == "" || dsocialUserId == "" {
-        return false, nil
-    }
-    userInfo, err := client.RetrieveUserInfo()
-    if err != nil {
-        return true, err
-    }
-    gGroupId, err := ds.ExternalContactIdForDsocialId(p.ServiceId(), userInfo.Guid(), dsocialUserId, dsocialGroupId)
-    if gGroupId == "" || err != nil {
-        return false, err
-    }
-    original, _, err := ds.RetrieveExternalGroup(p.ServiceId(), userInfo.Guid(), dsocialUserId, gGroupId)
-    if err != nil {
-        return true, err
-    }
-    err = google.DeleteGroup(client, "", "", original.(*google.ContactGroup))
     return true, err
 }
 
