@@ -1,7 +1,7 @@
 package contacts_test
 
 import (
-    //"github.com/pomack/jsonhelper.go/jsonhelper"
+    "github.com/pomack/jsonhelper.go/jsonhelper"
     "github.com/pomack/oauth2_client.go/oauth2_client"
     "github.com/pomack/contacts.go/google"
     "github.com/pomack/dsocial.go/backend/contacts"
@@ -2216,7 +2216,12 @@ func TestInitialSyncWithEmptyDataStoreWithGoogleContacts(t *testing.T) {
     ds := datastore.NewInMemoryDataStore()
     cs := contacts.NewGoogleContactService()
     dsocialUserId := "testname"
-    pipeline.InitialSync(mockClient, ds, cs, dsocialUserId)
+    csSettings := contacts.NewGoogleContactServiceSettings()
+    csSettings.SetId("ABC-123")
+    csSettings.SetDsocialUserId(dsocialUserId)
+    csSettings.SetClientProperties(make(jsonhelper.JSONObject))
+    csSettings.SetExternalUserId("test@example.com")
+    pipeline.InitialSync(mockClient, ds, cs, csSettings, dsocialUserId, "me-contact-id")
     buf := bytes.NewBuffer(make([]byte, 0))
     ds.Encode(buf)
     t.Fatalf("Final data store is:\n%s\n\n", buf.String())
@@ -2234,6 +2239,11 @@ func TestInitialSyncWithPartialDataStoreWithGoogleContacts(t *testing.T) {
     ds := datastore.NewInMemoryDataStore()
     cs := contacts.NewGoogleContactService()
     dsocialUserId := "testname"
+    csSettings := contacts.NewGoogleContactServiceSettings()
+    csSettings.SetId("ABC-123")
+    csSettings.SetDsocialUserId(dsocialUserId)
+    csSettings.SetClientProperties(make(jsonhelper.JSONObject))
+    csSettings.SetExternalUserId("test@example.com")
     existingGroups := make([]*dm.Group, 0)
     if err := json.Unmarshal([]byte(EXISTING_GROUPS), &existingGroups); err != nil {
         t.Fatalf("Unable to parse EXISTING_GROUPS: %s\n\n", err.String())
@@ -2249,7 +2259,7 @@ func TestInitialSyncWithPartialDataStoreWithGoogleContacts(t *testing.T) {
         t.Logf("%s => %#v", contact.DisplayName, contact)
         ds.StoreDsocialContact(dsocialUserId, "", contact)
     }
-    pipeline.InitialSync(mockClient, ds, cs, dsocialUserId)
+    pipeline.InitialSync(mockClient, ds, cs, csSettings, dsocialUserId, "me-contact-id")
     buf := bytes.NewBuffer(make([]byte, 0))
     ds.Encode(buf)
     t.Fatalf("Final data store is:\n%s\n\n", buf.String())
