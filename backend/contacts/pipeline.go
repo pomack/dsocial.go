@@ -487,120 +487,152 @@ func (p *Pipeline) Sync(client oauth2_client.OAuth2Client, ds DataStoreService, 
     return
 }
 
+func (p *Pipeline) importContacts(client oauth2_client.OAuth2Client, ds DataStoreService, cs ContactsService, dsocialUserId string, allowAdd, allowDelete, allowUpdate bool, groupMappings map[string]*list.List, contactChangesetIds *vector.StringVector) (err os.Error) {
+    checkGroupsInContacts := cs.ContactInfoIncludesGroups()
+    var nextToken NextToken = "blah"
+    for contacts, useNextToken, err := cs.RetrieveContacts(client, ds, dsocialUserId, nil); (len(contacts) > 0 && nextToken != nil) || err != nil; contacts, useNextToken, err = cs.RetrieveContacts(client, ds, dsocialUserId, nextToken) {
+        if err != nil {
+            break
+        }
+        for _, contact := range contacts {
+            finalContact, changesetId, err := p.contactImport(cs, ds, dsocialUserId, contact, allowAdd, allowDelete, allowUpdate)
+            if changesetId != "" {
+                contactChangesetIds.Push(changesetId)
+            }
+            if checkGroupsInContacts && finalContact != nil && finalContact.GroupReferences != nil && len(finalContact.GroupReferences) > 0 {
+                p.addContactToGroupMappings(groupMappings, finalContact)
+            }
+            if err != nil {
+                break
+            }
+        }
+        nextToken = useNextToken
+        if err != nil {
+            break
+        }
+    }
+    return
+}
+
+func (p *Pipeline) importConnections(client oauth2_client.OAuth2Client, ds DataStoreService, cs ContactsService, dsocialUserId string, allowAdd, allowDelete, allowUpdate bool, groupMappings map[string]*list.List, contactChangesetIds *vector.StringVector) (err os.Error) {
+    checkGroupsInContacts := cs.ContactInfoIncludesGroups()
+    var nextToken NextToken = "blah"
+    for connections, useNextToken, err := cs.RetrieveConnections(client, ds, dsocialUserId, nil); (len(connections) > 0 && nextToken != nil) || err != nil; connections, useNextToken, err = cs.RetrieveConnections(client, ds, dsocialUserId, nextToken) {
+        if err != nil {
+            break
+        }
+        for _, connection := range connections {
+            contact, err := cs.RetrieveContact(client, ds, dsocialUserId, connection.ExternalContactId)
+            if err != nil {
+                break
+            }
+            finalContact, changesetId, err := p.contactImport(cs, ds, dsocialUserId, contact, allowAdd, allowDelete, allowUpdate)
+            if changesetId != "" {
+                contactChangesetIds.Push(changesetId)
+            }
+            if checkGroupsInContacts && finalContact != nil && finalContact != nil && finalContact.GroupReferences != nil && len(finalContact.GroupReferences) > 0 {
+                p.addContactToGroupMappings(groupMappings, finalContact)
+            } 
+            if err != nil {
+                break
+            }
+        }
+        nextToken = useNextToken
+        if err != nil {
+            break
+        }
+    }
+    return
+}
+
+func (p *Pipeline) importGroups(client oauth2_client.OAuth2Client, ds DataStoreService, cs ContactsService, dsocialUserId string, allowAdd, allowDelete, allowUpdate bool, groupMappings map[string]*list.List, groupChangesetIds *vector.StringVector) (err os.Error) {
+    var nextToken NextToken = "blah"
+    for groups, useNextToken, err := cs.RetrieveGroups(client, ds, dsocialUserId, nil); (len(groups) > 0 && nextToken != nil) || err != nil; groups, useNextToken, err = cs.RetrieveGroups(client, ds, dsocialUserId, nextToken) {
+        if err != nil {
+            break
+        }
+        for _, group := range groups {
+            var changesetId string
+            _, changesetId, err = p.groupImport(cs, ds, dsocialUserId, group, groupMappings[group.Value.Name], allowAdd, allowDelete, allowUpdate)
+            if changesetId != "" {
+                groupChangesetIds.Push(changesetId)
+            }
+            if err != nil {
+                break
+            }
+        }
+        nextToken = useNextToken
+        if err != nil {
+            break
+        }
+    }
+    return
+}
+
+func (p *Pipeline) queueContactChangeSetsToApply(ds DataStoreService, cs ContactsService, csSettings ContactsServiceSettings, settings []ContactsServiceSettings, dsocialUserId string, changesetIds *vector.StringVector) (err os.Error) {
+    if changesetIds == nil || changesetIds.Len() == 0 || settings == nil || len(settings) == 0 {
+        return
+    }
+    thisServiceName := cs.ServiceId()
+    thisServiceId := csSettings.Id()
+    ids := []string(*changesetIds)
+    for _, setting := range settings {
+        if setting.Id() == thisServiceId && thisServiceName == setting.ContactsServiceId() {
+            // if we import from this service, don't export to it
+            continue
+        }
+        if _, err2 := ds.AddContactChangeSetsToApply(dsocialUserId, setting.Id(), setting.ContactsServiceId(), ids); err2 != nil {
+            if err == nil {
+                err = err2
+            }
+            break
+        }
+    }
+    return
+}
+
+func (p *Pipeline) queueGroupChangeSetsToApply(ds DataStoreService, cs ContactsService, csSettings ContactsServiceSettings, settings []ContactsServiceSettings, dsocialUserId string, changesetIds *vector.StringVector) (err os.Error) {
+    if changesetIds == nil || changesetIds.Len() == 0 || settings == nil || len(settings) == 0 {
+        return
+    }
+    thisServiceName := cs.ServiceId()
+    thisServiceId := csSettings.Id()
+    ids := []string(*changesetIds)
+    for _, setting := range settings {
+        if setting.Id() == thisServiceId && thisServiceName == setting.ContactsServiceId() {
+            // if we import from this service, don't export to it
+            continue
+        }
+        if _, err2 := ds.AddGroupChangeSetsToApply(dsocialUserId, setting.Id(), setting.ContactsServiceId(), ids); err2 != nil {
+            if err == nil {
+                err = err2
+            }
+            break
+        }
+    }
+    return
+}
+
 func (p *Pipeline) Import(client oauth2_client.OAuth2Client, ds DataStoreService, cs ContactsService, csSettings ContactsServiceSettings, dsocialUserId, meContactId string, allowAdd, allowDelete, allowUpdate bool) (err os.Error) {
     if !cs.CanImportContactsOrGroups() {
         return nil
     }
     groupMappings := make(map[string]*list.List)
-    checkGroupsInContacts := cs.ContactInfoIncludesGroups()
-    contactChangesetIds := make(vector.StringVector, 0)
-    groupChangesetIds := make(vector.StringVector, 0)
+    contactChangesetIds := new(vector.StringVector)
+    groupChangesetIds := new(vector.StringVector)
     if cs.CanRetrieveContacts() {
-        var nextToken NextToken = "blah"
-        for contacts, useNextToken, err := cs.RetrieveContacts(client, ds, dsocialUserId, nil); (len(contacts) > 0 && nextToken != nil) || err != nil; contacts, useNextToken, err = cs.RetrieveContacts(client, ds, dsocialUserId, nextToken) {
-            if err != nil {
-                break
-            }
-            for _, contact := range contacts {
-                finalContact, changesetId, err := p.contactImport(cs, ds, dsocialUserId, contact, allowAdd, allowDelete, allowUpdate)
-                if changesetId != "" {
-                    contactChangesetIds.Push(changesetId)
-                }
-                if checkGroupsInContacts && finalContact != nil && finalContact.GroupReferences != nil && len(finalContact.GroupReferences) > 0 {
-                    p.addContactToGroupMappings(groupMappings, finalContact)
-                }
-                if err != nil {
-                    break
-                }
-            }
-            nextToken = useNextToken
-            if err != nil {
-                break
-            }
-        }
+        err = p.importContacts(client, ds, cs, dsocialUserId, allowAdd, allowDelete, allowUpdate, groupMappings, contactChangesetIds)
     } else if cs.CanRetrieveConnections() {
-        var nextToken NextToken = "blah"
-        for connections, useNextToken, err := cs.RetrieveConnections(client, ds, dsocialUserId, nil); (len(connections) > 0 && nextToken != nil) || err != nil; connections, useNextToken, err = cs.RetrieveConnections(client, ds, dsocialUserId, nextToken) {
-            if err != nil {
-                break
-            }
-            for _, connection := range connections {
-                contact, err := cs.RetrieveContact(client, ds, dsocialUserId, connection.ExternalContactId)
-                if err != nil {
-                    break
-                }
-                finalContact, changesetId, err := p.contactImport(cs, ds, dsocialUserId, contact, allowAdd, allowDelete, allowUpdate)
-                if changesetId != "" {
-                    contactChangesetIds.Push(changesetId)
-                }
-                if checkGroupsInContacts && finalContact != nil && finalContact != nil && finalContact.GroupReferences != nil && len(finalContact.GroupReferences) > 0 {
-                    p.addContactToGroupMappings(groupMappings, finalContact)
-                } 
-                if err != nil {
-                    break
-                }
-            }
-            nextToken = useNextToken
-            if err != nil {
-                break
-            }
-        }
+        err = p.importConnections(client, ds, cs, dsocialUserId, allowAdd, allowDelete, allowUpdate, groupMappings, contactChangesetIds)
     }
     if err == nil && cs.CanRetrieveGroups() {
-        var nextToken NextToken = "blah"
-        for groups, useNextToken, err := cs.RetrieveGroups(client, ds, dsocialUserId, nil); (len(groups) > 0 && nextToken != nil) || err != nil; groups, useNextToken, err = cs.RetrieveGroups(client, ds, dsocialUserId, nextToken) {
-            if err != nil {
-                break
-            }
-            for _, group := range groups {
-                var changesetId string
-                _, changesetId, err = p.groupImport(cs, ds, dsocialUserId, group, groupMappings[group.Value.Name], allowAdd, allowDelete, allowUpdate)
-                if changesetId != "" {
-                    groupChangesetIds.Push(changesetId)
-                }
-                if err != nil {
-                    break
-                }
-            }
-            nextToken = useNextToken
-            if err != nil {
-                break
-            }
-        }
+        err = p.importGroups(client, ds, cs, dsocialUserId, allowAdd, allowDelete, allowUpdate, groupMappings, groupChangesetIds)
     }
     if contactChangesetIds.Len() > 0 || groupChangesetIds.Len() > 0 {
-        thisServiceName := cs.ServiceId()
-        thisServiceId := csSettings.Id()
         settings, _ := ds.RetrieveAllContactsServiceSettingsForUser(dsocialUserId)
-        if contactChangesetIds.Len() > 0 {
-            ids := []string(contactChangesetIds)
-            for _, setting := range settings {
-                if setting.Id() == thisServiceId && thisServiceName == setting.ContactsServiceId() {
-                    // if we import from this service, don't export to it
-                    continue
-                }
-                if _, err2 := ds.AddContactChangeSetsToApply(dsocialUserId, setting.Id(), setting.ContactsServiceId(), ids); err2 != nil {
-                    if err == nil {
-                        err = err2
-                    }
-                    break
-                }
-            }
-        }
-        if groupChangesetIds.Len() > 0 {
-            ids := []string(groupChangesetIds)
-            for _, setting := range settings {
-                if setting.Id() == thisServiceId && thisServiceName == setting.ContactsServiceId() {
-                    // if we import from this service, don't export to it
-                    continue
-                }
-                if _, err2 := ds.AddGroupChangeSetsToApply(dsocialUserId, setting.Id(), setting.ContactsServiceId(), ids); err2 != nil {
-                    if err == nil {
-                        err = err2
-                    }
-                    break
-                }
-            }
+        err = p.queueContactChangeSetsToApply(ds, cs, csSettings, settings, dsocialUserId, contactChangesetIds)
+        if err == nil {
+            err = p.queueGroupChangeSetsToApply(ds, cs, csSettings, settings, dsocialUserId, contactChangesetIds)
         }
     }
     return
