@@ -90,6 +90,14 @@ func (p *LinkedInContactService) CanRetrieveContact(selfContact bool) bool {
     return true
 }
 
+func (p *LinkedInContactService) CanImportContactsOrGroups() bool {
+    return true
+}
+
+func (p *LinkedInContactService) CanExportContactsOrGroups() bool {
+    return false
+}
+
 func (p *LinkedInContactService) CanCreateContact(selfContact bool) bool {
     return false
 }

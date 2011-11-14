@@ -67,10 +67,10 @@ type DataStoreService interface {
     RetrieveContactChangeSetsNotCurrentlyApplyable(dsocialUserId, serviceId, serviceName string) ([]*dm.ChangeSetsToApply, map[string]*dm.ChangeSet, os.Error)
     RetrieveGroupChangeSetsNotCurrentlyApplyable(dsocialUserId, serviceId, serviceName string) ([]*dm.ChangeSetsToApply, map[string]*dm.ChangeSet, os.Error)
     
-    RemoveContactChangeSetsToApply(dsocialUserId string, changeSetIdsToApply []string) (os.Error)
-    RemoveGroupChangeSetsToApply(dsocialUserId string, changeSetIdsToApply []string) (err os.Error)
-    RemoveContactChangeSetsNotCurrentlyApplyable(dsocialUserId string, changeSetIdsToApply []string) (err os.Error)
-    RemoveGroupChangeSetsNotCurrentlyApplyable(dsocialUserId string, changeSetIdsToApply []string) (err os.Error)
+    RemoveContactChangeSetsToApply(dsocialUserId, serviceId, serviceName string, changeSetIdsToApply []string) (os.Error)
+    RemoveGroupChangeSetsToApply(dsocialUserId, serviceId, serviceName string, changeSetIdsToApply []string) (err os.Error)
+    RemoveContactChangeSetsNotCurrentlyApplyable(dsocialUserId, serviceId, serviceName string, changeSetIdsToApply []string) (err os.Error)
+    RemoveGroupChangeSetsNotCurrentlyApplyable(dsocialUserId, serviceId, serviceName string, changeSetIdsToApply []string) (err os.Error)
     
     // Generates a new unique id for the specified collection name
     GenerateId(dsocialUserId, collectionName string) string
@@ -235,6 +235,10 @@ type ContactsService interface {
     CanRetrieveConnections() bool
     // Whether this service can retrieve all groups using paging
     CanRetrieveGroups() bool
+    // Whether this service supports retrieve contact or group information from the service
+    CanImportContactsOrGroups() bool
+    // Whether this service supports modifications to contact or group information to the service
+    CanExportContactsOrGroups() bool
     // Whether this service can retrieve contact information, either for self or for others
     CanRetrieveContact(selfContact bool) bool
     // Whether this service can create contact information, either for self or for others

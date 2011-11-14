@@ -290,15 +290,17 @@ func (p *InMemoryDataStore) retrieveChangeSetsById(ids []string, m map[string]*d
     if m == nil {
         m = make(map[string]*dm.ChangeSet)
     }
+    // make a set from ids to make it faster to query
+    idmap := make(map[string]bool, len(ids))
+    for _, id := range ids {
+        idmap[id] = true
+    }
     for _, v := range p.retrieveChangesetCollection().Data {
         if cs, ok := v.(*dm.ChangeSet); ok {
-            for _, id := range ids {
-                if id == cs.Id {
-                    cs2 := new(dm.ChangeSet)
-                    *cs2 = *cs
-                    m[id] = cs2
-                    break
-                }
+            if _, ok := idmap[cs.Id]; ok {
+                cs2 := new(dm.ChangeSet)
+                *cs2 = *cs
+                m[cs.Id] = cs2
             }
         }
     }
@@ -370,20 +372,22 @@ func (p *InMemoryDataStore) retrieveChangeSetsToApply(dsocialUserId, collectionN
     return
 }
 
-func (p *InMemoryDataStore) removeChangeSetsToApply(dsocialUserId, collectionName, recordType string, ids []string) (err os.Error) {
+func (p *InMemoryDataStore) removeChangeSetsToApply(dsocialUserId, collectionName, recordType string, serviceId, serviceName string, ids []string) (err os.Error) {
     if dsocialUserId == "" || collectionName == "" || recordType == "" || ids == nil || len(ids) == 0 {
         return
+    }
+    // make a set from ids to make it faster to query
+    idmap := make(map[string]bool, len(ids))
+    for _, id := range ids {
+        idmap[id] = true
     }
     v, ok := p.retrieve(collectionName, dsocialUserId)
     if ok && v != nil {
         l := v.(*list.List)
         for e := l.Front(); e != nil; e = e.Next() {
             ch := e.Value.(*dm.ChangeSetsToApply)
-            if ch.RecordType != recordType {
-                continue
-            }
-            for _, id := range ids {
-                if ch.Id == id {
+            if ch.RecordType == recordType && ch.ServiceName == serviceName && ch.ServiceId == serviceId {
+                if _, ok := idmap[ch.Id]; ok {
                     l.Remove(e)
                     break
                 }
@@ -425,20 +429,20 @@ func (p *InMemoryDataStore) RetrieveGroupChangeSetsNotCurrentlyApplyable(dsocial
     return p.retrieveChangeSetsToApply(dsocialUserId, _INMEMORY_CHANGESETS_NOT_CURRENTLY_APPLYABLE_COLLECTION_NAME, _INMEMORY_GROUP_COLLECTION_NAME, serviceId, serviceName)
 }
 
-func (p *InMemoryDataStore) RemoveContactChangeSetsToApply(dsocialUserId string, changeSetIdsToApply []string) (os.Error) {
-    return p.removeChangeSetsToApply(dsocialUserId, _INMEMORY_CHANGESETS_TO_APPLY_COLLECTION_NAME, _INMEMORY_CONTACT_COLLECTION_NAME, changeSetIdsToApply)
+func (p *InMemoryDataStore) RemoveContactChangeSetsToApply(dsocialUserId, serviceId, serviceName string, changeSetIdsToApply []string) (os.Error) {
+    return p.removeChangeSetsToApply(dsocialUserId, _INMEMORY_CHANGESETS_TO_APPLY_COLLECTION_NAME, _INMEMORY_CONTACT_COLLECTION_NAME, serviceId, serviceName, changeSetIdsToApply)
 }
 
-func (p *InMemoryDataStore) RemoveGroupChangeSetsToApply(dsocialUserId string, changeSetIdsToApply []string) (err os.Error) {
-    return p.removeChangeSetsToApply(dsocialUserId, _INMEMORY_CHANGESETS_TO_APPLY_COLLECTION_NAME, _INMEMORY_GROUP_COLLECTION_NAME, changeSetIdsToApply)
+func (p *InMemoryDataStore) RemoveGroupChangeSetsToApply(dsocialUserId, serviceId, serviceName string, changeSetIdsToApply []string) (err os.Error) {
+    return p.removeChangeSetsToApply(dsocialUserId, _INMEMORY_CHANGESETS_TO_APPLY_COLLECTION_NAME, _INMEMORY_GROUP_COLLECTION_NAME, serviceId, serviceName, changeSetIdsToApply)
 }
 
-func (p *InMemoryDataStore) RemoveContactChangeSetsNotCurrentlyApplyable(dsocialUserId string, changeSetIdsToApply []string) (err os.Error) {
-    return p.removeChangeSetsToApply(dsocialUserId, _INMEMORY_CHANGESETS_NOT_CURRENTLY_APPLYABLE_COLLECTION_NAME, _INMEMORY_CONTACT_COLLECTION_NAME, changeSetIdsToApply)
+func (p *InMemoryDataStore) RemoveContactChangeSetsNotCurrentlyApplyable(dsocialUserId, serviceId, serviceName string, changeSetIdsToApply []string) (err os.Error) {
+    return p.removeChangeSetsToApply(dsocialUserId, _INMEMORY_CHANGESETS_NOT_CURRENTLY_APPLYABLE_COLLECTION_NAME, _INMEMORY_CONTACT_COLLECTION_NAME, serviceId, serviceName, changeSetIdsToApply)
 }
 
-func (p *InMemoryDataStore) RemoveGroupChangeSetsNotCurrentlyApplyable(dsocialUserId string, changeSetIdsToApply []string) (err os.Error) {
-    return p.removeChangeSetsToApply(dsocialUserId, _INMEMORY_CHANGESETS_NOT_CURRENTLY_APPLYABLE_COLLECTION_NAME, _INMEMORY_GROUP_COLLECTION_NAME, changeSetIdsToApply)
+func (p *InMemoryDataStore) RemoveGroupChangeSetsNotCurrentlyApplyable(dsocialUserId, serviceId, serviceName string, changeSetIdsToApply []string) (err os.Error) {
+    return p.removeChangeSetsToApply(dsocialUserId, _INMEMORY_CHANGESETS_NOT_CURRENTLY_APPLYABLE_COLLECTION_NAME, _INMEMORY_GROUP_COLLECTION_NAME, serviceId, serviceName, changeSetIdsToApply)
 }
     
     // Retrieve the dsocial contact id for the specified external service/user id/contact id combo

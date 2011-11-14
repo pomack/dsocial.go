@@ -84,6 +84,14 @@ func (p *SmugMugContactService) CanRetrieveContact(selfContact bool) bool {
     return true
 }
 
+func (p *SmugMugContactService) CanImportContactsOrGroups() bool {
+    return true
+}
+
+func (p *SmugMugContactService) CanExportContactsOrGroups() bool {
+    return false
+}
+
 func (p *SmugMugContactService) CanCreateContact(selfContact bool) bool {
     return false
 }

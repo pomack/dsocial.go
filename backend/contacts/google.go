@@ -93,6 +93,14 @@ func (p *GoogleContactService) CanRetrieveGroups() bool {
     return true
 }
 
+func (p *GoogleContactService) CanImportContactsOrGroups() bool {
+    return true
+}
+
+func (p *GoogleContactService) CanExportContactsOrGroups() bool {
+    return true
+}
+
 func (p *GoogleContactService) CanRetrieveContact(selfContact bool) bool {
     return true
 }

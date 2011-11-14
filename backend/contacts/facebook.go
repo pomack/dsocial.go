@@ -84,6 +84,14 @@ func (p *FacebookContactService) CanRetrieveContact(selfContact bool) bool {
     return true
 }
 
+func (p *FacebookContactService) CanImportContactsOrGroups() bool {
+    return true
+}
+
+func (p *FacebookContactService) CanExportContactsOrGroups() bool {
+    return false
+}
+
 func (p *FacebookContactService) CanCreateContact(selfContact bool) bool {
     return false
 }

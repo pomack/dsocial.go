@@ -96,6 +96,14 @@ func (p *YahooContactService) CanRetrieveContact(selfContact bool) bool {
     return true
 }
 
+func (p *YahooContactService) CanImportContactsOrGroups() bool {
+    return true
+}
+
+func (p *YahooContactService) CanExportContactsOrGroups() bool {
+    return true
+}
+
 func (p *YahooContactService) CanCreateContact(selfContact bool) bool {
     return true
 }

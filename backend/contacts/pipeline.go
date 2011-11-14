@@ -483,11 +483,14 @@ func (p *Pipeline) Sync(client oauth2_client.OAuth2Client, ds DataStoreService, 
     if err != nil {
         return err
     }
-    err = p.Export(client, ds, cs, csSettings, dsocialUserId, meContactId, allowAdd, allowDelete, allowUpdate)
+    err = p.Export(client, ds, cs, csSettings, dsocialUserId, meContactId)
     return
 }
 
 func (p *Pipeline) Import(client oauth2_client.OAuth2Client, ds DataStoreService, cs ContactsService, csSettings ContactsServiceSettings, dsocialUserId, meContactId string, allowAdd, allowDelete, allowUpdate bool) (err os.Error) {
+    if !cs.CanImportContactsOrGroups() {
+        return nil
+    }
     groupMappings := make(map[string]*list.List)
     checkGroupsInContacts := cs.ContactInfoIncludesGroups()
     contactChangesetIds := make(vector.StringVector, 0)
@@ -603,21 +606,179 @@ func (p *Pipeline) Import(client oauth2_client.OAuth2Client, ds DataStoreService
     return
 }
 
-func (p *Pipeline) Export(client oauth2_client.OAuth2Client, ds DataStoreService, cs ContactsService, csSettings ContactsServiceSettings, dsocialUserId, meContactId string, allowAdd, allowDelete, allowUpdate bool) (err os.Error) {
-    if !cs.CanCreateContact(false) && !cs.CanCreateContact(true) && !cs.CanUpdateContact(false) && !cs.CanUpdateContact(true) && !cs.CanDeleteContact(false) && !cs.CanDeleteContact(true) &&
-            !cs.CanCreateGroup(false) && !cs.CanCreateGroup(true) && !cs.CanUpdateGroup(false) && !cs.CanUpdateGroup(true) && !cs.CanDeleteGroup(false) && !cs.CanDeleteGroup(true) {
-        return
+func (p *Pipeline) extractAllChangeSetIds(applyable []*dm.ChangeSetsToApply, changesets map[string]*dm.ChangeSet) ([]string) {
+    arr := make(vector.StringVector, 0, len(changesets))
+    for _, toApply := range applyable {
+        for _, changesetId := range toApply.ChangeSetIds {
+            changeset, _ := changesets[changesetId]
+            if changeset != nil {
+                arr.Push(changeset.Id)
+            }
+        }
     }
+    return arr
+}
+
+func (p *Pipeline) markAllContactChangeSetsNotApplyable(ds DataStoreService, dsocialUserId, externalServiceId, externalServiceName string) (err os.Error) {
+    applyable, changesets, err := ds.RetrieveContactChangeSetsToApply(dsocialUserId, externalServiceId, externalServiceName)
     if err != nil {
         return
     }
-    applyable, changesets, err := ds.RetrieveContactChangeSetsToApply(dsocialUserId, csSettings.Id(), csSettings.ContactsServiceId())
+    changesetIdsNotApplyable := p.extractAllChangeSetIds(applyable, changesets)
+    err = p.markContactChangeSetsNotApplyable(ds, dsocialUserId, externalServiceId, externalServiceName, changesetIdsNotApplyable)
+    return
+}
+
+func (p *Pipeline) markAllGroupChangeSetsNotApplyable(ds DataStoreService, dsocialUserId, externalServiceId, externalServiceName string) (err os.Error) {
+    applyable, changesets, err := ds.RetrieveGroupChangeSetsToApply(dsocialUserId, externalServiceId, externalServiceName)
+    if err != nil {
+        return
+    }
+    changesetIdsNotApplyable := p.extractAllChangeSetIds(applyable, changesets)
+    err = p.markGroupChangeSetsNotApplyable(ds, dsocialUserId, externalServiceId, externalServiceName, changesetIdsNotApplyable)
+    return
+}
+
+func (p *Pipeline) markContactChangeSetsNotApplyable(ds DataStoreService, dsocialUserId, externalServiceId, externalServiceName string, changesetIdsNotApplyable []string) (err os.Error) {
+    if changesetIdsNotApplyable == nil || len(changesetIdsNotApplyable) == 0 {
+        return
+    }
+    if _, err = ds.AddContactChangeSetsNotCurrentlyApplyable(dsocialUserId, externalServiceId, externalServiceName, changesetIdsNotApplyable); err != nil {
+        return
+    }
+    err = ds.RemoveContactChangeSetsToApply(dsocialUserId, externalServiceId, externalServiceName, changesetIdsNotApplyable)
+    return
+}
+
+func (p *Pipeline) markGroupChangeSetsNotApplyable(ds DataStoreService, dsocialUserId, externalServiceId, externalServiceName string, changesetIdsNotApplyable []string) (err os.Error) {
+    if changesetIdsNotApplyable == nil || len(changesetIdsNotApplyable) == 0 {
+        return
+    }
+    if _, err = ds.AddGroupChangeSetsNotCurrentlyApplyable(dsocialUserId, externalServiceId, externalServiceName, changesetIdsNotApplyable); err != nil {
+        return
+    }
+    err = ds.RemoveGroupChangeSetsToApply(dsocialUserId, externalServiceId, externalServiceName, changesetIdsNotApplyable)
+    return
+}
+
+func (p *Pipeline) handleDeleteContact(client oauth2_client.OAuth2Client, ds DataStoreService, cs ContactsService, dsocialUserId, externalServiceId, externalUserId, dsocialContactId string) (err os.Error) {
+    externalContactId, err := ds.ExternalContactIdForDsocialId(externalServiceId, externalUserId, dsocialUserId, dsocialContactId)
+    if err != nil {
+        return
+    }
+    if externalContactId == "" {
+        // nothing to delete
+        return
+    }
+    _, err = DeleteContactOnExternalService(client, cs, ds, dsocialUserId, dsocialContactId)
+    return
+}
+
+func (p *Pipeline) handleCreateContact(client oauth2_client.OAuth2Client, ds DataStoreService, cs ContactsService, dsocialUserId, dsocialContactId string) (err os.Error) {
+    // don't have it locally
+    dsocContact, _, err := ds.RetrieveDsocialContact(dsocialUserId, dsocialContactId)
+    if err != nil {
+        return
+    }
+    if dsocContact == nil {
+        // can't create what doesn't exist anymore...ignore
+        return
+    }
+    _, err = CreateContactOnExternalService(client, cs, ds, dsocialUserId, dsocContact)
+    return
+}
+
+func (p *Pipeline) handleUpdateContact(client oauth2_client.OAuth2Client, ds DataStoreService, cs ContactsService, dsocialUserId, externalServiceId, externalUserId, dsocialContactId string, changeset *dm.ChangeSet) (err os.Error) {
+    externalContactId, err := ds.ExternalContactIdForDsocialId(externalServiceId, externalUserId, dsocialUserId, dsocialContactId)
+    if err != nil {
+        return
+    }
+    if externalContactId != "" {
+        dsocExternalContact, _, err := ds.RetrieveDsocialContactForExternalContact(externalServiceId, externalUserId, externalContactId, dsocialUserId)
+        if err != nil {
+            return
+        }
+        if dsocExternalContact != nil {
+            for _, change := range changeset.Changes {
+                dm.ApplyChange(dsocExternalContact, change)
+            }
+        }
+        origDsocExternalContact, _, err := ds.RetrieveDsocialContactForExternalContact(externalServiceId, externalUserId, externalContactId, dsocialUserId)
+        if err != nil {
+            return
+        }
+        _, err = UpdateContactOnExternalService(client, cs, ds, dsocialUserId, origDsocExternalContact, dsocExternalContact)
+    } else {
+        err = p.handleCreateContact(client, ds, cs, dsocialUserId, dsocialContactId)
+    }
+    return
+}
+
+
+
+func (p *Pipeline) handleDeleteGroup(client oauth2_client.OAuth2Client, ds DataStoreService, cs ContactsService, dsocialUserId, externalServiceId, externalUserId, dsocialGroupId string) (err os.Error) {
+    externalGroupId, err := ds.ExternalGroupIdForDsocialId(externalServiceId, externalUserId, dsocialUserId, dsocialGroupId)
+    if err != nil {
+        return
+    }
+    if externalGroupId == "" {
+        // nothing to delete
+        return
+    }
+    _, err = DeleteGroupOnExternalService(client, cs, ds, dsocialUserId, dsocialGroupId)
+    return
+}
+
+func (p *Pipeline) handleCreateGroup(client oauth2_client.OAuth2Client, ds DataStoreService, cs ContactsService, dsocialUserId, dsocialGroupId string) (err os.Error) {
+    // don't have it locally
+    dsocGroup, _, err := ds.RetrieveDsocialGroup(dsocialUserId, dsocialGroupId)
+    if err != nil {
+        return
+    }
+    if dsocGroup == nil {
+        // can't create what doesn't exist anymore...ignore
+        return
+    }
+    _, err = CreateGroupOnExternalService(client, cs, ds, dsocialUserId, dsocGroup)
+    return
+}
+
+func (p *Pipeline) handleUpdateGroup(client oauth2_client.OAuth2Client, ds DataStoreService, cs ContactsService, dsocialUserId, externalServiceId, externalUserId, dsocialGroupId string, changeset *dm.ChangeSet) (err os.Error) {
+    externalGroupId, err := ds.ExternalGroupIdForDsocialId(externalServiceId, externalUserId, dsocialUserId, dsocialGroupId)
+    if err != nil {
+        return
+    }
+    if externalGroupId != "" {
+        dsocExternalGroup, _, err := ds.RetrieveDsocialGroupForExternalGroup(externalServiceId, externalUserId, externalGroupId, dsocialUserId)
+        if err != nil {
+            return
+        }
+        if dsocExternalGroup != nil {
+            for _, change := range changeset.Changes {
+                dm.ApplyChange(dsocExternalGroup, change)
+            }
+        }
+        origDsocExternalGroup, _, err := ds.RetrieveDsocialGroupForExternalGroup(externalServiceId, externalUserId, externalGroupId, dsocialUserId)
+        if err != nil {
+            return
+        }
+        _, err = UpdateGroupOnExternalService(client, cs, ds, dsocialUserId, origDsocExternalGroup, dsocExternalGroup)
+    } else {
+        err = p.handleCreateGroup(client, ds, cs, dsocialUserId, dsocialGroupId)
+    }
+    return
+}
+
+
+func (p *Pipeline) applyContactChangeSets(client oauth2_client.OAuth2Client, ds DataStoreService, cs ContactsService, csSettings ContactsServiceSettings, dsocialUserId, meContactId string) (err os.Error) {
+    externalServiceId := csSettings.Id()
+    externalServiceName := csSettings.ContactsServiceId()
+    externalUserId := csSettings.ExternalUserId()
+    applyable, changesets, err := ds.RetrieveContactChangeSetsToApply(dsocialUserId, externalServiceId, externalServiceName)
     if err != nil {
         return
     }
     changesetIdsNotApplyable := make(vector.StringVector, 0)
-    externalServiceId := csSettings.ContactsServiceId()
-    externalUserId := csSettings.ExternalUserId()
     for _, toApply := range applyable {
         for _, changesetId := range toApply.ChangeSetIds {
             changeset, _ := changesets[changesetId]
@@ -647,75 +808,103 @@ func (p *Pipeline) Export(client oauth2_client.OAuth2Client, ds DataStoreService
                 }
                 dsocialContactId := changeset.RecordId
                 if isDelete {
-                    externalContactId, err := ds.ExternalContactIdForDsocialId(csSettings.ContactsServiceId(), csSettings.ExternalUserId(), dsocialUserId, dsocialContactId)
-                    if err != nil {
+                    if err = p.handleDeleteContact(client, ds, cs, dsocialUserId, externalServiceId, externalUserId, dsocialContactId); err != nil {
                         break
                     }
-                    if externalContactId == "" {
-                        // nothing to delete
-                        continue
-                    }
-                    _, err = DeleteContactOnExternalService(client, cs, ds, dsocialUserId, dsocialContactId)
-                    if err != nil {
-                        break
-                    }
-                    continue
                 } else if isCreate {
-                    // don't have it locally
-                    dsocContact, _, err := ds.RetrieveDsocialContact(dsocialUserId, dsocialContactId)
-                    if err != nil {
-                        break
-                    }
-                    if dsocContact == nil {
-                        // can't create what doesn't exist anymore...ignore
-                        continue
-                    }
-                    _, err = CreateContactOnExternalService(client, cs, ds, dsocialUserId, dsocContact)
-                    if err != nil {
+                    if err = p.handleCreateContact(client, ds, cs, dsocialUserId, dsocialContactId); err != nil {
                         break
                     }
                 } else {
                     // must be update
-                    externalContactId, err := ds.ExternalContactIdForDsocialId(externalServiceId, externalUserId, dsocialUserId, dsocialContactId)
-                    if err != nil {
+                    if err = p.handleUpdateContact(client, ds, cs, dsocialUserId, externalServiceId, externalUserId, dsocialContactId, changeset); err != nil {
                         break
-                    }
-                    if externalContactId != "" {
-                        dsocExternalContact, _, err := ds.RetrieveDsocialContactForExternalContact(externalServiceId, externalUserId, externalContactId, dsocialUserId)
-                        if err != nil {
-                            break
-                        }
-                        if dsocExternalContact != nil {
-                            for _, change := range changeset.Changes {
-                                dm.ApplyChange(dsocExternalContact, change)
-                            }
-                        }
-                        origDsocExternalContact, _, err := ds.RetrieveDsocialContactForExternalContact(externalServiceId, externalUserId, externalContactId, dsocialUserId)
-                        if err != nil {
-                            break
-                        }
-                        _, err = UpdateContactOnExternalService(client, cs, ds, dsocialUserId, origDsocExternalContact, dsocExternalContact)
-                        if err != nil {
-                            break
-                        }
-                    } else {
-                        // don't have it locally
-                        dsocContact, _, err := ds.RetrieveDsocialContact(dsocialUserId, dsocialContactId)
-                        if err != nil {
-                            break
-                        }
-                        if dsocContact == nil {
-                            // can't create what doesn't exist anymore...ignore
-                            continue
-                        }
-                        _, err = CreateContactOnExternalService(client, cs, ds, dsocialUserId, dsocContact)
-                        if err != nil {
-                            break
-                        }
                     }
                 }
             }
         }
+    }
+    if err == nil {
+        err = p.markContactChangeSetsNotApplyable(ds, dsocialUserId, externalServiceId, externalServiceName, changesetIdsNotApplyable)
+    }
+    return
+}
+
+func (p *Pipeline) applyGroupChangeSets(client oauth2_client.OAuth2Client, ds DataStoreService, cs ContactsService, csSettings ContactsServiceSettings, dsocialUserId, meContactId string) (err os.Error) {
+    externalServiceId := csSettings.Id()
+    externalServiceName := csSettings.ContactsServiceId()
+    externalUserId := csSettings.ExternalUserId()
+    applyable, changesets, err := ds.RetrieveGroupChangeSetsToApply(dsocialUserId, externalServiceId, externalServiceName)
+    if err != nil {
+        return
+    }
+    changesetIdsNotApplyable := make(vector.StringVector, 0)
+    for _, toApply := range applyable {
+        for _, changesetId := range toApply.ChangeSetIds {
+            changeset, _ := changesets[changesetId]
+            if changeset != nil {
+                isMe := changeset.RecordId == meContactId
+                canCreate, canUpdate, canDelete := cs.CanCreateGroup(isMe), cs.CanUpdateGroup(isMe), cs.CanDeleteGroup(isMe)
+                if !canCreate && !canUpdate && !canDelete {
+                    changesetIdsNotApplyable.Push(changeset.Id)
+                    continue
+                }
+                isCreate, isUpdate, isDelete := false, false, false
+                if len(changeset.Changes) > 1 {
+                    isUpdate = true
+                } else if len(changeset.Changes) == 1 {
+                    switch changeset.Changes[0].ChangeType {
+                        case dm.CHANGE_TYPE_CREATE, dm.CHANGE_TYPE_ADD:
+                            isCreate = true
+                        case dm.CHANGE_TYPE_UPDATE:
+                            isUpdate = true
+                        case dm.CHANGE_TYPE_DELETE:
+                            isDelete = true
+                    }
+                }
+                if !(isCreate && canCreate) && !(isUpdate && canUpdate) && !(isDelete && canDelete) {
+                    changesetIdsNotApplyable.Push(changeset.Id)
+                    continue
+                }
+                dsocialGroupId := changeset.RecordId
+                if isDelete {
+                    if err = p.handleDeleteGroup(client, ds, cs, dsocialUserId, externalServiceId, externalUserId, dsocialGroupId); err != nil {
+                        break
+                    }
+                } else if isCreate {
+                    if err = p.handleCreateGroup(client, ds, cs, dsocialUserId, dsocialGroupId); err != nil {
+                        break
+                    }
+                } else {
+                    // must be update
+                    if err = p.handleUpdateGroup(client, ds, cs, dsocialUserId, externalServiceId, externalUserId, dsocialGroupId, changeset); err != nil {
+                        break
+                    }
+                }
+            }
+        }
+    }
+    if err == nil {
+        err = p.markGroupChangeSetsNotApplyable(ds, dsocialUserId, externalServiceId, externalServiceName, changesetIdsNotApplyable)
+    }
+    return
+}
+
+func (p *Pipeline) Export(client oauth2_client.OAuth2Client, ds DataStoreService, cs ContactsService, csSettings ContactsServiceSettings, dsocialUserId, meContactId string) (err os.Error) {
+    externalServiceId := csSettings.Id()
+    externalServiceName := csSettings.ContactsServiceId()
+    if !cs.CanExportContactsOrGroups() {
+        if err = p.markAllContactChangeSetsNotApplyable(ds, dsocialUserId, externalServiceId, externalServiceName); err != nil {
+            return
+        }
+        p.markAllGroupChangeSetsNotApplyable(ds, dsocialUserId, externalServiceId, externalServiceName)
+        return
+    }
+    if err = p.applyContactChangeSets(client, ds, cs, csSettings, dsocialUserId, meContactId); err != nil {
+        return
+    }
+    if err = p.applyGroupChangeSets(client, ds, cs, csSettings, dsocialUserId, meContactId); err != nil {
+        return
     }
     return
 }

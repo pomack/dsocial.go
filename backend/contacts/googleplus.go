@@ -82,6 +82,14 @@ func (p *GooglePlusContactService) CanRetrieveContact(selfContact bool) bool {
     return true
 }
 
+func (p *GooglePlusContactService) CanImportContactsOrGroups() bool {
+    return true
+}
+
+func (p *GooglePlusContactService) CanExportContactsOrGroups() bool {
+    return false
+}
+
 func (p *GooglePlusContactService) CanCreateContact(selfContact bool) bool {
     return false
 }

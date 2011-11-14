@@ -84,6 +84,14 @@ func (p *TwitterContactService) CanRetrieveContact(selfContact bool) bool {
     return true
 }
 
+func (p *TwitterContactService) CanImportContactsOrGroups() bool {
+    return true
+}
+
+func (p *TwitterContactService) CanExportContactsOrGroups() bool {
+    return false
+}
+
 func (p *TwitterContactService) CanCreateContact(selfContact bool) bool {
     return false
 }
