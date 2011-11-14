@@ -30,10 +30,12 @@ type ContactsServiceSettings interface {
     Id() string
     DsocialUserId() string
     ContactsServiceId() string
+    ExternalUserId() string
     ClientProperties() jsonhelper.JSONObject
     SetId(id string)
     SetDsocialUserId(dsocialUserId string)
     SetClientProperties(obj jsonhelper.JSONObject)
+    SetExternalUserId(externalUserId string)
 }
 
 type NextToken interface{}
@@ -303,32 +305,38 @@ type ContactsService interface {
     // Returns:
     //   updatedContact : updated version of contact with fields updated like Id and LastModified
     //   err : error or nil
-    CreateContact(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId string, contact *dm.Contact) (updatedContact *Contact, err os.Error)
+    CreateContactOnExternalService(client oauth2_client.OAuth2Client, externalContact interface{}) (externalContactResult interface{}, externalContactId string, err os.Error)
+    //CreateContact(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId string, contact *dm.Contact) (updatedContact *Contact, err os.Error)
     // Creates the specified group
     // Returns:
     //   updatedGroup : updated version of group with fields updated like Id and LastModified
     //   err : error or nil
-    CreateGroup(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId string, group *dm.Group) (updatedGroup *Group, err os.Error)
+    CreateGroupOnExternalService(client oauth2_client.OAuth2Client, externalGroup interface{}) (externalGroupResult interface{}, externalGroupId string, err os.Error)
+    //CreateGroup(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId string, group *dm.Group) (updatedGroup *Group, err os.Error)
     // Updates the specified contact
     // Returns:
     //   updatedContact : updated version of contact with fields updated like LastModified
     //   err : error or nil
-    UpdateContact(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId string, originalContact, contact *dm.Contact) (updatedContact *Contact, err os.Error)
+    UpdateContactOnExternalService(client oauth2_client.OAuth2Client, originalExternalContact, latestExternalContact interface{}) (externalContactResult interface{}, externalContactId string, err os.Error)
+    //UpdateContact(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId string, originalContact, contact *dm.Contact) (updatedContact *Contact, err os.Error)
     // Updates the specified group
     // Returns:
     //   updatedGroup : updated version of group with fields updated like LastModified
     //   err : error or nil
-    UpdateGroup(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId string, originalGroup, group *dm.Group) (updatedGroup *Group, err os.Error)
+    UpdateGroupOnExternalService(client oauth2_client.OAuth2Client, originalExternalGroup, latestExternalGroup interface{}) (externalGroupResult interface{}, externalGroupId string, err os.Error)
+    //UpdateGroup(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId string, originalGroup, group *dm.Group) (updatedGroup *Group, err os.Error)
     // Deletes the specified contact
     // Returns:
     //   existed : whether the contact existed upon deletiong
     //   err : error or nil
-    DeleteContact(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId, dsocialContactId string) (existed bool, err os.Error)
+    DeleteContactOnExternalService(client oauth2_client.OAuth2Client, originalExternalContact interface{}) (existed bool, err os.Error)
+    //DeleteContact(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId, dsocialContactId string) (existed bool, err os.Error)
     // Deletes the specified group
     // Returns:
     //   existed : whether the group existed upon deletiong
     //   err : error or nil
-    DeleteGroup(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId, dsocialGroupId string) (existed bool, err os.Error)
+    DeleteGroupOnExternalService(client oauth2_client.OAuth2Client, originalExternalGroup interface{}) (existed bool, err os.Error)
+    //DeleteGroup(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId, dsocialGroupId string) (existed bool, err os.Error)
 }
 
 
@@ -442,3 +450,251 @@ func AddIdsForDsocialGroup(g *dm.Group, ds DataStoreService, dsocialUserId strin
     if g.Id == "" { g.Id = ds.GenerateId(dsocialUserId, "group") }
     return
 }
+
+
+func CreateContactOnExternalService(client oauth2_client.OAuth2Client, cs ContactsService, ds DataStoreService, dsocialUserId string, contact *dm.Contact) (*Contact, os.Error) {
+    if contact == nil {
+        return nil, nil
+    }
+    userInfo, err := client.RetrieveUserInfo()
+    if err != nil {
+        return nil, err
+    }
+    externalServiceId := cs.ServiceId()
+    externalUserId := userInfo.Guid()
+    externalContactId, err := ds.ExternalContactIdForDsocialId(externalServiceId, externalUserId, dsocialUserId, contact.Id)
+    if err != nil {
+        return nil, err
+    }
+    if externalContactId != "" {
+        originalContact, _, err := ds.RetrieveDsocialContact(dsocialUserId, contact.Id)
+        if err != nil {
+            return nil, err
+        }
+        return UpdateContactOnExternalService(client, cs, ds, dsocialUserId, originalContact, contact)
+    }
+    externalContact := cs.ConvertToExternalContact(contact, nil, dsocialUserId)
+    externalContact, externalContactId, err = cs.CreateContactOnExternalService(client, externalContact)
+    if err != nil {
+        return nil, err
+    }
+    externalContactId, err = ds.StoreExternalContact(externalServiceId, externalUserId, dsocialUserId, externalContactId, externalContact)
+    if err != nil {
+        return nil, err
+    }
+    dsocialContactForExternal := cs.ConvertToDsocialContact(externalContact, contact, dsocialUserId)
+    dsocialContactForExternal, err = ds.StoreDsocialContactForExternalContact(externalServiceId, externalUserId, externalContactId, dsocialUserId, dsocialContactForExternal)
+    if err != nil {
+        return nil, err
+    }
+    _, _, err = ds.StoreDsocialExternalContactMapping(externalServiceId, externalUserId, externalContactId, dsocialUserId, dsocialContactForExternal.Id)
+    outContact := &Contact{
+        ExternalServiceId: externalServiceId,
+        ExternalUserId: externalUserId,
+        ExternalContactId: externalContactId,
+        DsocialUserId: dsocialUserId,
+        DsocialContactId: dsocialContactForExternal.Id,
+        Value: dsocialContactForExternal,
+    }
+    return outContact, err
+}
+
+func CreateGroupOnExternalService(client oauth2_client.OAuth2Client, cs ContactsService, ds DataStoreService, dsocialUserId string, group *dm.Group) (*Group, os.Error) {
+    if group == nil {
+        return nil, nil
+    }
+    userInfo, err := client.RetrieveUserInfo()
+    if err != nil {
+        return nil, err
+    }
+    externalServiceId := cs.ServiceId()
+    externalUserId := userInfo.Guid()
+    externalGroupId, err := ds.ExternalGroupIdForDsocialId(externalServiceId, externalUserId, dsocialUserId, group.Id)
+    if err != nil {
+        return nil, err
+    }
+    if externalGroupId != "" {
+        originalGroup, _, err := ds.RetrieveDsocialGroup(dsocialUserId, group.Id)
+        if err != nil {
+            return nil, err
+        }
+        return UpdateGroupOnExternalService(client, cs, ds, dsocialUserId, originalGroup, group)
+    }
+    externalGroup := cs.ConvertToExternalGroup(group, nil, dsocialUserId)
+    externalGroup, externalGroupId, err = cs.CreateGroupOnExternalService(client, externalGroup)
+    if err != nil {
+        return nil, err
+    }
+    externalGroupId, err = ds.StoreExternalGroup(externalServiceId, externalUserId, dsocialUserId, externalGroupId, externalGroup)
+    if err != nil {
+        return nil, err
+    }
+    dsocialGroupForExternal := cs.ConvertToDsocialGroup(externalGroup, group, dsocialUserId)
+    dsocialGroupForExternal, err = ds.StoreDsocialGroupForExternalGroup(externalServiceId, externalUserId, externalGroupId, dsocialUserId, dsocialGroupForExternal)
+    if err != nil {
+        return nil, err
+    }
+    _, _, err = ds.StoreDsocialExternalGroupMapping(externalServiceId, externalUserId, externalGroupId, dsocialUserId, dsocialGroupForExternal.Id)
+    outGroup := &Group{
+        ExternalServiceId: externalServiceId,
+        ExternalUserId: externalUserId,
+        ExternalGroupId: externalGroupId,
+        DsocialUserId: dsocialUserId,
+        DsocialGroupId: dsocialGroupForExternal.Id,
+        Value: dsocialGroupForExternal,
+    }
+    return outGroup, err
+}
+
+func UpdateContactOnExternalService(client oauth2_client.OAuth2Client, cs ContactsService, ds DataStoreService, dsocialUserId string, originalContact, contact *dm.Contact) (*Contact, os.Error) {
+    if contact == nil || originalContact == nil {
+        return nil, nil
+    }
+    userInfo, err := client.RetrieveUserInfo()
+    if err != nil {
+        return nil, err
+    }
+    externalServiceId := cs.ServiceId()
+    externalUserId := userInfo.Guid()
+    externalContactId, err := ds.ExternalContactIdForDsocialId(externalServiceId, externalUserId, dsocialUserId, originalContact.Id)
+    if err != nil {
+        return nil, err
+    }
+    if externalContactId == "" {
+        return CreateContactOnExternalService(client, cs, ds, dsocialUserId, contact)
+    }
+    originalExternalContact, _, err := ds.RetrieveExternalContact(externalServiceId, externalUserId, dsocialUserId, externalContactId)
+    if err != nil {
+        return nil, err
+    }
+    latestExternalContact := cs.ConvertToExternalContact(contact, originalExternalContact, dsocialUserId)
+    latestExternalContact, externalContactId, err = cs.UpdateContactOnExternalService(client, originalExternalContact, latestExternalContact)
+    if err != nil {
+        return nil, err
+    }
+    latestDsocialContactForExternal := cs.ConvertToDsocialContact(latestExternalContact, originalContact, dsocialUserId)
+    _, err = ds.StoreExternalContact(externalServiceId, externalUserId, dsocialUserId, externalContactId, latestExternalContact)
+    if err != nil {
+        return nil, err
+    }
+    latestDsocialContactForExternal, err = ds.StoreDsocialContactForExternalContact(externalServiceId, externalUserId, externalContactId, dsocialUserId, latestDsocialContactForExternal)
+    outContact := &Contact{
+        ExternalServiceId: externalServiceId,
+        ExternalUserId: externalUserId,
+        ExternalContactId: externalContactId,
+        DsocialUserId: dsocialUserId,
+        DsocialContactId: latestDsocialContactForExternal.Id,
+        Value: latestDsocialContactForExternal,
+    }
+    return outContact, err
+}
+
+func UpdateGroupOnExternalService(client oauth2_client.OAuth2Client, cs ContactsService, ds DataStoreService, dsocialUserId string, originalGroup, group *dm.Group) (*Group, os.Error) {
+    if group == nil || originalGroup == nil {
+        return nil, nil
+    }
+    userInfo, err := client.RetrieveUserInfo()
+    if err != nil {
+        return nil, err
+    }
+    externalServiceId := cs.ServiceId()
+    externalUserId := userInfo.Guid()
+    externalGroupId, err := ds.ExternalGroupIdForDsocialId(externalServiceId, externalUserId, dsocialUserId, originalGroup.Id)
+    if err != nil {
+        return nil, err
+    }
+    if externalGroupId == "" {
+        return CreateGroupOnExternalService(client, cs, ds, dsocialUserId, group)
+    }
+    originalExternalGroup, _, err := ds.RetrieveExternalGroup(externalServiceId, externalUserId, dsocialUserId, externalGroupId)
+    if err != nil {
+        return nil, err
+    }
+    latestExternalGroup := cs.ConvertToExternalGroup(group, originalExternalGroup, dsocialUserId)
+    latestExternalGroup, externalGroupId, err = cs.UpdateGroupOnExternalService(client, originalExternalGroup, latestExternalGroup)
+    if err != nil {
+        return nil, err
+    }
+    latestDsocialGroupForExternal := cs.ConvertToDsocialGroup(latestExternalGroup, originalGroup, dsocialUserId)
+    _, err = ds.StoreExternalGroup(externalServiceId, externalUserId, dsocialUserId, externalGroupId, latestExternalGroup)
+    if err != nil {
+        return nil, err
+    }
+    latestDsocialGroupForExternal, err = ds.StoreDsocialGroupForExternalGroup(externalServiceId, externalUserId, externalGroupId, dsocialUserId, latestDsocialGroupForExternal)
+    outGroup := &Group{
+        ExternalServiceId: externalServiceId,
+        ExternalUserId: externalUserId,
+        ExternalGroupId: externalGroupId,
+        DsocialUserId: dsocialUserId,
+        DsocialGroupId: latestDsocialGroupForExternal.Id,
+        Value: latestDsocialGroupForExternal,
+    }
+    return outGroup, err
+}
+
+func DeleteContactOnExternalService(client oauth2_client.OAuth2Client, cs ContactsService, ds DataStoreService, dsocialUserId, dsocialContactId string) (bool, os.Error) {
+    if dsocialContactId == "" || dsocialUserId == "" {
+        return false, nil
+    }
+    userInfo, err := client.RetrieveUserInfo()
+    if err != nil {
+        return true, err
+    }
+    externalServiceId := cs.ServiceId()
+    externalUserId := userInfo.Guid()
+    externalContactId, err := ds.ExternalContactIdForDsocialId(externalServiceId, externalUserId, dsocialUserId, dsocialContactId)
+    if externalContactId == "" || err != nil {
+        return externalContactId == "", err
+    }
+    externalContact, _, err := ds.RetrieveExternalContact(externalServiceId, externalUserId, dsocialUserId, externalContactId)
+    if err != nil {
+        return true, err
+    }
+    if externalContact == nil {
+        return false, err
+    }
+    _, err = cs.DeleteContactOnExternalService(client, externalContact)
+    if err != nil {
+        return true, err
+    }
+    _, err = ds.DeleteDsocialContactForExternalContact(externalServiceId, externalUserId, externalContactId, dsocialUserId)
+    if err != nil {
+        return true, err
+    }
+    _, err = ds.DeleteExternalContact(externalServiceId, externalUserId, dsocialUserId, externalContactId)
+    return true, err
+}
+
+func DeleteGroupOnExternalService(client oauth2_client.OAuth2Client, cs ContactsService, ds DataStoreService, dsocialUserId, dsocialGroupId string) (bool, os.Error) {
+    if dsocialGroupId == "" || dsocialUserId == "" {
+        return false, nil
+    }
+    userInfo, err := client.RetrieveUserInfo()
+    if err != nil {
+        return true, err
+    }
+    externalServiceId := cs.ServiceId()
+    externalUserId := userInfo.Guid()
+    externalGroupId, err := ds.ExternalGroupIdForDsocialId(externalServiceId, externalUserId, dsocialUserId, dsocialGroupId)
+    if externalGroupId == "" || err != nil {
+        return externalGroupId == "", err
+    }
+    externalGroup, _, err := ds.RetrieveExternalGroup(externalServiceId, externalUserId, dsocialUserId, externalGroupId)
+    if err != nil {
+        return true, err
+    }
+    if externalGroup == nil {
+        return false, err
+    }
+    _, err = cs.DeleteGroupOnExternalService(client, externalGroup)
+    if err != nil {
+        return true, err
+    }
+    _, err = ds.DeleteDsocialGroupForExternalGroup(externalServiceId, externalUserId, externalGroupId, dsocialUserId)
+    if err != nil {
+        return true, err
+    }
+    _, err = ds.DeleteExternalGroup(externalServiceId, externalUserId, dsocialUserId, externalGroupId)
+    return true, err
+}
+

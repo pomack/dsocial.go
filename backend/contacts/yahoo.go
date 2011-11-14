@@ -347,113 +347,51 @@ func (p *YahooContactService) RetrieveGroup(client oauth2_client.OAuth2Client, d
     return group, useErr
 }
 
-func (p *YahooContactService) CreateContact(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId string, contact *dm.Contact) (*Contact, os.Error) {
+func (p *YahooContactService) CreateContactOnExternalService(client oauth2_client.OAuth2Client, contact interface{}) (interface{}, string, os.Error) {
     if contact == nil {
-        return nil, nil
+        return nil, "", nil
     }
-    userInfo, err := client.RetrieveUserInfo()
-    if err != nil {
-        return nil, err
-    }
-    externalUserId := userInfo.Guid()
-    yContactId, err := ds.ExternalContactIdForDsocialId(p.ServiceId(), userInfo.Guid(), dsocialUserId, contact.Id)
-    if err != nil {
-        return nil, err
-    }
-    if yContactId != "" {
-        originalContact, _, err := ds.RetrieveDsocialContact(dsocialUserId, contact.Id)
-        if err != nil {
-            return nil, err
-        }
-        return p.UpdateContact(client, ds, dsocialUserId, originalContact, contact)
-    }
-    yContact := dm.DsocialContactToYahoo(contact, nil)
-    err = yahoo.CreateContact(client, "", yContact)
-    if err != nil {
-        return nil, err
-    }
-    dsocialContact := dm.YahooContactToDsocial(yContact, contact, dsocialUserId)
-    yContactId = strconv.Itoa64(yContact.Id)
-    if contact.Id != "" {
-        _, _, err = ds.StoreDsocialExternalContactMapping(p.ServiceId(), userInfo.Guid(), yContactId, dsocialUserId, contact.Id)
-    }
-    outContact := &Contact{
-        ExternalServiceId: p.ServiceId(),
-        ExternalUserId: externalUserId,
-        ExternalContactId: yContactId,
-        DsocialUserId: dsocialUserId,
-        DsocialContactId: dsocialContact.Id,
-        Value: dsocialContact,
-    }
-    return outContact, err
+    yContact := contact.(*yahoo.Contact)
+    err := yahoo.CreateContact(client, "", yContact)
+    return yContact, strconv.Itoa64(yContact.Id), err
 }
 
-func (p *YahooContactService) CreateGroup(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId string, group *dm.Group) (*Group, os.Error) {
-    return nil, nil
+func (p *YahooContactService) CreateGroupOnExternalService(client oauth2_client.OAuth2Client, group interface{}) (interface{}, string, os.Error) {
+    return nil, "", nil
 }
 
-func (p *YahooContactService) UpdateContact(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId string, originalContact, contact *dm.Contact) (*Contact, os.Error) {
-    if contact == nil || originalContact == nil {
-        return nil, nil
+func (p *YahooContactService) UpdateContactOnExternalService(client oauth2_client.OAuth2Client, originalContact, contact interface{}) (interface{}, string, os.Error) {
+    if contact == nil {
+        return nil, "", nil
     }
-    userInfo, err := client.RetrieveUserInfo()
-    if err != nil {
-        return nil, err
+    if originalContact == nil {
+        return p.CreateContactOnExternalService(client, contact)
     }
-    externalUserId := userInfo.Guid()
-    yContactId, err := ds.ExternalContactIdForDsocialId(p.ServiceId(), userInfo.Guid(), dsocialUserId, originalContact.Id)
-    if err != nil {
-        return nil, err
-    }
-    if yContactId == "" {
-        return p.CreateContact(client, ds, dsocialUserId, contact)
-    }
-    originalYContact, _, err := ds.RetrieveExternalContact(p.ServiceId(), userInfo.Guid(), dsocialUserId, yContactId)
-    if err != nil {
-        return nil, err
-    }
-    yContact := dm.DsocialContactToYahoo(contact, originalYContact.(*yahoo.Contact))
-    yContact.Id, _ = strconv.Atoi64(yContactId)
-    err = yahoo.UpdateContact(client, "", yContactId, yContact)
-    if err != nil {
-        return nil, err
-    }
-    dsocialContact := dm.YahooContactToDsocial(yContact, contact, dsocialUserId)
-    dsocialContact.Id = originalContact.Id
-    outContact := &Contact{
-        ExternalServiceId: p.ServiceId(),
-        ExternalUserId: externalUserId,
-        ExternalContactId: yContactId,
-        DsocialUserId: dsocialUserId,
-        DsocialContactId: dsocialContact.Id,
-        Value: dsocialContact,
-    }
-    return outContact, err
+    originalYContact := originalContact.(*yahoo.Contact)
+    yContact := contact.(*yahoo.Contact)
+    err := yahoo.UpdateContact(client, "", strconv.Itoa64(originalYContact.Id), yContact)
+    return yContact, strconv.Itoa64(yContact.Id), err
 }
 
-func (p *YahooContactService) UpdateGroup(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId string, originalGroup, group *dm.Group) (*Group, os.Error) {
-    return nil, nil
+func (p *YahooContactService) UpdateGroupOnExternalService(client oauth2_client.OAuth2Client, originalGroup, group interface{}) (interface{}, string, os.Error) {
+    return nil, "", nil
 }
 
-func (p *YahooContactService) DeleteContact(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId, dsocialContactId string) (bool, os.Error) {
-    if dsocialContactId == "" || dsocialUserId == "" {
+func (p *YahooContactService) DeleteContactOnExternalService(client oauth2_client.OAuth2Client, contact interface{}) (bool, os.Error) {
+    if contact == nil {
         return false, nil
     }
-    userInfo, err := client.RetrieveUserInfo()
-    if err != nil {
-        return true, err
-    }
-    yContactId, err := ds.ExternalContactIdForDsocialId(p.ServiceId(), userInfo.Guid(), dsocialUserId, dsocialContactId)
-    if yContactId == "" || err != nil {
-        return false, err
-    }
-    err = yahoo.DeleteContact(client, "", yContactId)
+    yContact := contact.(*yahoo.Contact)
+    err := yahoo.DeleteContact(client, "", strconv.Itoa64(yContact.Id))
     return true, err
 }
 
-func (p *YahooContactService) DeleteGroup(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId, dsocialGroupId string) (bool, os.Error) {
+func (p *YahooContactService) DeleteGroupOnExternalService(client oauth2_client.OAuth2Client, group interface{}) (bool, os.Error) {
     return false, nil
 }
+
+
+
 
 func (p *YahooContactService) ContactsService() ContactsService {
     return p
