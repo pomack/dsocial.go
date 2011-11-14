@@ -16,12 +16,27 @@ type GoogleContactService struct {
 
 }
 
+type GoogleContactServiceSettings struct {
+    StandardContactServiceSettings
+}
+
+func NewGoogleContactServiceSettings() *GoogleContactServiceSettings {
+    s := new(GoogleContactServiceSettings)
+    s.SetAllowRetrieveContactInfo(true)
+    s.SetAllowModifyContactInfo(true)
+    return s
+}
+
+func (p *GoogleContactServiceSettings) ContactsServiceId() string {
+    return GOOGLE_CONTACT_SERVICE_ID
+}
+
 func NewGoogleContactService() *GoogleContactService {
     return new(GoogleContactService)
 }
 
 func (p *GoogleContactService) ServiceId() string {
-    return "www.google.com"
+    return GOOGLE_CONTACT_SERVICE_ID
 }
 
 func (p *GoogleContactService) CreateOAuth2Client(settings jsonhelper.JSONObject) (client oauth2_client.OAuth2Client, err os.Error) {

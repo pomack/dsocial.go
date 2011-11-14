@@ -2,6 +2,7 @@ include $(GOROOT)/src/Make.inc
 
 TARG=github.com/pomack/dsocial.go/backend/contacts
 GOFILES=\
+	const.go\
 	facebook.go\
 	factory.go\
 	google.go\

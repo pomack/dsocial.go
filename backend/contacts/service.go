@@ -348,6 +348,66 @@ type ContactsService interface {
 }
 
 
+
+type StandardContactServiceSettings struct {
+    FieldId                         string                  `json:"id"`
+    FieldDsocialUserId              string                  `json:"dsocial_user_id"`
+    FieldExternalUserId             string                  `json:"external_user_id"`
+    FieldClientProperties           jsonhelper.JSONObject   `json:"client_properties"`
+    FieldAllowRetrieveContactInfo   bool                    `json:"allow_retrieve_contact_info"`
+    FieldAllowModifyContactInfo     bool                    `json:"allow_modify_contact_info"`
+}
+
+func (p *StandardContactServiceSettings) Id() string {
+    return p.FieldId
+}
+
+func (p *StandardContactServiceSettings) DsocialUserId() string {
+    return p.FieldDsocialUserId
+}
+
+func (p *StandardContactServiceSettings) ExternalUserId() string {
+    return p.FieldExternalUserId
+}
+
+func (p *StandardContactServiceSettings) ClientProperties() jsonhelper.JSONObject {
+    return p.FieldClientProperties
+}
+
+func (p *StandardContactServiceSettings) AllowRetrieveContactInfo() bool {
+    return p.FieldAllowRetrieveContactInfo
+}
+
+func (p *StandardContactServiceSettings) AllowModifyContactInfo() bool {
+    return p.FieldAllowModifyContactInfo
+}
+
+func (p *StandardContactServiceSettings) SetId(id string) {
+    p.FieldId = id
+}
+
+func (p *StandardContactServiceSettings) SetDsocialUserId(dsocialUserId string) {
+    p.FieldDsocialUserId = dsocialUserId
+}
+
+func (p *StandardContactServiceSettings) SetClientProperties(obj jsonhelper.JSONObject) {
+    p.FieldClientProperties = obj
+}
+
+func (p *StandardContactServiceSettings) SetExternalUserId(externalUserId string) {
+    p.FieldExternalUserId = externalUserId
+}
+
+func (p *StandardContactServiceSettings) SetAllowRetrieveContactInfo(allow bool) {
+    p.FieldAllowRetrieveContactInfo = allow
+}
+
+func (p *StandardContactServiceSettings) SetAllowModifyContactInfo(allow bool) {
+    p.FieldAllowModifyContactInfo = allow
+}
+
+
+
 func addIdForAclPersistableModel(m *dm.AclPersistableModel, ds DataStoreService, collectionName string, ownerId string) {
     if m == nil {
         return

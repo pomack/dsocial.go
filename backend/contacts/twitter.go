@@ -10,6 +10,21 @@ import (
 )
 
 
+type TwitterContactServiceSettings struct {
+    StandardContactServiceSettings
+}
+
+func NewTwitterContactServiceSettings() *TwitterContactServiceSettings {
+    s := new(TwitterContactServiceSettings)
+    s.SetAllowRetrieveContactInfo(true)
+    s.SetAllowModifyContactInfo(true)
+    return s
+}
+
+func (p *TwitterContactServiceSettings) ContactsServiceId() string {
+    return TWITTER_CONTACT_SERVICE_ID
+}
+
 type TwitterContactService struct {
 
 }
@@ -19,7 +34,7 @@ func NewTwitterContactService() *TwitterContactService {
 }
 
 func (p *TwitterContactService) ServiceId() string {
-    return "www.twitter.com"
+    return TWITTER_CONTACT_SERVICE_ID
 }
 
 func (p *TwitterContactService) CreateOAuth2Client(settings jsonhelper.JSONObject) (client oauth2_client.OAuth2Client, err os.Error) {

@@ -10,6 +10,21 @@ import (
 )
 
 
+type SmugMugContactServiceSettings struct {
+    StandardContactServiceSettings
+}
+
+func NewSmugMugContactServiceSettings() *SmugMugContactServiceSettings {
+    s := new(SmugMugContactServiceSettings)
+    s.SetAllowRetrieveContactInfo(true)
+    s.SetAllowModifyContactInfo(true)
+    return s
+}
+
+func (p *SmugMugContactServiceSettings) ContactsServiceId() string {
+    return SMUGMUG_CONTACT_SERVICE_ID
+}
+
 type SmugMugContactService struct {
 
 }
@@ -19,7 +34,7 @@ func NewSmugMugContactService() *SmugMugContactService {
 }
 
 func (p *SmugMugContactService) ServiceId() string {
-    return "www.smugmug.com"
+    return SMUGMUG_CONTACT_SERVICE_ID
 }
 
 func (p *SmugMugContactService) CreateOAuth2Client(settings jsonhelper.JSONObject) (client oauth2_client.OAuth2Client, err os.Error) {

@@ -11,6 +11,21 @@ import (
     "url"
 )
 
+type YahooContactServiceSettings struct {
+    StandardContactServiceSettings
+}
+
+func NewYahooContactServiceSettings() *YahooContactServiceSettings {
+    s := new(YahooContactServiceSettings)
+    s.SetAllowRetrieveContactInfo(true)
+    s.SetAllowModifyContactInfo(true)
+    return s
+}
+
+func (p *YahooContactServiceSettings) ContactsServiceId() string {
+    return YAHOO_CONTACT_SERVICE_ID
+}
+
 type YahooContactService struct {
 
 }
@@ -20,7 +35,7 @@ func NewYahooContactService() *YahooContactService {
 }
 
 func (p *YahooContactService) ServiceId() string {
-    return "www.yahoo.com"
+    return YAHOO_CONTACT_SERVICE_ID
 }
 
 func (p *YahooContactService) CreateOAuth2Client(settings jsonhelper.JSONObject) (client oauth2_client.OAuth2Client, err os.Error) {

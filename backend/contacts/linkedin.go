@@ -16,6 +16,21 @@ const (
     _LINKEDIN_MAX_CONNECTIONS_PER_CALL_STRING = "500"
 )
 
+type LinkedInContactServiceSettings struct {
+    StandardContactServiceSettings
+}
+
+func NewLinkedInContactServiceSettings() *LinkedInContactServiceSettings {
+    s := new(LinkedInContactServiceSettings)
+    s.SetAllowRetrieveContactInfo(true)
+    s.SetAllowModifyContactInfo(true)
+    return s
+}
+
+func (p *LinkedInContactServiceSettings) ContactsServiceId() string {
+    return LINKEDIN_CONTACT_SERVICE_ID
+}
+
 type LinkedInContactService struct {
 
 }
@@ -25,7 +40,7 @@ func NewLinkedInContactService() *LinkedInContactService {
 }
 
 func (p *LinkedInContactService) ServiceId() string {
-    return "www.linkedin.com"
+    return LINKEDIN_CONTACT_SERVICE_ID
 }
 
 func (p *LinkedInContactService) CreateOAuth2Client(settings jsonhelper.JSONObject) (client oauth2_client.OAuth2Client, err os.Error) {

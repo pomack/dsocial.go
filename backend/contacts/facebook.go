@@ -14,12 +14,27 @@ type FacebookContactService struct {
 
 }
 
+type FacebookContactServiceSettings struct {
+    StandardContactServiceSettings
+}
+
+func NewFacebookContactServiceSettings() *FacebookContactServiceSettings {
+    s := new(FacebookContactServiceSettings)
+    s.SetAllowRetrieveContactInfo(true)
+    s.SetAllowModifyContactInfo(true)
+    return s
+}
+
+func (p *FacebookContactServiceSettings) ContactsServiceId() string {
+    return FACEBOOK_CONTACT_SERVICE_ID
+}
+
 func NewFacebookContactService() *FacebookContactService {
     return new(FacebookContactService)
 }
 
 func (p *FacebookContactService) ServiceId() string {
-    return "www.facebook.com"
+    return FACEBOOK_CONTACT_SERVICE_ID
 }
 
 func (p *FacebookContactService) CreateOAuth2Client(settings jsonhelper.JSONObject) (client oauth2_client.OAuth2Client, err os.Error) {
