@@ -614,7 +614,7 @@ func (p *Pipeline) queueGroupChangeSetsToApply(ds DataStoreService, cs ContactsS
 }
 
 func (p *Pipeline) Import(client oauth2_client.OAuth2Client, ds DataStoreService, cs ContactsService, csSettings ContactsServiceSettings, dsocialUserId, meContactId string, allowAdd, allowDelete, allowUpdate bool) (err os.Error) {
-    if !cs.CanImportContactsOrGroups() {
+    if !csSettings.AllowRetrieveContactInfo() || !cs.CanImportContactsOrGroups() {
         return nil
     }
     groupMappings := make(map[string]*list.List)
@@ -925,7 +925,7 @@ func (p *Pipeline) applyGroupChangeSets(client oauth2_client.OAuth2Client, ds Da
 func (p *Pipeline) Export(client oauth2_client.OAuth2Client, ds DataStoreService, cs ContactsService, csSettings ContactsServiceSettings, dsocialUserId, meContactId string) (err os.Error) {
     externalServiceId := csSettings.Id()
     externalServiceName := csSettings.ContactsServiceId()
-    if !cs.CanExportContactsOrGroups() {
+    if !csSettings.AllowModifyContactInfo() || !cs.CanExportContactsOrGroups() {
         if err = p.markAllContactChangeSetsNotApplyable(ds, dsocialUserId, externalServiceId, externalServiceName); err != nil {
             return
         }

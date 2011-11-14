@@ -32,10 +32,14 @@ type ContactsServiceSettings interface {
     ContactsServiceId() string
     ExternalUserId() string
     ClientProperties() jsonhelper.JSONObject
+    AllowRetrieveContactInfo() bool
+    AllowModifyContactInfo() bool
     SetId(id string)
     SetDsocialUserId(dsocialUserId string)
     SetClientProperties(obj jsonhelper.JSONObject)
     SetExternalUserId(externalUserId string)
+    SetAllowRetrieveContactInfo(allow bool)
+    SetAllowModifyContactInfo(allow bool)
 }
 
 type NextToken interface{}
