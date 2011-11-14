@@ -20,8 +20,8 @@ func init() {
         contactServicesMap[service.ServiceId()] = service
     }
     l := len(contactServicesMap)
-    selfUpdateableContactServices := make([]ContactsService, l, l)
-    updatedableContactServices := make([]ContactsService, l, l)
+    selfUpdateableContactServices = make([]ContactsService, l, l)
+    updateableContactServices = make([]ContactsService, l, l)
     i, j := 0, 0
     for _, service := range contactServicesMap {
         if service.CanUpdateGroup(true) || service.CanUpdateContact(true) {
@@ -34,7 +34,7 @@ func init() {
         }
     }
     selfUpdateableContactServices = selfUpdateableContactServices[0:i]
-    updatedableContactServices = updatedableContactServices[0:j]
+    updateableContactServices = updateableContactServices[0:j]
 }
 
 func ContactServiceForName(name string) ContactsService {
