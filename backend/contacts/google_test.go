@@ -2197,11 +2197,13 @@ const (
 
 var (
     GOOGLE_USERINFO_RESULT oauth2_client.GoogleUserInfoResult
+    GOOGLE_USERINFO_RESULT2 oauth2_client.GoogleUserInfoResult
 )
 
 
 func init() {
     GOOGLE_USERINFO_RESULT = oauth2_client.NewGoogleUserInfoResult("test@example.com", "John", "test@example.com", "https://www.google.com/m8/feeds/contacts/test%40example.com/full", time.UTC())
+    GOOGLE_USERINFO_RESULT2 = oauth2_client.NewGoogleUserInfoResult("test2@example.com", "John", "test2@example.com", "https://www.google.com/m8/feeds/contacts/test2%40example.com/full", time.UTC())
 }
 
 func TestInitialSyncWithEmptyDataStoreWithGoogleContacts(t *testing.T) {
@@ -2269,8 +2271,13 @@ func TestInitialSyncWithPartialDataStoreWithGoogleContacts(t *testing.T) {
         t.Logf("%s => %#v", contact.DisplayName, contact)
         ds.StoreDsocialContact(dsocialUserId, "", contact)
     }
-    pipeline.InitialSync(mockClient, ds, cs, csSettings, dsocialUserId, "me-contact-id")
-    pipeline.Export(mockClient, ds, cs, csSettings2, dsocialUserId, "me-contact-id")
+    if err := pipeline.InitialSync(mockClient, ds, cs, csSettings, dsocialUserId, "me-contact-id"); err != nil {
+        t.Fatalf("Error on initial sync: %s\n\n", err.String())
+    }
+    mockClient.SetRetrieveUserInfo(GOOGLE_USERINFO_RESULT2, nil)
+    if err := pipeline.Export(mockClient, ds, cs, csSettings2, dsocialUserId, "me-contact-id"); err != nil {
+        t.Fatalf("Error on pipeline.Export: %s\n\n", err.String())
+    }
     buf := bytes.NewBuffer(make([]byte, 0))
     ds.Encode(buf)
     t.Fatalf("Final data store is:\n%s\n\n", buf.String())
