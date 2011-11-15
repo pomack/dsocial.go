@@ -510,6 +510,11 @@ func (p *InMemoryDataStore) ExternalGroupIdForDsocialId(externalServiceId, exter
 func (p *InMemoryDataStore) StoreDsocialExternalContactMapping(externalServiceId, externalUserId, externalContactId, dsocialUserId, dsocialContactId string) (externalExisted, dsocialExisted bool, err os.Error) {
     k1 := strings.Join([]string{externalServiceId, externalUserId, externalContactId}, "|")
     k2 := strings.Join([]string{externalServiceId, externalUserId}, "|")
+    if externalServiceId == "" || externalUserId == "" || externalContactId == "" {
+        panic(fmt.Sprintf("One of the following three strings are empty: externalServiceId: %s, externalUserId: %s, externalContactId: %s\n", externalServiceId, externalUserId, externalContactId))
+    } else if strings.Contains(externalServiceId, "|") || strings.Contains(externalUserId, "|") || strings.Contains(externalContactId, "|") {
+        panic(fmt.Sprintf("One of the following three strings contain pipe character: externalServiceId: %s, externalUserId: %s, externalContactId: %s\n", externalServiceId, externalUserId, externalContactId))
+    }
     id1 := dsocialUserId + "/" + k1
     v1, externalExisted := p.retrieve(_INMEMORY_EXTERNAL_TO_INTERNAL_CONTACT_MAPPING_COLLECTION_NAME, id1)
     v2, dsocialExisted := p.retrieve(_INMEMORY_INTERNAL_TO_EXTERNAL_CONTACT_MAPPING_COLLECTION_NAME, dsocialContactId)
@@ -544,6 +549,11 @@ func (p *InMemoryDataStore) StoreDsocialExternalContactMapping(externalServiceId
 func (p *InMemoryDataStore) StoreDsocialExternalGroupMapping(externalServiceId, externalUserId, externalGroupId, dsocialUserId, dsocialGroupId string) (externalExisted, dsocialExisted bool, err os.Error) {
     k1 := strings.Join([]string{externalServiceId, externalUserId, externalGroupId}, "|")
     k2 := strings.Join([]string{externalServiceId, externalUserId}, "|")
+    if externalServiceId == "" || externalUserId == "" || externalGroupId == "" {
+        panic(fmt.Sprintf("One of the following three strings are empty: externalServiceId: %s, externalUserId: %s, externalGroupId: %s\n", externalServiceId, externalUserId, externalGroupId))
+    } else if strings.Contains(externalServiceId, "|") || strings.Contains(externalUserId, "|") || strings.Contains(externalGroupId, "|") {
+        panic(fmt.Sprintf("One of the following three strings contain pipe character: externalServiceId: %s, externalUserId: %s, externalGroupId: %s\n", externalServiceId, externalUserId, externalGroupId))
+    }
     id1 := dsocialUserId + "/" + k1
     v1, externalExisted := p.retrieve(_INMEMORY_EXTERNAL_TO_INTERNAL_GROUP_MAPPING_COLLECTION_NAME, id1)
     v2, dsocialExisted := p.retrieve(_INMEMORY_INTERNAL_TO_EXTERNAL_GROUP_MAPPING_COLLECTION_NAME, dsocialGroupId)
@@ -597,11 +607,17 @@ func (p *InMemoryDataStore) RetrieveExternalGroup(externalServiceId, externalUse
 func (p *InMemoryDataStore) StoreExternalContact(externalServiceId, externalUserId, dsocialUserId, externalContactId string, contact interface{}) (id string, err os.Error) {
     //id = strings.Join([]string{dsocialUserId, externalServiceId, externalUserId, externalContactId}, "/")
     k := strings.Join([]string{externalServiceId, externalUserId, externalContactId}, "|")
-    id = dsocialUserId + "/" + k
-    p.store(dsocialUserId, _INMEMORY_EXTERNAL_CONTACT_COLLECTION_NAME, id, contact)
+    if externalServiceId == "" || externalUserId == "" || externalContactId == "" {
+        panic(fmt.Sprintf("One of the following three strings are empty: externalServiceId: %s, externalUserId: %s, externalContactId: %s\n", externalServiceId, externalUserId, externalContactId))
+    } else if strings.Contains(externalServiceId, "|") || strings.Contains(externalUserId, "|") || strings.Contains(externalContactId, "|") {
+        panic(fmt.Sprintf("One of the following three strings contain pipe character: externalServiceId: %s, externalUserId: %s, externalContactId: %s\n", externalServiceId, externalUserId, externalContactId))
+    }
+    key := dsocialUserId + "/" + k
+    p.store(dsocialUserId, _INMEMORY_EXTERNAL_CONTACT_COLLECTION_NAME, key, contact)
     if strings.HasPrefix(externalContactId, "testname/contact/") {
         panic(fmt.Sprintf("Storing external contact with invalid externalContactId: %v\n", externalContactId))
     }
+    id = externalContactId
     return
 }
     // Stores external group
@@ -611,11 +627,17 @@ func (p *InMemoryDataStore) StoreExternalContact(externalServiceId, externalUser
 func (p *InMemoryDataStore) StoreExternalGroup(externalServiceId, externalUserId, dsocialUserId, externalGroupId string, group interface{}) (id string, err os.Error) {
     //id = strings.Join([]string{dsocialUserId, externalServiceId, externalUserId, externalGroupId}, "/")
     k := strings.Join([]string{externalServiceId, externalUserId, externalGroupId}, "|")
-    id = dsocialUserId + "/" + k
-    p.store(dsocialUserId, _INMEMORY_EXTERNAL_GROUP_COLLECTION_NAME, id, group)
+    if externalServiceId == "" || externalUserId == "" || externalGroupId == "" {
+        panic(fmt.Sprintf("One of the following three strings are empty: externalServiceId: %s, externalUserId: %s, externalGroupId: %s\n", externalServiceId, externalUserId, externalGroupId))
+    } else if strings.Contains(externalServiceId, "|") || strings.Contains(externalUserId, "|") || strings.Contains(externalGroupId, "|") {
+        panic(fmt.Sprintf("One of the following three strings contain pipe character: externalServiceId: %s, externalUserId: %s, externalGroupId: %s\n", externalServiceId, externalUserId, externalGroupId))
+    }
+    key := dsocialUserId + "/" + k
+    p.store(dsocialUserId, _INMEMORY_EXTERNAL_GROUP_COLLECTION_NAME, key, group)
     if strings.HasPrefix(externalGroupId, "testname/group/") {
         panic(fmt.Sprintf("Storing external group with invalid externalGroupId: %v\n", externalGroupId))
     }
+    id = externalGroupId
     return
 }
     // Deletes external contact
@@ -685,6 +707,11 @@ func (p *InMemoryDataStore) RetrieveDsocialGroupForExternalGroup(externalService
 func (p *InMemoryDataStore) StoreDsocialContactForExternalContact(externalServiceId, externalUserId, externalContactId, dsocialUserId string, contact *dm.Contact) (dsocialContact *dm.Contact, err os.Error) {
     //k := strings.Join([]string{dsocialUserId, externalServiceId, externalUserId, externalContactId}, "/")
     k := strings.Join([]string{externalServiceId, externalUserId, externalContactId}, "|")
+    if externalServiceId == "" || externalUserId == "" || externalContactId == "" {
+        panic(fmt.Sprintf("One of the following three strings are empty: externalServiceId: %s, externalUserId: %s, externalContactId: %s\n", externalServiceId, externalUserId, externalContactId))
+    } else if strings.Contains(externalServiceId, "|") || strings.Contains(externalUserId, "|") || strings.Contains(externalContactId, "|") {
+        panic(fmt.Sprintf("One of the following three strings contain pipe character: externalServiceId: %s, externalUserId: %s, externalContactId: %s\n", externalServiceId, externalUserId, externalContactId))
+    }
     extid := dsocialUserId + "/" + k
     bc.AddIdsForDsocialContact(contact, p, dsocialUserId)
     c := new(dm.Contact)
@@ -701,6 +728,11 @@ func (p *InMemoryDataStore) StoreDsocialContactForExternalContact(externalServic
 func (p *InMemoryDataStore) StoreDsocialGroupForExternalGroup(externalServiceId, externalUserId, externalGroupId, dsocialUserId string, group *dm.Group) (dsocialGroup *dm.Group, err os.Error) {
     //k := strings.Join([]string{dsocialUserId, externalServiceId, externalUserId, externalGroupId}, "/")
     k := strings.Join([]string{externalServiceId, externalUserId, externalGroupId}, "|")
+    if externalServiceId == "" || externalUserId == "" || externalGroupId == "" {
+        panic(fmt.Sprintf("One of the following three strings are empty: externalServiceId: %s, externalUserId: %s, externalGroupId: %s\n", externalServiceId, externalUserId, externalGroupId))
+    } else if strings.Contains(externalServiceId, "|") || strings.Contains(externalUserId, "|") || strings.Contains(externalGroupId, "|") {
+        panic(fmt.Sprintf("One of the following three strings contain pipe character: externalServiceId: %s, externalUserId: %s, externalGroupId: %s\n", externalServiceId, externalUserId, externalGroupId))
+    }
     extid := dsocialUserId + "/" + k
     bc.AddIdsForDsocialGroup(group, p, dsocialUserId)
     g := new(dm.Group)
