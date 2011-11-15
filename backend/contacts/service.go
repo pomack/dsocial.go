@@ -4,6 +4,7 @@ import (
     "github.com/pomack/jsonhelper.go/jsonhelper"
     "github.com/pomack/oauth2_client.go/oauth2_client"
     dm "github.com/pomack/dsocial.go/models/dsocial"
+    "fmt"
     "os"
     "time"
 )
@@ -546,9 +547,13 @@ func CreateContactOnExternalService(client oauth2_client.OAuth2Client, cs Contac
     if err != nil {
         return nil, err
     }
-    externalContactId, err = ds.StoreExternalContact(externalServiceId, externalUserId, dsocialUserId, externalContactId, externalContact)
+    externalContactId2, err := ds.StoreExternalContact(externalServiceId, externalUserId, dsocialUserId, externalContactId, externalContact)
     if err != nil {
         return nil, err
+    }
+    fmt.Printf("[SERVICE]: extContactId: %s, extContactId2: %s\n", externalContactId, externalContactId2)
+    if externalContactId2 != "" {
+        externalContactId = externalContactId2
     }
     dsocialContactForExternal := cs.ConvertToDsocialContact(externalContact, contact, dsocialUserId)
     dsocialContactForExternal, err = ds.StoreDsocialContactForExternalContact(externalServiceId, externalUserId, externalContactId, dsocialUserId, dsocialContactForExternal)
@@ -636,12 +641,15 @@ func UpdateContactOnExternalService(client oauth2_client.OAuth2Client, cs Contac
         return nil, err
     }
     latestExternalContact := cs.ConvertToExternalContact(contact, originalExternalContact, dsocialUserId)
-    latestExternalContact2, externalContactId, err := cs.UpdateContactOnExternalService(client, originalExternalContact, latestExternalContact)
+    latestExternalContact2, externalContactId2, err := cs.UpdateContactOnExternalService(client, originalExternalContact, latestExternalContact)
     if err != nil {
         return nil, err
     }
     if latestExternalContact2 != nil {
         latestExternalContact = latestExternalContact2
+    }
+    if externalContactId2 != "" {
+        externalContactId = externalContactId2
     }
     latestDsocialContactForExternal := cs.ConvertToDsocialContact(latestExternalContact, originalContact, dsocialUserId)
     _, err = ds.StoreExternalContact(externalServiceId, externalUserId, dsocialUserId, externalContactId, latestExternalContact)
@@ -682,12 +690,15 @@ func UpdateGroupOnExternalService(client oauth2_client.OAuth2Client, cs Contacts
         return nil, err
     }
     latestExternalGroup := cs.ConvertToExternalGroup(group, originalExternalGroup, dsocialUserId)
-    latestExternalGroup2, externalGroupId, err := cs.UpdateGroupOnExternalService(client, originalExternalGroup, latestExternalGroup)
+    latestExternalGroup2, externalGroupId2, err := cs.UpdateGroupOnExternalService(client, originalExternalGroup, latestExternalGroup)
     if err != nil {
         return nil, err
     }
     if latestExternalGroup2 != nil {
         latestExternalGroup = latestExternalGroup2
+    }
+    if externalGroupId2 != "" {
+        externalGroupId = externalGroupId2
     }
     latestDsocialGroupForExternal := cs.ConvertToDsocialGroup(latestExternalGroup, originalGroup, dsocialUserId)
     _, err = ds.StoreExternalGroup(externalServiceId, externalUserId, dsocialUserId, externalGroupId, latestExternalGroup)
