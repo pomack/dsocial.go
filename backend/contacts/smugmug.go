@@ -11,7 +11,7 @@ import (
 
 
 type SmugMugContactServiceSettings struct {
-    StandardContactServiceSettings
+    StandardContactServiceSettings `json:"settings,omitempty,collapse"`
 }
 
 func NewSmugMugContactServiceSettings() *SmugMugContactServiceSettings {

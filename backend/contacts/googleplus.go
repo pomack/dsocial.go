@@ -13,7 +13,7 @@ type GooglePlusContactService struct {
 }
 
 type GooglePlusContactServiceSettings struct {
-    StandardContactServiceSettings
+    StandardContactServiceSettings `json:"settings,omitempty,collapse"`
 }
 
 func NewGooglePlusContactServiceSettings() *GooglePlusContactServiceSettings {

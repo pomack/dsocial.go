@@ -11,7 +11,7 @@ import (
 
 
 type TwitterContactServiceSettings struct {
-    StandardContactServiceSettings
+    StandardContactServiceSettings `json:"settings,omitempty,collapse"`
 }
 
 func NewTwitterContactServiceSettings() *TwitterContactServiceSettings {

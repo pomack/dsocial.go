@@ -15,7 +15,7 @@ type FacebookContactService struct {
 }
 
 type FacebookContactServiceSettings struct {
-    StandardContactServiceSettings
+    StandardContactServiceSettings `json:"settings,omitempty,collapse"`
 }
 
 func NewFacebookContactServiceSettings() *FacebookContactServiceSettings {

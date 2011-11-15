@@ -12,7 +12,7 @@ import (
 )
 
 type YahooContactServiceSettings struct {
-    StandardContactServiceSettings
+    StandardContactServiceSettings `json:"settings,omitempty,collapse"`
 }
 
 func NewYahooContactServiceSettings() *YahooContactServiceSettings {

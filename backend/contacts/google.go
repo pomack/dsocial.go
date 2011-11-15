@@ -17,7 +17,7 @@ type GoogleContactService struct {
 }
 
 type GoogleContactServiceSettings struct {
-    StandardContactServiceSettings
+    StandardContactServiceSettings `json:"settings,omitempty,collapse"`
 }
 
 func NewGoogleContactServiceSettings() *GoogleContactServiceSettings {
