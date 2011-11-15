@@ -32,24 +32,19 @@ func (p *Pipeline) removeUnacceptedChanges(l *list.List, allowAdd, allowDelete, 
     n := list.New()
     for iter := l.Front(); iter != nil; iter = iter.Next() {
         if iter.Value == nil {
-            //l.Remove(iter)
             continue
         }
         ch, _ := iter.Value.(*dm.Change)
         if ch == nil {
-            //l.Remove(iter)
             continue
         }
         if !allowAdd && ch.ChangeType == dm.CHANGE_TYPE_ADD {
             fmt.Printf("[PIPELINE]: Removing add change for path of %#v\n", ch.Path)
-            //l.Remove(iter)
         } else if !allowDelete && ch.ChangeType == dm.CHANGE_TYPE_DELETE {
             fmt.Printf("[PIPELINE]: Removing delete change for path of %#v\n", ch.Path)
-            //l.Remove(iter)
         } else if !allowUpdate && ch.ChangeType == dm.CHANGE_TYPE_UPDATE {
             if !allowAdd || ch.Path == nil || len(ch.Path) <= 1 {
                 fmt.Printf("[PIPELINE]: Removing update for path of %#v and allowAdd %v\n", ch.Path, allowAdd)
-                //l.Remove(iter)
             } else {
                 fmt.Printf("[PIPELINE]: Changing update to add for path of %#v and allowAdd %v\n", ch.Path, allowAdd)
                 ch.ChangeType = dm.CHANGE_TYPE_ADD
@@ -116,21 +111,6 @@ func (p *Pipeline) contactImport(cs ContactsService, ds DataStoreService, dsocia
         if err != nil {
             return matchingContact, "", err
         }
-        if isSame {
-            /*
-            existingExtContact, extContactId, err := ds.RetrieveExternalContact(group.ExternalServiceId, group.ExternalUserId, dsocialUserId, group.ExternalContactId)
-            if err != nil {
-                return matchingContact, err
-            }
-            if existingExtContact != nil && extContactId != "" {
-                if extDsocialContact != nil {
-                    fmt.Printf("[PIPELINE]: contactImport() found existing external contact id %v\n", extContactId)
-                    return matchingContact, err
-                }
-            }
-            */
-        }
-        
         if matchingContact != nil {
             contact.DsocialContactId = matchingContact.Id
             extContact := cs.ConvertToExternalContact(matchingContact, nil, dsocialUserId)
@@ -338,20 +318,6 @@ func (p *Pipeline) groupImport(cs ContactsService, ds DataStoreService, dsocialU
         matchingGroup, isSame, err = p.findMatchingDsocialGroup(ds, dsocialUserId, group)
         if err != nil {
             return matchingGroup, "", err
-        }
-        if isSame {
-            /*
-            existingExtGroup, extGroupId, err := ds.RetrieveExternalGroup(group.ExternalServiceId, group.ExternalUserId, dsocialUserId, group.ExternalGroupId)
-            if err != nil {
-                return matchingGroup, err
-            }
-            if existingExtGroup != nil && extGroupId != "" {
-                if extDsocialGroup != nil {
-                    fmt.Printf("[PIPELINE]: groupImport() found existing external group id %v\n", extGroupId)
-                    return matchingGroup, err
-                }
-            }
-            */
         }
         if matchingGroup != nil {
             group.DsocialGroupId = matchingGroup.Id
