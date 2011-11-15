@@ -636,9 +636,12 @@ func UpdateContactOnExternalService(client oauth2_client.OAuth2Client, cs Contac
         return nil, err
     }
     latestExternalContact := cs.ConvertToExternalContact(contact, originalExternalContact, dsocialUserId)
-    latestExternalContact, externalContactId, err = cs.UpdateContactOnExternalService(client, originalExternalContact, latestExternalContact)
+    latestExternalContact2, externalContactId, err := cs.UpdateContactOnExternalService(client, originalExternalContact, latestExternalContact)
     if err != nil {
         return nil, err
+    }
+    if latestExternalContact2 != nil {
+        latestExternalContact = latestExternalContact2
     }
     latestDsocialContactForExternal := cs.ConvertToDsocialContact(latestExternalContact, originalContact, dsocialUserId)
     _, err = ds.StoreExternalContact(externalServiceId, externalUserId, dsocialUserId, externalContactId, latestExternalContact)
@@ -679,9 +682,12 @@ func UpdateGroupOnExternalService(client oauth2_client.OAuth2Client, cs Contacts
         return nil, err
     }
     latestExternalGroup := cs.ConvertToExternalGroup(group, originalExternalGroup, dsocialUserId)
-    latestExternalGroup, externalGroupId, err = cs.UpdateGroupOnExternalService(client, originalExternalGroup, latestExternalGroup)
+    latestExternalGroup2, externalGroupId, err := cs.UpdateGroupOnExternalService(client, originalExternalGroup, latestExternalGroup)
     if err != nil {
         return nil, err
+    }
+    if latestExternalGroup2 != nil {
+        latestExternalGroup = latestExternalGroup2
     }
     latestDsocialGroupForExternal := cs.ConvertToDsocialGroup(latestExternalGroup, originalGroup, dsocialUserId)
     _, err = ds.StoreExternalGroup(externalServiceId, externalUserId, dsocialUserId, externalGroupId, latestExternalGroup)
