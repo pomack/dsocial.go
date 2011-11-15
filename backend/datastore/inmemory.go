@@ -358,12 +358,13 @@ func (p *InMemoryDataStore) retrieveChangeSetsToApply(dsocialUserId, collectionN
         arr = make([]*dm.ChangeSetsToApply, 0)
     } else {
         l := v.(*list.List)
-        arr := make([]*dm.ChangeSetsToApply, l.Len())
+        arr = make([]*dm.ChangeSetsToApply, l.Len())
         i := 0
         for e := l.Front(); e != nil; e = e.Next() {
             ch := e.Value.(*dm.ChangeSetsToApply)
             if ch.RecordType == recordType && ch.ServiceName == serviceName && ch.ServiceId == serviceId {
                 arr[i] = ch
+                i++
                 p.retrieveChangeSetsById(ch.ChangeSetIds, m)
             }
         }
