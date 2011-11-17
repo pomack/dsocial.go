@@ -4,7 +4,11 @@ include $(GOROOT)/src/Make.inc
 all: Make.deps install
 
 DIRS=\
+	accounts/\
+	authentication/\
+	authorization/\
 	contacts/\
+	datastore/\
 
 TEST=\
 	$(filter-out $(NOTEST),$(DIRS))
