@@ -3,7 +3,9 @@ package dsocial
 import (
     "container/vector"
     "fmt"
+    "os"
     "strings"
+    "time"
 )
 
 type HashAlgorithm int
@@ -64,6 +66,52 @@ type PersistableModel struct {
     CreatedAt  int64  `json:"created_at,omitempty"`
     ModifiedAt int64  `json:"modified_at,omitempty"`
 }
+
+func (p *PersistableModel) Validate(createNew bool, errors map[string][]os.Error) (isValid bool) {
+    if errors == nil {
+        errors = make(map[string][]os.Error)
+    }
+    p.Id, _ = validateId(p.Id, createNew, "id", errors)
+    isValid = len(errors) == 0
+    return
+}
+
+func (p *PersistableModel) BeforeCreate() (os.Error) {
+    p.CreatedAt = time.UTC().Seconds()
+    p.ModifiedAt = p.CreatedAt
+    return nil
+}
+
+func (p *PersistableModel) BeforeUpdate() (os.Error) {
+    p.ModifiedAt = time.UTC().Seconds()
+    return nil
+}
+
+func (p *PersistableModel) BeforeSave() (os.Error) {
+    return nil
+}
+
+func (p *PersistableModel) BeforeDelete() (os.Error) {
+    return nil
+}
+
+func (p *PersistableModel) AfterCreate() (os.Error) {
+    return nil
+}
+
+func (p *PersistableModel) AfterUpdate() (os.Error) {
+    return nil
+}
+
+func (p *PersistableModel) AfterSave() (os.Error) {
+    return nil
+}
+
+func (p *PersistableModel) AfterDelete() (os.Error) {
+    return nil
+}
+
+
 
 func removeEmptyStrings(arr []string) []string {
     sv := new(vector.StringVector)

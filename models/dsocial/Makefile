@@ -18,8 +18,10 @@ GOFILES=\
 	convert_smugmug.go\
 	convert_twitter.go\
 	convert_yahoo.go\
+	errors.go\
 	images.go\
-	util.go
+	util.go\
+	validation.go\
 
 
 include $(GOROOT)/src/Make.pkg
