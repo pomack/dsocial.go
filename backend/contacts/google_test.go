@@ -5,7 +5,7 @@ import (
     "github.com/pomack/oauth2_client.go/oauth2_client"
     "github.com/pomack/contacts.go/google"
     "github.com/pomack/dsocial.go/backend/contacts"
-    "github.com/pomack/dsocial.go/backend/datastore"
+    "github.com/pomack/dsocial.go/backend/datastore/inmemory"
     dm "github.com/pomack/dsocial.go/models/dsocial"
     "bytes"
     "json"
@@ -2215,7 +2215,7 @@ func TestInitialSyncWithEmptyDataStoreWithGoogleContacts(t *testing.T) {
     mockClient.AddMockContactJSONEntry(CONTACT_MARIE_CURIE)
     mockClient.AddMockContactJSONEntry(CONTACT_ALBERT_EINSTEIN)
     mockClient.SetRetrieveUserInfo(GOOGLE_USERINFO_RESULT, nil)
-    ds := datastore.NewInMemoryDataStore()
+    ds := inmemory.NewInMemoryDataStore()
     cs := contacts.NewGoogleContactService()
     dsocialUserId := "testname"
     csSettings := contacts.NewGoogleContactServiceSettings()
@@ -2243,7 +2243,7 @@ func TestInitialSyncWithPartialDataStoreWithGoogleContacts(t *testing.T) {
     mockClient.AddMockContactJSONEntry(CONTACT_MARIE_CURIE)
     mockClient.AddMockContactJSONEntry(CONTACT_ALBERT_EINSTEIN)
     mockClient.SetRetrieveUserInfo(GOOGLE_USERINFO_RESULT, nil)
-    ds := datastore.NewInMemoryDataStore()
+    ds := inmemory.NewInMemoryDataStore()
     cs := contacts.NewGoogleContactService()
     dsocialUserId := "testname"
     csSettings := contacts.NewGoogleContactServiceSettings()
