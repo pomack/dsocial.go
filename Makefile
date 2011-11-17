@@ -9,7 +9,7 @@ DIRS=\
 	backend/authentication\
 	backend/authorization\
 	backend/contacts\
-	backend/datastore\
+	backend/datastore/inmemory\
 	api/account\
 	api/auth\
 	api/contacts\

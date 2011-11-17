@@ -1,67 +1,14 @@
-package datastore
+package inmemory
 
 import (
-    "github.com/pomack/jsonhelper.go/jsonhelper"
     dm "github.com/pomack/dsocial.go/models/dsocial"
     bc "github.com/pomack/dsocial.go/backend/contacts"
     "container/list"
     "fmt"
-    "io"
-    "json"
     "os"
-    "strconv"
     "strings"
     "time"
 )
-
-const (
-    _INMEMORY_CONTACT_COLLECTION_NAME = "contacts"
-    _INMEMORY_CONNECTION_COLLECTION_NAME = "connections"
-    _INMEMORY_GROUP_COLLECTION_NAME = "group"
-    _INMEMORY_CHANGESET_COLLECTION_NAME = "changesets"
-    _INMEMORY_EXTERNAL_CONTACT_COLLECTION_NAME = "external_contacts"
-    _INMEMORY_EXTERNAL_GROUP_COLLECTION_NAME = "external_group"
-    _INMEMORY_CONTACT_FOR_EXTERNAL_CONTACT_COLLECTION_NAME = "contacts_for_external_contacts"
-    _INMEMORY_GROUP_FOR_EXTERNAL_GROUP_COLLECTION_NAME = "groups_for_external_group"
-    _INMEMORY_EXTERNAL_TO_INTERNAL_CONTACT_MAPPING_COLLECTION_NAME = "external_to_internal_contact_mappings"
-    _INMEMORY_INTERNAL_TO_EXTERNAL_CONTACT_MAPPING_COLLECTION_NAME = "internal_to_external_contact_mappings"
-    _INMEMORY_EXTERNAL_TO_INTERNAL_GROUP_MAPPING_COLLECTION_NAME = "external_to_internal_group_mappings"
-    _INMEMORY_INTERNAL_TO_EXTERNAL_GROUP_MAPPING_COLLECTION_NAME = "internal_to_external_group_mappings"
-    _INMEMORY_USER_TO_CONTACT_SETTINGS_COLLECTION_NAME = "user_to_contact_settings"
-    _INMEMORY_CHANGESETS_TO_APPLY_COLLECTION_NAME = "changesets_to_apply"
-    _INMEMORY_CHANGESETS_NOT_CURRENTLY_APPLYABLE_COLLECTION_NAME = "changesets_not_currently_applyable"
-)
-
-type inMemoryObject interface{}
-
-type inMemoryCollection struct {
-    Data map[string]inMemoryObject  `json:"data"`
-    Name string                     `json:"name"`
-}
-
-type InMemoryDataStore struct {
-    Collections map[string]*inMemoryCollection  `json:"collections"`
-    NextId int64                                `json:"next_id"`
-}
-
-func NewInMemoryDataStore() *InMemoryDataStore {
-    return &InMemoryDataStore{
-        Collections: make(map[string]*inMemoryCollection),
-        NextId: 1,
-    }
-}
-
-func (p *InMemoryDataStore) retrieveCollection(name string) (m *inMemoryCollection) {
-    var ok bool
-    if m, ok = p.Collections[name]; !ok {
-        m = &inMemoryCollection{
-            Data: make(map[string]inMemoryObject),
-            Name: name,
-        }
-        p.Collections[name] = m
-    }
-    return m
-}
 
 func (p *InMemoryDataStore) retrieveContactCollection() (m *inMemoryCollection) {
     return p.retrieveCollection(_INMEMORY_CONTACT_COLLECTION_NAME)
@@ -73,41 +20,6 @@ func (p *InMemoryDataStore) retrieveConnectionCollection() (m *inMemoryCollectio
 
 func (p *InMemoryDataStore) retrieveGroupCollection() (m *inMemoryCollection) {
     return p.retrieveCollection(_INMEMORY_GROUP_COLLECTION_NAME)
-}
-
-func (p *InMemoryDataStore) retrieveChangesetCollection() (m *inMemoryCollection) {
-    return p.retrieveCollection(_INMEMORY_CHANGESET_COLLECTION_NAME)
-}
-
-func (p *InMemoryDataStore) GenerateId(dsocialUserId string, collectionName string) string {
-    nextId := dsocialUserId + "/" + collectionName + "/" + strconv.Itoa64(p.NextId)
-    p.NextId++
-    return nextId
-}
-
-func (p *InMemoryDataStore) store(dsocialUserId, collectionName, id string, value interface{}) string {
-    if id == "" {
-        id = p.GenerateId(dsocialUserId, collectionName)
-    }
-    p.retrieveCollection(collectionName).Data[id] = inMemoryObject(value)
-    return id
-}
-
-func (p *InMemoryDataStore) delete(dsocialUserId, collectionName, id string) (existed bool) {
-    if id != "" {
-        m := p.retrieveCollection(collectionName).Data
-        _, existed = m[id]
-        m[id] = nil, false
-    }
-    return
-}
-
-func (p *InMemoryDataStore) retrieve(collectionName, id string) (interface{}, bool) {
-    if id == "" {
-        return nil, false
-    }
-    v, ok := p.retrieveCollection(collectionName).Data[id]
-    return v, ok
 }
 
 
@@ -244,69 +156,6 @@ func (p *InMemoryDataStore) SearchForDsocialGroups(dsocialUserId string, groupNa
     return rc, nil
 }
 
-func (p *InMemoryDataStore) storeChangeSet(dsocialUserId string, changeset *dm.ChangeSet) (*dm.ChangeSet, os.Error) {
-    if changeset == nil {
-        return nil, nil
-    }
-    if changeset.Id == "" {
-        changeset.Id = p.GenerateId(dsocialUserId, _INMEMORY_CHANGESET_COLLECTION_NAME)
-    }
-    if changeset.CreatedAt == "" {
-        changeset.CreatedAt = time.UTC().Format(dm.UTC_DATETIME_FORMAT)
-    }
-    obj := new(dm.ChangeSet)
-    *obj = *changeset
-    p.store(dsocialUserId, _INMEMORY_CHANGESET_COLLECTION_NAME, changeset.Id, obj)
-    return changeset, nil
-}
-
-func (p *InMemoryDataStore) retrieveChangeSets(dsocialId string, after *time.Time) ([]*dm.ChangeSet, bc.NextToken, os.Error) {
-    l := list.New()
-    var afterString string
-    if after != nil {
-        afterString = after.Format(dm.UTC_DATETIME_FORMAT)
-    }
-    for _, v := range p.retrieveChangesetCollection().Data {
-        if cs, ok := v.(*dm.ChangeSet); ok {
-            if cs.RecordId == dsocialId {
-                if after == nil || cs.CreatedAt > afterString {
-                    cs2 := new(dm.ChangeSet)
-                    *cs2 = *cs
-                    l.PushBack(cs2)
-                }
-            }
-        }
-    }
-    rc := make([]*dm.ChangeSet, l.Len())
-    for i, iter := 0, l.Front(); iter != nil; i, iter = i+1, iter.Next() {
-        if iter.Value != nil {
-            rc[i] = iter.Value.(*dm.ChangeSet)
-        }
-    }
-    return rc, nil, nil
-}
-
-func (p *InMemoryDataStore) retrieveChangeSetsById(ids []string, m map[string]*dm.ChangeSet) (map[string]*dm.ChangeSet) {
-    if m == nil {
-        m = make(map[string]*dm.ChangeSet)
-    }
-    // make a set from ids to make it faster to query
-    idmap := make(map[string]bool, len(ids))
-    for _, id := range ids {
-        idmap[id] = true
-    }
-    for _, v := range p.retrieveChangesetCollection().Data {
-        if cs, ok := v.(*dm.ChangeSet); ok {
-            if _, ok := idmap[cs.Id]; ok {
-                cs2 := new(dm.ChangeSet)
-                *cs2 = *cs
-                m[cs.Id] = cs2
-            }
-        }
-    }
-    return m
-}
-
 func (p *InMemoryDataStore) StoreContactChangeSet(dsocialUserId string, changeset *dm.ChangeSet) (*dm.ChangeSet, os.Error) {
     return p.storeChangeSet(dsocialUserId, changeset)
 }
@@ -321,81 +170,6 @@ func (p *InMemoryDataStore) StoreGroupChangeSet(dsocialUserId string, changeset 
 
 func (p *InMemoryDataStore) RetrieveGroupChangeSets(dsocialId string, after *time.Time) ([]*dm.ChangeSet, bc.NextToken, os.Error) {
     return p.retrieveChangeSets(dsocialId, after)
-}
-
-func (p *InMemoryDataStore) addChangeSetsToApply(dsocialUserId, collectionName, recordType, serviceId, serviceName string, changesetIds []string) (id string, err os.Error) {
-    if len(dsocialUserId) == 0 || len(recordType) == 0 || len(serviceId) == 0 || len(serviceName) == 0 || changesetIds == nil || len(changesetIds) == 0 {
-        return
-    }
-    v, ok := p.retrieve(collectionName, dsocialUserId)
-    var l *list.List
-    if !ok {
-        l = list.New()
-        p.store(dsocialUserId, collectionName, dsocialUserId, l)
-    } else {
-        l = v.(*list.List)
-    }
-    id = p.GenerateId(dsocialUserId, collectionName)
-    l.PushBack(&dm.ChangeSetsToApply{
-        Id: id,
-        UserId: dsocialUserId,
-        RecordType: recordType,
-        ServiceId: serviceId,
-        ServiceName: serviceName,
-        ChangeSetIds: changesetIds,
-    })
-    return
-}
-
-func (p *InMemoryDataStore) retrieveChangeSetsToApply(dsocialUserId, collectionName, recordType, serviceId, serviceName string) (arr []*dm.ChangeSetsToApply, m map[string]*dm.ChangeSet, err os.Error) {
-    m = make(map[string]*dm.ChangeSet)
-    if dsocialUserId == "" || recordType == "" || serviceId == "" || serviceName == "" {
-        arr = make([]*dm.ChangeSetsToApply, 0)
-        return
-    }
-    v, ok := p.retrieve(collectionName, dsocialUserId)
-    if !ok || v == nil {
-        arr = make([]*dm.ChangeSetsToApply, 0)
-    } else {
-        l := v.(*list.List)
-        arr = make([]*dm.ChangeSetsToApply, l.Len())
-        i := 0
-        for e := l.Front(); e != nil; e = e.Next() {
-            ch := e.Value.(*dm.ChangeSetsToApply)
-            if ch.RecordType == recordType && ch.ServiceName == serviceName && ch.ServiceId == serviceId {
-                arr[i] = ch
-                i++
-                p.retrieveChangeSetsById(ch.ChangeSetIds, m)
-            }
-        }
-        arr = arr[0:i]
-    }
-    return
-}
-
-func (p *InMemoryDataStore) removeChangeSetsToApply(dsocialUserId, collectionName, recordType string, serviceId, serviceName string, ids []string) (err os.Error) {
-    if dsocialUserId == "" || collectionName == "" || recordType == "" || ids == nil || len(ids) == 0 {
-        return
-    }
-    // make a set from ids to make it faster to query
-    idmap := make(map[string]bool, len(ids))
-    for _, id := range ids {
-        idmap[id] = true
-    }
-    v, ok := p.retrieve(collectionName, dsocialUserId)
-    if ok && v != nil {
-        l := v.(*list.List)
-        for e := l.Front(); e != nil; e = e.Next() {
-            ch := e.Value.(*dm.ChangeSetsToApply)
-            if ch.RecordType == recordType && ch.ServiceName == serviceName && ch.ServiceId == serviceId {
-                if _, ok := idmap[ch.Id]; ok {
-                    l.Remove(e)
-                    break
-                }
-            }
-        }
-    }
-    return
 }
 
 func (p *InMemoryDataStore) AddContactChangeSetsToApply(dsocialUserId, serviceId, serviceName string, changesetIds []string) (id string, err os.Error) {
@@ -861,42 +635,5 @@ func (p *InMemoryDataStore) DeleteDsocialGroup(dsocialUserId, dsocialGroupId str
 
 func (p *InMemoryDataStore) BackendContactsDataStoreService() (bc.DataStoreService) {
     return p
-}
-
-func (p *InMemoryDataStore) Encode(w io.Writer) os.Error {
-    v, err := jsonhelper.MarshalWithOptions(p, dm.UTC_DATETIME_FORMAT)
-    if err != nil {
-        return err
-    }
-    return json.NewEncoder(w).Encode(v)
-}
-
-func (p *InMemoryDataStore) Decode(r io.Reader) os.Error {
-    err := json.NewDecoder(r).Decode(p)
-    if err != nil {
-        return err
-    }
-    m := make(map[string]interface{})
-    m[_INMEMORY_CONTACT_COLLECTION_NAME] = new(dm.Contact)
-    m[_INMEMORY_CONNECTION_COLLECTION_NAME] = new(dm.Contact)
-    m[_INMEMORY_GROUP_COLLECTION_NAME] = new(dm.Group)
-    m[_INMEMORY_CHANGESET_COLLECTION_NAME] = new(dm.ChangeSet)
-    m[_INMEMORY_CONTACT_FOR_EXTERNAL_CONTACT_COLLECTION_NAME] = new(dm.Contact)
-    m[_INMEMORY_GROUP_FOR_EXTERNAL_GROUP_COLLECTION_NAME] = new(dm.Group)
-    
-    for k, collection := range p.Collections {
-        if obj, ok := m[k]; ok {
-            for k1, v1 := range collection.Data {
-                m1, _ := jsonhelper.MarshalWithOptions(v1, dm.UTC_DATETIME_FORMAT)
-                b1, _ := json.Marshal(m1)
-                err = json.Unmarshal(b1, obj)
-                if err != nil {
-                    return err
-                }
-                collection.Data[k1] = obj
-            }
-        }
-    }
-    return nil
 }
 
