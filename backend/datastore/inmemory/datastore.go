@@ -134,6 +134,9 @@ func (p *InMemoryDataStore) retrieveString(collectionName, id string) (string, b
 }
 
 func (p *InMemoryDataStore) retrieveStringMapCollection(userId, collectionName, id string) map[string]string {
+    if len(collectionName) == 0 || len(id) == 0 {
+        return make(map[string]string)
+    }
     var m map[string]string
     if names, ok := p.retrieve(collectionName, id); ok {
         m = names.(map[string]string)
@@ -147,6 +150,9 @@ func (p *InMemoryDataStore) retrieveStringMapCollection(userId, collectionName, 
 }
 
 func (p *InMemoryDataStore) retrieveFromStringMapCollection(userId, collectionName, colKey, id string) (value string, found bool) {
+    if len(collectionName) == 0 || len(colKey) == 0 || len(id) == 0 {
+        return
+    }
     var m map[string]string
     if names, ok := p.retrieve(collectionName, id); ok {
         m = names.(map[string]string)
@@ -156,6 +162,9 @@ func (p *InMemoryDataStore) retrieveFromStringMapCollection(userId, collectionNa
 }
 
 func (p *InMemoryDataStore) addToStringMapCollection(userId, collectionName, colKey, key, value string) {
+    if len(collectionName) == 0 || len(colKey) == 0 || len(key) == 0 {
+        return
+    }
     var m map[string]string
     if names, ok := p.retrieve(collectionName, colKey); ok {
         m = names.(map[string]string)
@@ -167,6 +176,9 @@ func (p *InMemoryDataStore) addToStringMapCollection(userId, collectionName, col
 }
 
 func (p *InMemoryDataStore) removeFromStringMapCollection(userId, collectionName, colKey, key string) {
+    if len(collectionName) == 0 || len(colKey) == 0 || len(key) == 0 {
+        return
+    }
     var m map[string]string
     if names, ok := p.retrieve(collectionName, colKey); ok {
         m = names.(map[string]string)
