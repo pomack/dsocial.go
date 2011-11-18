@@ -13,7 +13,7 @@ type DataStore interface {
     RetrieveConsumerKey(consumerKeyId string) (*dm.ConsumerKey, os.Error)
     RetrieveUserKey(userKeyId string) (*dm.UserKey, os.Error)
     RetrieveConsumerKeys(consumerId string, next NextToken, maxResults int) ([]*dm.ConsumerKey, NextToken, os.Error)
-    RetrieveUserKeys(userId, next NextToken, maxResults int) ([]*dm.UserKey, NextToken, os.Error)
+    RetrieveUserKeys(userId string, next NextToken, maxResults int) ([]*dm.UserKey, NextToken, os.Error)
     
     StoreUserPassword(password *dm.UserPassword) (*dm.UserPassword, os.Error)
     StoreConsumerKey(key *dm.ConsumerKey) (*dm.ConsumerKey, os.Error)

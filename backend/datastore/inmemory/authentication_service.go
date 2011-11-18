@@ -31,11 +31,33 @@ func (p *InMemoryDataStore) RetrieveUserKey(userKeyId string) (*dm.UserKey, os.E
 }
 
 func (p *InMemoryDataStore) RetrieveConsumerKeys(consumerId string, next ba.NextToken, maxResults int) ([]*dm.ConsumerKey, ba.NextToken, os.Error) {
-    return nil, nil, nil
+    m := p.retrieveStringMapCollection(consumerId, _INMEMORY_CONSUMER_KEYS_FOR_CONSUMER_ID_COLLECTION_NAME, consumerId)
+    arr := make([]*dm.ConsumerKey, len(m))
+    i := 0
+    var err os.Error
+    for k := range m {
+        arr[i], err = p.RetrieveConsumerKey(k)
+        i++
+        if err != nil {
+            break
+        }
+    }
+    return arr, nil, err
 }
 
-func (p *InMemoryDataStore) RetrieveUserKeys(userId, next ba.NextToken, maxResults int) ([]*dm.UserKey, ba.NextToken, os.Error) {
-    return nil, nil, nil
+func (p *InMemoryDataStore) RetrieveUserKeys(userId string, next ba.NextToken, maxResults int) ([]*dm.UserKey, ba.NextToken, os.Error) {
+    m := p.retrieveStringMapCollection(userId, _INMEMORY_USER_KEYS_FOR_USER_ID_COLLECTION_NAME, userId)
+    arr := make([]*dm.UserKey, len(m))
+    i := 0
+    var err os.Error
+    for k := range m {
+        arr[i], err = p.RetrieveUserKey(k)
+        i++
+        if err != nil {
+            break
+        }
+    }
+    return arr, nil, err
 }
 
 func (p *InMemoryDataStore) StoreUserPassword(password *dm.UserPassword) (*dm.UserPassword, os.Error) {
