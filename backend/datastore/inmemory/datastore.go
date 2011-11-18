@@ -120,3 +120,27 @@ func (p *InMemoryDataStore) retrieve(collectionName, id string) (interface{}, bo
     v, ok := p.retrieveCollection(collectionName).Data[id]
     return v, ok
 }
+
+func (p *InMemoryDataStore) addToStringMapCollection(userId, collectionName, colKey, key, value string) {
+    var m map[string]string
+    if names, ok := p.retrieve(collectionName, colKey); ok {
+        m = names.(map[string]string)
+    } else {
+        m = make(map[string]string)
+    }
+    m[key] = value
+    p.store(userId, collectionName, colKey, m)
+}
+
+func (p *InMemoryDataStore) removeFromStringMapCollection(userId, collectionName, colKey, key, value string) {
+    var m map[string]string
+    if names, ok := p.retrieve(collectionName, colKey); ok {
+        m = names.(map[string]string)
+        m[key] = value, false
+        if len(m) == 0 {
+            p.delete(userId, collectionName, colKey)
+        } else {
+            p.store(userId, collectionName, colKey, m)
+        }
+    }
+}
