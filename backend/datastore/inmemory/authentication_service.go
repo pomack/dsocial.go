@@ -78,7 +78,7 @@ func (p *InMemoryDataStore) StoreUserKey(key *dm.UserKey) (*dm.UserKey, os.Error
 }
 
 func (p *InMemoryDataStore) DeleteUserPassword(userId string) (*dm.UserPassword, os.Error) {
-    oldValue, _ := p.delete(userId, _INMEMORY_USER_PASSWORD_COLLECTION_NAME, userId)
+    oldValue, _ := p.delete(_INMEMORY_USER_PASSWORD_COLLECTION_NAME, userId)
     if oldValue != nil {
         pwd, _ := oldValue.(*dm.UserPassword)
         return pwd, nil
@@ -87,7 +87,7 @@ func (p *InMemoryDataStore) DeleteUserPassword(userId string) (*dm.UserPassword,
 }
 
 func (p *InMemoryDataStore) DeleteConsumerKey(consumerKeyId string) (oldKey *dm.ConsumerKey, err os.Error) {
-    oldValue, _ := p.delete("", _INMEMORY_CONSUMER_KEYS_COLLECTION_NAME, consumerKeyId)
+    oldValue, _ := p.delete(_INMEMORY_CONSUMER_KEYS_COLLECTION_NAME, consumerKeyId)
     if oldValue != nil {
         if key, ok := oldValue.(*dm.ConsumerKey); ok {
             p.removeFromStringMapCollection(key.ConsumerId, _INMEMORY_CONSUMER_KEYS_FOR_CONSUMER_ID_COLLECTION_NAME, key.ConsumerId, consumerKeyId)
@@ -98,7 +98,7 @@ func (p *InMemoryDataStore) DeleteConsumerKey(consumerKeyId string) (oldKey *dm.
 }
 
 func (p *InMemoryDataStore) DeleteUserKey(userKeyId string) (oldKey *dm.UserKey, err os.Error) {
-    oldValue, _ := p.delete("", _INMEMORY_USER_KEYS_COLLECTION_NAME, userKeyId)
+    oldValue, _ := p.delete(_INMEMORY_USER_KEYS_COLLECTION_NAME, userKeyId)
     if oldValue != nil {
         if key, ok := oldValue.(*dm.UserKey); ok {
             p.removeFromStringMapCollection(key.UserId, _INMEMORY_USER_KEYS_FOR_USER_ID_COLLECTION_NAME, key.UserId, userKeyId)
