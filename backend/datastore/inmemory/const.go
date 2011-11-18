@@ -13,6 +13,12 @@ const (
     _INMEMORY_EXTERNAL_ACCOUNT_IDS_FOR_CONSUMER_ID_COLLECTION_NAME = "external_account_ids_for_consumer_id"
     _INMEMORY_EXTERNAL_ACCOUNT_IDS_FOR_EXTERNAL_USER_ID_COLLECTION_NAME = "external_account_ids_for_external_user_id"
     
+    _INMEMORY_USER_PASSWORD_COLLECTION_NAME = "user_passwords"
+    _INMEMORY_USER_KEYS_COLLECTION_NAME = "user_keys"
+    _INMEMORY_CONSUMER_KEYS_COLLECTION_NAME = "consumer_keys"
+    _INMEMORY_USER_KEYS_FOR_USER_ID_COLLECTION_NAME = "user_keys_for_user_id"
+    _INMEMORY_CONSUMER_KEYS_FOR_CONSUMER_ID_COLLECTION_NAME = "consumer_keys_for_consumer_id"
+    
     _INMEMORY_CONTACT_COLLECTION_NAME = "contacts"
     _INMEMORY_CONNECTION_COLLECTION_NAME = "connections"
     _INMEMORY_GROUP_COLLECTION_NAME = "group"
