@@ -25,7 +25,6 @@ func init() {
     ERR_ACCOUNT_MUST_SPECIFY_SHORTNAME = os.NewError("Must specify short-name")
 }
 
-    FindUserAccountsByPhoneNumber(phoneNumber string, next NextToken, maxResults int) ([]*dm.User, NextToken, os.Error)
 
 type NextToken interface{}
 
@@ -45,7 +44,6 @@ type DataStore interface {
     RetrieveUserAccountById(id string) (*dm.User, os.Error)
     FindUserAccountByUsername(username string) (*dm.User, os.Error)
     FindUserAccountsByEmail(email string, next NextToken, maxResults int) ([]*dm.User, NextToken, os.Error)
-    FindUserAccountsByPhoneNumber(phoneNumber string, next NextToken, maxResults int) ([]*dm.User, NextToken, os.Error)
     
     RetrieveConsumerAccountById(id string) (*dm.Consumer, os.Error)
     FindConsumerAccountByShortName(shortName string) (*dm.Consumer, os.Error)
