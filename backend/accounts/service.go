@@ -33,9 +33,9 @@ type DataStore interface {
     UpdateUserAccount(user *dm.User) (*dm.User, os.Error)
     DeleteUserAccount(user *dm.User) (*dm.User, os.Error)
     
-    CreateConsumerAccount(user *dm.Consumer) (*dm.User, os.Error)
-    UpdateConsumerAccount(user *dm.Consumer) (*dm.User, os.Error)
-    DeleteConsumerAccount(user *dm.Consumer) (*dm.User, os.Error)
+    CreateConsumerAccount(user *dm.Consumer) (*dm.Consumer, os.Error)
+    UpdateConsumerAccount(user *dm.Consumer) (*dm.Consumer, os.Error)
+    DeleteConsumerAccount(user *dm.Consumer) (*dm.Consumer, os.Error)
     
     CreateExternalUserAccount(user *dm.ExternalUser) (*dm.ExternalUser, os.Error)
     UpdateExternalUserAccount(user *dm.ExternalUser) (*dm.ExternalUser, os.Error)
