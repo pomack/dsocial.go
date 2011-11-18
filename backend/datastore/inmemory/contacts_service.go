@@ -396,7 +396,7 @@ func (p *InMemoryDataStore) DeleteExternalContact(externalServiceId, externalUse
     //k := strings.Join([]string{dsocialUserId, externalServiceId, externalUserId, externalContactId}, "/")
     k := strings.Join([]string{externalServiceId, externalUserId, externalContactId}, "|")
     id := dsocialUserId + "/" + k
-    existed = p.delete(dsocialUserId, _INMEMORY_EXTERNAL_CONTACT_COLLECTION_NAME, id)
+    _, existed = p.delete(dsocialUserId, _INMEMORY_EXTERNAL_CONTACT_COLLECTION_NAME, id)
     return
 }
     // Deletes external group
@@ -407,7 +407,7 @@ func (p *InMemoryDataStore) DeleteExternalGroup(externalServiceId, externalUserI
     //k := strings.Join([]string{dsocialUserId, externalServiceId, externalUserId, externalGroupId}, "/")
     k := strings.Join([]string{externalServiceId, externalUserId, externalGroupId}, "|")
     id := dsocialUserId + "/" + k
-    existed = p.delete(dsocialUserId, _INMEMORY_EXTERNAL_GROUP_COLLECTION_NAME, id)
+    _, existed = p.delete(dsocialUserId, _INMEMORY_EXTERNAL_GROUP_COLLECTION_NAME, id)
     return
 }
     
@@ -499,7 +499,7 @@ func (p *InMemoryDataStore) DeleteDsocialContactForExternalContact(externalServi
     //k := strings.Join([]string{dsocialUserId, externalServiceId, externalUserId, externalContactId}, "|")
     k := strings.Join([]string{externalServiceId, externalUserId, externalContactId}, "|")
     extid := dsocialUserId + "/" + k
-    existed = p.delete(dsocialUserId, _INMEMORY_CONTACT_FOR_EXTERNAL_CONTACT_COLLECTION_NAME, extid)
+    _, existed = p.delete(dsocialUserId, _INMEMORY_CONTACT_FOR_EXTERNAL_CONTACT_COLLECTION_NAME, extid)
     return
 }
     // Deletes dsocial group
@@ -510,7 +510,7 @@ func (p *InMemoryDataStore) DeleteDsocialGroupForExternalGroup(externalServiceId
     //k := strings.Join([]string{dsocialUserId, externalServiceId, externalUserId, externalGroupId}, "/")
     k := strings.Join([]string{externalServiceId, externalUserId, externalGroupId}, "|")
     extid := dsocialUserId + "/" + k
-    existed = p.delete(dsocialUserId, _INMEMORY_GROUP_FOR_EXTERNAL_GROUP_COLLECTION_NAME, extid)
+    _, existed = p.delete(dsocialUserId, _INMEMORY_GROUP_FOR_EXTERNAL_GROUP_COLLECTION_NAME, extid)
     return
 }
 
@@ -594,7 +594,7 @@ func (p *InMemoryDataStore) StoreDsocialGroup(dsocialUserId, dsocialGroupId stri
     //   err : error or nil
 func (p *InMemoryDataStore) DeleteDsocialContact(dsocialUserId, dsocialContactId string) (existed bool, err os.Error) {
     //k := strings.Join([]string{dsocialUserId, dsocialContactId}, "/")
-    existed = p.delete(dsocialUserId, _INMEMORY_CONTACT_COLLECTION_NAME, dsocialContactId)
+    _, existed = p.delete(dsocialUserId, _INMEMORY_CONTACT_COLLECTION_NAME, dsocialContactId)
     return 
 }
     // Deletes dsocial group
@@ -603,7 +603,7 @@ func (p *InMemoryDataStore) DeleteDsocialContact(dsocialUserId, dsocialContactId
     //   err : error or nil
 func (p *InMemoryDataStore) DeleteDsocialGroup(dsocialUserId, dsocialGroupId string) (existed bool, err os.Error) {
     //k := strings.Join([]string{dsocialUserId, dsocialGroupId}, "/")
-    existed = p.delete(dsocialUserId, _INMEMORY_GROUP_COLLECTION_NAME, dsocialGroupId)
+    _, existed = p.delete(dsocialUserId, _INMEMORY_GROUP_COLLECTION_NAME, dsocialGroupId)
     return 
 }
 

@@ -104,10 +104,10 @@ func (p *InMemoryDataStore) store(dsocialUserId, collectionName, id string, valu
     return id
 }
 
-func (p *InMemoryDataStore) delete(dsocialUserId, collectionName, id string) (existed bool) {
+func (p *InMemoryDataStore) delete(dsocialUserId, collectionName, id string) (oldValue interface{}, existed bool) {
     if id != "" {
         m := p.retrieveCollection(collectionName).Data
-        _, existed = m[id]
+        oldValue, existed = m[id]
         m[id] = nil, false
     }
     return
