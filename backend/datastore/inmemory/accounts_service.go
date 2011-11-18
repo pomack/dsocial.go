@@ -262,11 +262,7 @@ func (p *InMemoryDataStore) RetrieveUserAccountById(id string) (*dm.User, os.Err
 }
 
 func (p *InMemoryDataStore) FindUserAccountByUsername(username string) (*dm.User, os.Error) {
-    uidI, _ := p.retrieve(_INMEMORY_USER_ACCOUNT_ID_FOR_USERNAME_COLLECTION_NAME, username)
-    if uidI == nil {
-        return nil, nil
-    }
-    uid := uidI.(string)
+    uid, _ := p.retrieveString(_INMEMORY_USER_ACCOUNT_ID_FOR_USERNAME_COLLECTION_NAME, username)
     if uid == "" {
         return nil, nil
     }
@@ -274,11 +270,7 @@ func (p *InMemoryDataStore) FindUserAccountByUsername(username string) (*dm.User
 }
 
 func (p *InMemoryDataStore) FindUserAccountsByEmail(email string, next ba.NextToken, maxResults int) ([]*dm.User, ba.NextToken, os.Error) {
-    uidI, _ := p.retrieve(_INMEMORY_USER_ACCOUNT_ID_FOR_EMAIL_COLLECTION_NAME, email)
-    if uidI == nil {
-        return nil, nil, nil
-    }
-    uid := uidI.(string)
+    uid, _ := p.retrieveString(_INMEMORY_USER_ACCOUNT_ID_FOR_EMAIL_COLLECTION_NAME, email)
     if uid == "" {
         return nil, nil, nil
     }
@@ -299,11 +291,7 @@ func (p *InMemoryDataStore) RetrieveConsumerAccountById(id string) (*dm.Consumer
 }
 
 func (p *InMemoryDataStore) FindConsumerAccountByShortName(shortName string) (*dm.Consumer, os.Error) {
-    uidI, _ := p.retrieve(_INMEMORY_CONSUMER_ACCOUNT_ID_FOR_SHORTNAME_COLLECTION_NAME, shortName)
-    if uidI == nil {
-        return nil, nil
-    }
-    uid := uidI.(string)
+    uid, _ := p.retrieveString(_INMEMORY_CONSUMER_ACCOUNT_ID_FOR_SHORTNAME_COLLECTION_NAME, shortName)
     if uid == "" {
         return nil, nil
     }
@@ -311,11 +299,7 @@ func (p *InMemoryDataStore) FindConsumerAccountByShortName(shortName string) (*d
 }
 
 func (p *InMemoryDataStore) FindConsumerAccountsByDomainName(domainName string, next ba.NextToken, maxResults int) ([]*dm.Consumer, ba.NextToken, os.Error) {
-    mI, _ := p.retrieve(_INMEMORY_CONSUMER_ACCOUNT_IDS_FOR_DOMAIN_NAME_COLLECTION_NAME, domainName)
-    if mI == nil {
-        return make([]*dm.Consumer, 0), nil, nil
-    }
-    m := mI.(map[string]string)
+    m := p.retrieveStringMapCollection("", _INMEMORY_CONSUMER_ACCOUNT_IDS_FOR_DOMAIN_NAME_COLLECTION_NAME, domainName)
     arr := make([]*dm.Consumer, len(m))
     i := 0
     for k := range m {
@@ -327,11 +311,7 @@ func (p *InMemoryDataStore) FindConsumerAccountsByDomainName(domainName string, 
 
 func (p *InMemoryDataStore) FindConsumerAccountsByName(name string, exact bool, next ba.NextToken, maxResults int) ([]*dm.Consumer, ba.NextToken, os.Error) {
     // TODO handle non-exact name matches
-    mI, _ := p.retrieve(_INMEMORY_CONSUMER_ACCOUNT_IDS_FOR_NAME_COLLECTION_NAME, name)
-    if mI == nil {
-        return make([]*dm.Consumer, 0), nil, nil
-    }
-    m := mI.(map[string]string)
+    m := p.retrieveStringMapCollection("", _INMEMORY_CONSUMER_ACCOUNT_IDS_FOR_NAME_COLLECTION_NAME, name)
     arr := make([]*dm.Consumer, len(m))
     i := 0
     for k := range m {
@@ -355,11 +335,7 @@ func (p *InMemoryDataStore) RetrieveExternalUserAccountByConsumerAndExternalUser
 }
 
 func (p *InMemoryDataStore) FindExternalUserAccountsByConsumerId(consumerId string, next ba.NextToken, maxResults int) ([]*dm.ExternalUser, ba.NextToken, os.Error) {
-    mI, _ := p.retrieve(_INMEMORY_EXTERNAL_ACCOUNT_IDS_FOR_CONSUMER_ID_COLLECTION_NAME, consumerId)
-    if mI == nil {
-        return make([]*dm.ExternalUser, 0), nil, nil
-    }
-    m := mI.(map[string]string)
+    m := p.retrieveStringMapCollection("", _INMEMORY_EXTERNAL_ACCOUNT_IDS_FOR_CONSUMER_ID_COLLECTION_NAME, consumerId)
     arr := make([]*dm.ExternalUser, len(m))
     i := 0
     for k := range m {
@@ -370,11 +346,7 @@ func (p *InMemoryDataStore) FindExternalUserAccountsByConsumerId(consumerId stri
 }
 
 func (p *InMemoryDataStore) FindExternalUserAccountsByExternalUserId(externalUserId string, next ba.NextToken, maxResults int) ([]*dm.ExternalUser, ba.NextToken, os.Error) {
-    mI, _ := p.retrieve(_INMEMORY_EXTERNAL_ACCOUNT_IDS_FOR_EXTERNAL_USER_ID_COLLECTION_NAME, externalUserId)
-    if mI == nil {
-        return make([]*dm.ExternalUser, 0), nil, nil
-    }
-    m := mI.(map[string]string)
+    m := p.retrieveStringMapCollection("", _INMEMORY_EXTERNAL_ACCOUNT_IDS_FOR_EXTERNAL_USER_ID_COLLECTION_NAME, externalUserId)
     arr := make([]*dm.ExternalUser, len(m))
     i := 0
     for k := range m {

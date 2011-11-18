@@ -121,6 +121,40 @@ func (p *InMemoryDataStore) retrieve(collectionName, id string) (interface{}, bo
     return v, ok
 }
 
+func (p *InMemoryDataStore) retrieveString(collectionName, id string) (string, bool) {
+    if id == "" {
+        return "", false
+    }
+    v, ok := p.retrieveCollection(collectionName).Data[id]
+    if ok {
+        value, _ := v.(string)
+        return value, ok
+    }
+    return "", ok
+}
+
+func (p *InMemoryDataStore) retrieveStringMapCollection(userId, collectionName, id string) map[string]string {
+    var m map[string]string
+    if names, ok := p.retrieve(collectionName, id); ok {
+        m = names.(map[string]string)
+    } else {
+        m = make(map[string]string)
+        if userId != "" && collectionName != "" && id != "" {
+            p.store(userId, collectionName, id, m)
+        }
+    }
+    return m
+}
+
+func (p *InMemoryDataStore) retrieveFromStringMapCollection(userId, collectionName, colKey, id string) (value string, found bool) {
+    var m map[string]string
+    if names, ok := p.retrieve(collectionName, id); ok {
+        m = names.(map[string]string)
+        value, found = m[id]
+    }
+    return
+}
+
 func (p *InMemoryDataStore) addToStringMapCollection(userId, collectionName, colKey, key, value string) {
     var m map[string]string
     if names, ok := p.retrieve(collectionName, colKey); ok {
