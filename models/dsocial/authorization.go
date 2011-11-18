@@ -68,3 +68,29 @@ type AclPersistableModel struct {
     PersistableModel `json:"model,omitempty,collapse"`
     Acl              Acl `json:"acl,omitempty"`
 }
+
+func (p *Session) UID() (uid string) {
+    if p != nil {
+        if len(p.ExternalUserId) > 0 {
+            uid = p.ExternalUserId
+        } else if len(p.ConsumerId) > 0 {
+            uid = p.ConsumerId
+        } else {
+            uid = p.UserId
+        }
+    }
+    return
+}
+
+func (p *AuthorizationToken) UID() (uid string) {
+    if p != nil {
+        if len(p.ExternalUserId) > 0 {
+            uid = p.ExternalUserId
+        } else if len(p.ConsumerId) > 0 {
+            uid = p.ConsumerId
+        } else {
+            uid = p.UserId
+        }
+    }
+    return
+}
