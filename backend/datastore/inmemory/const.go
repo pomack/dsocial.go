@@ -19,6 +19,15 @@ const (
     _INMEMORY_USER_KEYS_FOR_USER_ID_COLLECTION_NAME = "user_keys_for_user_id"
     _INMEMORY_CONSUMER_KEYS_FOR_CONSUMER_ID_COLLECTION_NAME = "consumer_keys_for_consumer_id"
     
+    _INMEMORY_SESSIONS_COLLECTION_NAME = "sessions"
+    _INMEMORY_SESSION_IDS_FOR_USER_ID_COLLECTION_NAME = "session_ids_for_user_id"
+    _INMEMORY_SESSION_IDS_FOR_CONSUMER_ID_COLLECTION_NAME = "session_ids_for_consumer_id"
+    _INMEMORY_SESSION_IDS_FOR_EXTERNAL_USER_ID_COLLECTION_NAME = "session_ids_for_external_user_id"
+    _INMEMORY_AUTH_TOKENS_COLLECTION_NAME = "auth_tokens"
+    _INMEMORY_AUTH_TOKEN_IDS_FOR_USER_ID_COLLECTION_NAME = "auth_token_ids_for_user_id"
+    _INMEMORY_AUTH_TOKEN_IDS_FOR_CONSUMER_ID_COLLECTION_NAME = "auth_token_ids_for_consumer_id"
+    _INMEMORY_AUTH_TOKEN_IDS_FOR_EXTERNAL_USER_ID_COLLECTION_NAME = "auth_token_ids_for_external_user_id"
+    
     _INMEMORY_CONTACT_COLLECTION_NAME = "contacts"
     _INMEMORY_CONNECTION_COLLECTION_NAME = "connections"
     _INMEMORY_GROUP_COLLECTION_NAME = "group"
