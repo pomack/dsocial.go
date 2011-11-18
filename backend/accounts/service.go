@@ -54,9 +54,44 @@ type DataStore interface {
     RetrieveExternalUserAccountByConsumerAndExternalUserId(consumerId, externalUserId string) (*dm.ExternalUser, os.Error)
     FindExternalUserAccountsByConsumerId(consumerId string, next NextToken, maxResults int) ([]*dm.ExternalUser, NextToken, os.Error)
     FindExternalUserAccountsByExternalUserId(externalUserId string, next NextToken, maxResults int) ([]*dm.ExternalUser, NextToken, os.Error)
-    
-    AllowLoginByUserId(userId string) (bool, os.Error)
-    DisableLogin(userId string) (os.Error)
-    DisableLoginAt(userId string, at *time.Time) (os.Error)
 }
 
+
+
+func AllowLoginByUserId(ds DataStore, userId string) (bool, os.Error) {
+    user, err := ds.RetrieveUserAccountById(userId)
+    if user != nil && user.AllowLogin && (user.DisableLoginAt <= 0 || user.DisableLoginAt < time.UTC().Seconds()) {
+        return true, err
+    }
+    return false, err
+}
+
+func DisableLogin(ds DataStore, userId string) (os.Error) {
+    user, err := ds.RetrieveUserAccountById(userId)
+    if user == nil || err != nil {
+        return err
+    }
+    user.AllowLogin = false
+    _, err = ds.UpdateUserAccount(user)
+    return err
+}
+
+func DisableLoginAt(ds DataStore, userId string, at *time.Time) (os.Error) {
+    user, err := ds.RetrieveUserAccountById(userId)
+    if user == nil || err != nil {
+        return err
+    }
+    if user.AllowLogin {
+        now := time.UTC().Seconds()
+        if user.DisableLoginAt == 0 || user.DisableLoginAt < now || (at != nil && at.Seconds() < now) {
+            user.AllowLogin = false
+            user.DisableLoginAt = 0
+        } else if at == nil {
+            user.DisableLoginAt = 0
+        } else {
+            user.DisableLoginAt = at.Seconds()
+        }
+        _, err = ds.UpdateUserAccount(user)
+    }
+    return err
+}
