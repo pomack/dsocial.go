@@ -1,9 +1,5 @@
 package inmemory
 
-import (
-    "os"
-)
-
 const (
     
     _INMEMORY_USER_ACCOUNT_COLLECTION_NAME = "user_accounts"
@@ -28,21 +24,4 @@ const (
     _INMEMORY_CHANGESETS_TO_APPLY_COLLECTION_NAME = "changesets_to_apply"
     _INMEMORY_CHANGESETS_NOT_CURRENTLY_APPLYABLE_COLLECTION_NAME = "changesets_not_currently_applyable"
 )
-
-var (
-    ERR_ACCOUNT_ALREADY_EXISTS_WITH_SPECIFIED_ID os.Error
-    ERR_ACCOUNT_ALREADY_EXISTS_WITH_SPECIFIED_USERNAME os.Error
-    ERR_ACCOUNT_ALREADY_EXISTS_WITH_SPECIFIED_SHORTNAME os.Error
-    ERR_ACCOUNT_ALREADY_EXISTS_WITH_SPECIFIED_EMAIL os.Error
-    ERR_ACCOUNT_MUST_SPECIFY_SHORTNAME os.Error
-)
-
-func init() {
-    ERR_ACCOUNT_ALREADY_EXISTS_WITH_SPECIFIED_ID = os.NewError("Account already exists with specified id")
-    ERR_ACCOUNT_ALREADY_EXISTS_WITH_SPECIFIED_USERNAME = os.NewError("Account already exists with specified username")
-    ERR_ACCOUNT_ALREADY_EXISTS_WITH_SPECIFIED_SHORTNAME = os.NewError("Account already exists with specified short-name")
-    ERR_ACCOUNT_ALREADY_EXISTS_WITH_SPECIFIED_EMAIL = os.NewError("Account already exists with specified email")
-    ERR_ACCOUNT_MUST_SPECIFY_SHORTNAME = os.NewError("Must specify short-name")
-}
-
 

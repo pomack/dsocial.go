@@ -7,6 +7,26 @@ import (
 )
 
 
+var (
+    ERR_ACCOUNT_ALREADY_EXISTS_WITH_SPECIFIED_ID os.Error
+    ERR_ACCOUNT_ALREADY_EXISTS_WITH_SPECIFIED_USERNAME os.Error
+    ERR_ACCOUNT_ALREADY_EXISTS_WITH_SPECIFIED_SHORTNAME os.Error
+    ERR_ACCOUNT_ALREADY_EXISTS_WITH_SPECIFIED_EMAIL os.Error
+    ERR_ACCOUNT_ALREADY_EXISTS_WITH_SPECIFIED_DOMAIN_NAME os.Error
+    ERR_ACCOUNT_MUST_SPECIFY_SHORTNAME os.Error
+)
+
+func init() {
+    ERR_ACCOUNT_ALREADY_EXISTS_WITH_SPECIFIED_ID = os.NewError("Account already exists with specified id")
+    ERR_ACCOUNT_ALREADY_EXISTS_WITH_SPECIFIED_USERNAME = os.NewError("Account already exists with specified username")
+    ERR_ACCOUNT_ALREADY_EXISTS_WITH_SPECIFIED_SHORTNAME = os.NewError("Account already exists with specified short-name")
+    ERR_ACCOUNT_ALREADY_EXISTS_WITH_SPECIFIED_EMAIL = os.NewError("Account already exists with specified email")
+    ERR_ACCOUNT_ALREADY_EXISTS_WITH_SPECIFIED_DOMAIN_NAME = os.NewError("Account already exists with specified domain name")
+    ERR_ACCOUNT_MUST_SPECIFY_SHORTNAME = os.NewError("Must specify short-name")
+}
+
+    FindUserAccountsByPhoneNumber(phoneNumber string, next NextToken, maxResults int) ([]*dm.User, NextToken, os.Error)
+
 type NextToken interface{}
 
 type DataStore interface {
