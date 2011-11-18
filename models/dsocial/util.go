@@ -8,18 +8,6 @@ import (
     "time"
 )
 
-type HashAlgorithm int
-
-const (
-    MD5                    HashAlgorithm = iota
-    SHA1                   HashAlgorithm = iota
-    SHA224                 HashAlgorithm = iota
-    SHA256                 HashAlgorithm = iota
-    SHA384                 HashAlgorithm = iota
-    SHA512                 HashAlgorithm = iota
-    DEFAULT_HASH_ALGORITHM HashAlgorithm = SHA512
-)
-
 type Date struct {
     Year  int16 `json:"year,omitempty"`
     Month int8  `json:"month,omitempty"`
