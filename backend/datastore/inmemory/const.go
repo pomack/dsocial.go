@@ -6,7 +6,12 @@ const (
     _INMEMORY_USER_ACCOUNT_ID_FOR_USERNAME_COLLECTION_NAME = "user_account_id_for_username"
     _INMEMORY_USER_ACCOUNT_ID_FOR_EMAIL_COLLECTION_NAME = "user_account_id_for_email"
     _INMEMORY_CONSUMER_ACCOUNT_COLLECTION_NAME = "consumer_accounts"
+    _INMEMORY_CONSUMER_ACCOUNT_ID_FOR_SHORTNAME_COLLECTION_NAME = "consumer_account_id_for_shortname"
+    _INMEMORY_CONSUMER_ACCOUNT_IDS_FOR_NAME_COLLECTION_NAME = "consumer_account_ids_for_name"
+    _INMEMORY_CONSUMER_ACCOUNT_IDS_FOR_DOMAIN_NAME_COLLECTION_NAME = "consumer_account_ids_for_domain_name"
     _INMEMORY_EXTERNAL_USER_ACCOUNT_COLLECTION_NAME = "external_user_accounts"
+    _INMEMORY_EXTERNAL_ACCOUNT_IDS_FOR_CONSUMER_ID_COLLECTION_NAME = "external_account_ids_for_consumer_id"
+    _INMEMORY_EXTERNAL_ACCOUNT_IDS_FOR_EXTERNAL_USER_ID_COLLECTION_NAME = "external_account_ids_for_external_user_id"
     
     _INMEMORY_CONTACT_COLLECTION_NAME = "contacts"
     _INMEMORY_CONNECTION_COLLECTION_NAME = "connections"
