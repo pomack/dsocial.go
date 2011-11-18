@@ -159,10 +159,10 @@ func (p *InMemoryDataStore) UpdateConsumerAccount(user *dm.Consumer) (*dm.Consum
             p.delete(user.Id, _INMEMORY_CONSUMER_ACCOUNT_ID_FOR_SHORTNAME_COLLECTION_NAME, oldUser.ShortName)
         }
         if oldUser.Name != user.Name {
-            p.removeFromStringMapCollection(user.Id, _INMEMORY_CONSUMER_ACCOUNT_IDS_FOR_NAME_COLLECTION_NAME, oldUser.Name, user.Id, user.Id)
+            p.removeFromStringMapCollection(user.Id, _INMEMORY_CONSUMER_ACCOUNT_IDS_FOR_NAME_COLLECTION_NAME, oldUser.Name, user.Id)
         }
         if oldUser.DomainName != user.DomainName {
-            p.removeFromStringMapCollection(user.Id, _INMEMORY_CONSUMER_ACCOUNT_IDS_FOR_DOMAIN_NAME_COLLECTION_NAME, oldUser.DomainName, user.Id, user.Id)
+            p.removeFromStringMapCollection(user.Id, _INMEMORY_CONSUMER_ACCOUNT_IDS_FOR_DOMAIN_NAME_COLLECTION_NAME, oldUser.DomainName, user.Id)
         }
     }
     return user, nil
@@ -183,8 +183,8 @@ func (p *InMemoryDataStore) DeleteConsumerAccount(user *dm.Consumer) (*dm.Consum
     if oldUser != nil {
         p.delete(user.Id, _INMEMORY_CONSUMER_ACCOUNT_COLLECTION_NAME, user.Id)
         p.delete(user.Id, _INMEMORY_CONSUMER_ACCOUNT_ID_FOR_SHORTNAME_COLLECTION_NAME, oldUser.ShortName)
-        p.removeFromStringMapCollection(user.Id, _INMEMORY_CONSUMER_ACCOUNT_IDS_FOR_NAME_COLLECTION_NAME, oldUser.Name, user.Id, user.Id)
-        p.removeFromStringMapCollection(user.Id, _INMEMORY_CONSUMER_ACCOUNT_IDS_FOR_DOMAIN_NAME_COLLECTION_NAME, oldUser.DomainName, user.Id, user.Id)
+        p.removeFromStringMapCollection(user.Id, _INMEMORY_CONSUMER_ACCOUNT_IDS_FOR_NAME_COLLECTION_NAME, oldUser.Name, user.Id)
+        p.removeFromStringMapCollection(user.Id, _INMEMORY_CONSUMER_ACCOUNT_IDS_FOR_DOMAIN_NAME_COLLECTION_NAME, oldUser.DomainName, user.Id)
     }
     return user, nil
 }
@@ -223,10 +223,10 @@ func (p *InMemoryDataStore) UpdateExternalUserAccount(user *dm.ExternalUser) (*d
     p.addToStringMapCollection(user.Id, _INMEMORY_EXTERNAL_ACCOUNT_IDS_FOR_EXTERNAL_USER_ID_COLLECTION_NAME, user.ExternalUserId, user.Id, user.Id)
     if oldUser != nil {
         if oldUser.ConsumerId != user.ConsumerId {
-            p.removeFromStringMapCollection(user.Id, _INMEMORY_EXTERNAL_ACCOUNT_IDS_FOR_CONSUMER_ID_COLLECTION_NAME, oldUser.ConsumerId, user.Id, user.Id)
+            p.removeFromStringMapCollection(user.Id, _INMEMORY_EXTERNAL_ACCOUNT_IDS_FOR_CONSUMER_ID_COLLECTION_NAME, oldUser.ConsumerId, user.Id)
         }
         if oldUser.ExternalUserId != user.ExternalUserId {
-            p.removeFromStringMapCollection(user.Id, _INMEMORY_EXTERNAL_ACCOUNT_IDS_FOR_EXTERNAL_USER_ID_COLLECTION_NAME, oldUser.ExternalUserId, user.Id, user.Id)
+            p.removeFromStringMapCollection(user.Id, _INMEMORY_EXTERNAL_ACCOUNT_IDS_FOR_EXTERNAL_USER_ID_COLLECTION_NAME, oldUser.ExternalUserId, user.Id)
         }
     }
     return user, nil
@@ -246,8 +246,8 @@ func (p *InMemoryDataStore) DeleteExternalUserAccount(user *dm.ExternalUser) (*d
     }
     if oldUser != nil {
         p.delete(user.Id, _INMEMORY_EXTERNAL_USER_ACCOUNT_COLLECTION_NAME, user.Id)
-        p.removeFromStringMapCollection(user.Id, _INMEMORY_EXTERNAL_ACCOUNT_IDS_FOR_CONSUMER_ID_COLLECTION_NAME, oldUser.ConsumerId, user.Id, user.Id)
-        p.removeFromStringMapCollection(user.Id, _INMEMORY_EXTERNAL_ACCOUNT_IDS_FOR_EXTERNAL_USER_ID_COLLECTION_NAME, oldUser.ExternalUserId, user.Id, user.Id)
+        p.removeFromStringMapCollection(user.Id, _INMEMORY_EXTERNAL_ACCOUNT_IDS_FOR_CONSUMER_ID_COLLECTION_NAME, oldUser.ConsumerId, user.Id)
+        p.removeFromStringMapCollection(user.Id, _INMEMORY_EXTERNAL_ACCOUNT_IDS_FOR_EXTERNAL_USER_ID_COLLECTION_NAME, oldUser.ExternalUserId, user.Id)
     }
     return user, nil
 }

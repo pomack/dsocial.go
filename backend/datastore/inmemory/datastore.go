@@ -166,11 +166,11 @@ func (p *InMemoryDataStore) addToStringMapCollection(userId, collectionName, col
     p.store(userId, collectionName, colKey, m)
 }
 
-func (p *InMemoryDataStore) removeFromStringMapCollection(userId, collectionName, colKey, key, value string) {
+func (p *InMemoryDataStore) removeFromStringMapCollection(userId, collectionName, colKey, key string) {
     var m map[string]string
     if names, ok := p.retrieve(collectionName, colKey); ok {
         m = names.(map[string]string)
-        m[key] = value, false
+        m[key] = "", false
         if len(m) == 0 {
             p.delete(userId, collectionName, colKey)
         } else {
