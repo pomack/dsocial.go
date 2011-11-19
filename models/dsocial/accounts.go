@@ -1,6 +1,7 @@
 package dsocial
 
 import (
+    "github.com/pomack/jsonhelper.go/jsonhelper"
     "os"
     "strings"
 )
@@ -55,6 +56,40 @@ type ExternalUser struct {
     Name             string `json:"name,omitempty"`
 }
 
+func (p *Consumer) InitFromJSONObject(obj jsonhelper.JSONObject) {
+    p.PersistableModel.InitFromJSONObject(obj)
+    p.DomainName = obj.GetAsString("domain_name")
+    p.HomePage = obj.GetAsString("home_page")
+    p.AuthorizationPage = obj.GetAsString("authorization_page")
+    p.ShortName = obj.GetAsString("short_name")
+    p.Name = obj.GetAsString("name")
+    p.Email = obj.GetAsString("email")
+    p.PhoneNumber = obj.GetAsString("phone_number")
+    p.IsTrusted = obj.GetAsBool("is_trusted")
+    p.IsSuggested = obj.GetAsBool("is_suggested")
+    p.AllowLogin = obj.GetAsBool("allow_login")
+    p.DisableLoginAt = obj.GetAsInt64("disable_login_at")
+}
+
+func (p *Consumer) CleanFromUser(user *User, original *Consumer) {
+    if original == nil {
+        p.PersistableModel.CleanFromUser(user, nil)
+    } else {
+        p.PersistableModel.CleanFromUser(user, &original.PersistableModel)
+    }
+    if original == nil {
+        p.IsTrusted = false
+        p.IsSuggested = false
+        p.AllowLogin = true
+        p.DisableLoginAt = 0
+    } else {
+        p.IsTrusted = original.IsTrusted
+        p.IsSuggested = original.IsSuggested
+        p.AllowLogin = original.AllowLogin
+        p.DisableLoginAt = original.DisableLoginAt
+    }
+}
+
 func (p *Consumer) Validate(createNew bool, errors map[string][]os.Error) (isValid bool) {
     if errors == nil {
         errors = make(map[string][]os.Error)
@@ -69,6 +104,45 @@ func (p *Consumer) Validate(createNew bool, errors map[string][]os.Error) (isVal
     p.PhoneNumber = strings.TrimSpace(p.PhoneNumber)
     isValid = len(errors) == 0
     return
+}
+
+func (p *User) InitFromJSONObject(obj jsonhelper.JSONObject) {
+    p.PersistableModel.InitFromJSONObject(obj)
+    p.Role = obj.GetAsInt32("role")
+    p.Name = obj.GetAsString("name")
+    p.Username = obj.GetAsString("username")
+    p.Email = obj.GetAsString("email")
+    p.PhoneNumber = obj.GetAsString("phone_number")
+    p.Address = obj.GetAsString("address")
+    p.ContactId = obj.GetAsString("contact_id")
+    p.AllowLogin = obj.GetAsBool("allow_login")
+    p.IsPayingUser = obj.GetAsBool("is_paying_user")
+    p.Notes = obj.GetAsString("notes")
+    p.DisableLoginAt = obj.GetAsInt64("disable_login_at")
+}
+
+func (p *User) CleanFromUser(user *User, original *User) {
+    if original == nil {
+        p.PersistableModel.CleanFromUser(user, nil)
+    } else {
+        p.PersistableModel.CleanFromUser(user, &original.PersistableModel)
+    }
+    if user == nil || user.Role != ROLE_ADMIN {
+        p.Role = ROLE_STANDARD
+    }
+    if original == nil {
+        p.ContactId = ""
+        p.AllowLogin = true
+        p.IsPayingUser = false
+        p.Notes = ""
+        p.DisableLoginAt = 0
+    } else {
+        p.ContactId = original.ContactId
+        p.AllowLogin = original.AllowLogin
+        p.IsPayingUser = original.IsPayingUser
+        p.Notes = original.Notes
+        p.DisableLoginAt = original.DisableLoginAt
+    }
 }
 
 func (p *User) Validate(createNew bool, errors map[string][]os.Error) (isValid bool) {
@@ -87,6 +161,32 @@ func (p *User) Validate(createNew bool, errors map[string][]os.Error) (isValid b
     p.ContactId, _ = validateId(p.ContactId, true, "contact_id", errors)
     isValid = len(errors) == 0
     return
+}
+
+func (p *ExternalUser) InitFromJSONObject(obj jsonhelper.JSONObject) {
+    p.PersistableModel.InitFromJSONObject(obj)
+    p.ConsumerId = obj.GetAsString("consumer_id")
+    p.ExternalUserId = obj.GetAsString("external_user_id")
+    p.Name = obj.GetAsString("name")
+}
+
+func (p *ExternalUser) CleanFromUser(user *User, original *ExternalUser) {
+    if original == nil {
+        p.PersistableModel.CleanFromUser(user, nil)
+    } else {
+        p.PersistableModel.CleanFromUser(user, &original.PersistableModel)
+    }
+    if original != nil {
+        if p.ConsumerId == "" {
+            p.ConsumerId = original.ConsumerId
+        }
+        if p.ExternalUserId == "" {
+            p.ExternalUserId = original.ExternalUserId
+        }
+        if p.Name == "" {
+            p.Name = original.Name
+        }
+    }
 }
 
 func (p *ExternalUser) Validate(createNew bool, errors map[string][]os.Error) (isValid bool) {

@@ -1,6 +1,7 @@
 package dsocial
 
 import (
+    "github.com/pomack/jsonhelper.go/jsonhelper"
     "container/vector"
     "fmt"
     "os"
@@ -53,6 +54,22 @@ type PersistableModel struct {
     Id         string `json:"id,omitempty"`
     CreatedAt  int64  `json:"created_at,omitempty"`
     ModifiedAt int64  `json:"modified_at,omitempty"`
+}
+
+func (p *PersistableModel) InitFromJSONObject(obj jsonhelper.JSONObject) {
+    p.Id = obj.GetAsString("id")
+    p.CreatedAt = obj.GetAsInt64("created_at")
+    p.ModifiedAt = obj.GetAsInt64("modified_at")
+}
+
+func (p *PersistableModel) CleanFromUser(user *User, original *PersistableModel) {
+    if original == nil {
+        p.CreatedAt = 0
+        p.ModifiedAt = 0
+    } else {
+        p.CreatedAt = original.CreatedAt
+        p.ModifiedAt = original.ModifiedAt
+    }
 }
 
 func (p *PersistableModel) Validate(createNew bool, errors map[string][]os.Error) (isValid bool) {
