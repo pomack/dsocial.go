@@ -24,7 +24,6 @@ func OutputErrorMessage(writer io.Writer, message string, result interface{}, st
     m.Set("message", message)
     m.Set("result", result)
     w.Encode(m)
-    panic("Error Message: " + message)
     return statusCode, headers, nil
 }
 
