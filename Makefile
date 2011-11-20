@@ -5,16 +5,8 @@ all: Make.deps install
 
 DIRS=\
 	models/dsocial\
-	backend/accounts\
-	backend/authentication\
-	backend/authorization\
-	backend/contacts\
-	backend/datastore/inmemory\
-	api/account\
-	api/auth\
-	api/contacts\
-	api/external_services\
-	api/groups\
+	backend\
+	api\
 
 TEST=\
 	$(filter-out $(NOTEST),$(DIRS))
