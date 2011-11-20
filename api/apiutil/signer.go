@@ -31,13 +31,13 @@ type Signer interface {
 }
 
 type signer struct {
-    accessKey string
+    accessKey       string
     secretAccessKey []byte
 }
 
 func NewSigner(accessKey string, secretAccessKey string) Signer {
     return &signer{
-        accessKey: accessKey,
+        accessKey:       accessKey,
         secretAccessKey: bytes.NewBufferString(secretAccessKey).Bytes(),
     }
 }
@@ -49,69 +49,73 @@ func (p *signer) AccessKey() string {
 // the core function of the Signer, generates the raw hmac of he bytes.
 func (p *signer) SignBytes(h crypto.Hash, buf []byte) (signature []byte, err os.Error) {
     hasher := hmac.New(func() hash.Hash { return h.New() }, p.secretAccessKey)
-	_, err = hasher.Write(buf)
-	if err == nil {
-		signature = hasher.Sum()
-	}
-	return
+    _, err = hasher.Write(buf)
+    if err == nil {
+        signature = hasher.Sum()
+    }
+    return
 }
 
 // Same as SignBytes, but with strings.
 func (p *signer) SignString(h crypto.Hash, s string) (signature string, err os.Error) {
     buf, err := p.SignBytes(h, bytes.NewBufferString(s).Bytes())
-	if err == nil {
-		signature = string(buf)
-	}
-	return
+    if err == nil {
+        signature = string(buf)
+    }
+    return
 }
 
 // SignBytes, but will base64 encode based on the specified encoder.
 func (p *signer) SignEncoded(h crypto.Hash, s string, enc *base64.Encoding) (signature []byte, err os.Error) {
-	buf, err := p.SignBytes(h, bytes.NewBufferString(s).Bytes())
-	if err == nil {
-		signature = make([]byte, enc.EncodedLen(len(buf)))
-		enc.Encode(signature, buf)
-	}
-	return
+    buf, err := p.SignBytes(h, bytes.NewBufferString(s).Bytes())
+    if err == nil {
+        signature = make([]byte, enc.EncodedLen(len(buf)))
+        enc.Encode(signature, buf)
+    }
+    return
 }
 
 // Modifies the request for signing
 // if expiresIn is set to 0, a Timestamp will be used, otherwise an expiration.
 func (p *signer) SignRequest(req *http.Request, expiresIn int64) {
     qstring, err := url.ParseQuery(req.URL.RawQuery)
-    if err != nil { return }
+    if err != nil {
+        return
+    }
     qstring["SignatureVersion"] = []string{DEFAULT_SIGNATURE_VERSION}
     if _, ok := qstring["SignatureMethod"]; !ok || len(qstring["SignatureMethod"]) == 0 {
         qstring["SignatureMethod"] = []string{DEFAULT_SIGNATURE_METHOD}
     }
     if expiresIn > 0 {
-        qstring["Expires"] = []string{strconv.Itoa64(time.Seconds()+expiresIn)}
+        qstring["Expires"] = []string{strconv.Itoa64(time.Seconds() + expiresIn)}
     } else {
         qstring["Timestamp"] = []string{time.UTC().Format(dm.UTC_DATETIME_FORMAT)}
     }
     qstring["Signature"] = nil, false
     qstring["DSOCAccessKeyId"] = []string{p.accessKey}
 
-  	var signature []byte
+    var signature []byte
     req.URL.RawQuery = qstring.Encode()
     canonicalizedStringToSign, err := p.Canonicalize(req)
-    if err != nil { return }
+    if err != nil {
+        return
+    }
     //log.Printf("String-to-sign: '%s'", canonicalizedStringToSign)
 
-  	switch qstring["SignatureMethod"][0] {
-  	case SIGNATURE_METHOD_HMAC_SHA256:
-  		signature, err = p.SignEncoded(crypto.SHA256, canonicalizedStringToSign, base64.StdEncoding)
-  	case SIGNATURE_METHOD_HMAC_SHA1:
-  		signature, err = p.SignEncoded(crypto.SHA1, canonicalizedStringToSign, base64.StdEncoding)
-  	default:
-  		err = os.NewError("Unknown SignatureMethod:" + req.Form.Get("SignatureMethod"))
-  	}
+    switch qstring["SignatureMethod"][0] {
+    case SIGNATURE_METHOD_HMAC_SHA256:
+        signature, err = p.SignEncoded(crypto.SHA256, canonicalizedStringToSign, base64.StdEncoding)
+    case SIGNATURE_METHOD_HMAC_SHA1:
+        signature, err = p.SignEncoded(crypto.SHA1, canonicalizedStringToSign, base64.StdEncoding)
+    default:
+        err = os.NewError("Unknown SignatureMethod:" + req.Form.Get("SignatureMethod"))
+    }
 
-  	if err == nil {
+    if err == nil {
         req.URL.RawQuery += "&" + url.Values{"Signature": []string{string(signature)}}.Encode()
         req.RawURL = req.URL.String()
-  	}
-  	return
+    }
+    return
 }
 
 // Generates the canonical string-to-sign for dsocial services.
@@ -123,7 +127,6 @@ func (p *signer) Canonicalize(req *http.Request) (out string, err os.Error) {
     }
     return
 }
-
 
 // Checks whether the request has a signature, validates it if it does
 // and returns an error if signature is present but not valid
@@ -146,7 +149,7 @@ func (p *signer) CheckSignature(req *http.Request) (hasSignature, validSignature
         }
     } else if timestampStr := qstring.Get("Timestamp"); timestampStr != "" {
         timestamp, _ := time.Parse(dm.UTC_DATETIME_FORMAT, timestampStr)
-        if timestamp == nil || timestamp.Seconds() - MAX_VALID_TIMESTAMP_IN_SECONDS > now || timestamp.Seconds() + MAX_VALID_TIMESTAMP_IN_SECONDS < now {
+        if timestamp == nil || timestamp.Seconds()-MAX_VALID_TIMESTAMP_IN_SECONDS > now || timestamp.Seconds()+MAX_VALID_TIMESTAMP_IN_SECONDS < now {
             err = ErrorTimestampTooOld
             return
         }
@@ -164,31 +167,31 @@ func (p *signer) CheckSignature(req *http.Request) (hasSignature, validSignature
         signatureMethod = DEFAULT_SIGNATURE_METHOD
     }
     switch signatureMethod {
-        case SIGNATURE_METHOD_HMAC_SHA256:
-            h = crypto.SHA256
-      	case SIGNATURE_METHOD_HMAC_SHA1:
-      	    h = crypto.SHA1
-      	default:
-      	    err = ErrorInvalidSignatureMethod
-      	    return
+    case SIGNATURE_METHOD_HMAC_SHA256:
+        h = crypto.SHA256
+    case SIGNATURE_METHOD_HMAC_SHA1:
+        h = crypto.SHA1
+    default:
+        err = ErrorInvalidSignatureMethod
+        return
     }
     originalSignature := qstring.Get("Signature")
     qstring["Signature"] = nil, false
     qstring["DSOCAccessKeyId"] = []string{p.accessKey}
-    
-  	var signature []byte
+
+    var signature []byte
     req.URL.RawQuery = qstring.Encode()
     canonicalizedStringToSign, err := p.Canonicalize(req)
-    if err != nil { return }
+    if err != nil {
+        return
+    }
     //log.Printf("String-to-sign: '%s'", canonicalizedStringToSign)
 
-	signature, err = p.SignEncoded(h, canonicalizedStringToSign, base64.StdEncoding)
-	if err != nil || string(signature) != originalSignature {
-	    err = ErrorSignatureDoesNotMatch
-	} else {
-	    validSignature = true
-	}
-  	return
+    signature, err = p.SignEncoded(h, canonicalizedStringToSign, base64.StdEncoding)
+    if err != nil || string(signature) != originalSignature {
+        err = ErrorSignatureDoesNotMatch
+    } else {
+        validSignature = true
+    }
+    return
 }
-
-

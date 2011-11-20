@@ -82,7 +82,6 @@ func (p *YahooContactService) ConvertToExternalGroup(dsocialGroup *dm.Group, ori
     return
 }
 
-
 func (p *YahooContactService) CanRetrieveAllContacts() bool {
     return false
 }
@@ -213,11 +212,11 @@ func (p *YahooContactService) RetrieveContacts(client oauth2_client.OAuth2Client
         dsocialContact := dm.YahooContactToDsocial(&yahooContact, origDsocialContact, dsocialUserId)
         contacts[i] = &Contact{
             ExternalServiceId: p.ServiceId(),
-            ExternalUserId: externalUserId,
+            ExternalUserId:    externalUserId,
             ExternalContactId: externalContactId,
-            DsocialUserId: dsocialUserId,
-            DsocialContactId: dsocialContactId,
-            Value: dsocialContact,
+            DsocialUserId:     dsocialUserId,
+            DsocialContactId:  dsocialContactId,
+            Value:             dsocialContact,
         }
     }
     return contacts, nil, useErr
@@ -274,11 +273,11 @@ func (p *YahooContactService) RetrieveGroups(client oauth2_client.OAuth2Client, 
         var dsocialGroup *dm.Group = dm.YahooCategoryToDsocial(&yahooGroup, origDsocialGroup, dsocialUserId)
         groups[i] = &Group{
             ExternalServiceId: p.ServiceId(),
-            ExternalUserId: externalUserId,
-            ExternalGroupId: externalGroupId,
-            DsocialUserId: dsocialUserId,
-            DsocialGroupId: dsocialGroupId,
-            Value: dsocialGroup,
+            ExternalUserId:    externalUserId,
+            ExternalGroupId:   externalGroupId,
+            DsocialUserId:     dsocialUserId,
+            DsocialGroupId:    dsocialGroupId,
+            Value:             dsocialGroup,
         }
     }
     return groups, nil, useErr
@@ -317,11 +316,11 @@ func (p *YahooContactService) RetrieveContact(client oauth2_client.OAuth2Client,
     dsocialContact := dm.YahooContactToDsocial(yahooContact, origDsocialContact, dsocialUserId)
     contact := &Contact{
         ExternalServiceId: p.ServiceId(),
-        ExternalUserId: externalUserId,
+        ExternalUserId:    externalUserId,
         ExternalContactId: externalContactId,
-        DsocialUserId: dsocialUserId,
-        DsocialContactId: dsocialContactId,
-        Value: dsocialContact,
+        DsocialUserId:     dsocialUserId,
+        DsocialContactId:  dsocialContactId,
+        Value:             dsocialContact,
     }
     return contact, useErr
 }
@@ -361,11 +360,11 @@ func (p *YahooContactService) RetrieveGroup(client oauth2_client.OAuth2Client, d
     var dsocialGroup *dm.Group = dm.YahooCategoryToDsocial(yahooGroup, origDsocialGroup, dsocialUserId)
     group := &Group{
         ExternalServiceId: p.ServiceId(),
-        ExternalUserId: externalUserId,
-        ExternalGroupId: externalGroupId,
-        DsocialUserId: dsocialUserId,
-        DsocialGroupId: dsocialGroupId,
-        Value: dsocialGroup,
+        ExternalUserId:    externalUserId,
+        ExternalGroupId:   externalGroupId,
+        DsocialUserId:     dsocialUserId,
+        DsocialGroupId:    dsocialGroupId,
+        Value:             dsocialGroup,
     }
     return group, useErr
 }
@@ -412,9 +411,6 @@ func (p *YahooContactService) DeleteContactOnExternalService(client oauth2_clien
 func (p *YahooContactService) DeleteGroupOnExternalService(client oauth2_client.OAuth2Client, group interface{}) (bool, os.Error) {
     return false, nil
 }
-
-
-
 
 func (p *YahooContactService) ContactsService() ContactsService {
     return p

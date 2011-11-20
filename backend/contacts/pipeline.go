@@ -11,6 +11,7 @@ import (
 )
 
 type Pipeline struct {
+
 }
 
 func NewPipeline() *Pipeline {
@@ -25,7 +26,7 @@ func (p *Pipeline) IncrementalSync(client oauth2_client.OAuth2Client, ds DataSto
     return p.Sync(client, ds, cs, csSettings, dsocialUserId, meContactId, true, true, true)
 }
 
-func (p *Pipeline) removeUnacceptedChanges(l *list.List, allowAdd, allowDelete, allowUpdate bool) (*list.List) {
+func (p *Pipeline) removeUnacceptedChanges(l *list.List, allowAdd, allowDelete, allowUpdate bool) *list.List {
     if allowAdd && allowDelete && allowUpdate {
         return l
     }
@@ -173,11 +174,11 @@ func (p *Pipeline) contactImport(cs ContactsService, ds DataStoreService, dsocia
         changes[i] = iter.Value.(*dm.Change)
     }
     changeset := &dm.ChangeSet{
-        CreatedAt: time.UTC().Format(dm.UTC_DATETIME_FORMAT),
-        ChangedBy: contact.ExternalServiceId,
+        CreatedAt:      time.UTC().Format(dm.UTC_DATETIME_FORMAT),
+        ChangedBy:      contact.ExternalServiceId,
         ChangeImportId: contact.ExternalContactId,
-        RecordId: contact.DsocialContactId,
-        Changes: changes,
+        RecordId:       contact.DsocialContactId,
+        Changes:        changes,
     }
     _, err = ds.StoreContactChangeSet(dsocialUserId, changeset)
     if err != nil {
@@ -267,8 +268,8 @@ func (p *Pipeline) groupImport(cs ContactsService, ds DataStoreService, dsocialU
     if len(group.Value.ContactIds) == 0 && len(group.Value.ContactNames) == 0 && minimumIncludes != nil {
         sv1 := vector.StringVector(group.Value.ContactIds)
         sv2 := vector.StringVector(group.Value.ContactNames)
-        sv1.Resize(sv1.Len(), sv1.Len() + minimumIncludes.Len())
-        sv2.Resize(sv2.Len(), sv2.Len() + minimumIncludes.Len())
+        sv1.Resize(sv1.Len(), sv1.Len()+minimumIncludes.Len())
+        sv2.Resize(sv2.Len(), sv2.Len()+minimumIncludes.Len())
         for iter := minimumIncludes.Front(); iter != nil; iter = iter.Next() {
             contactRef := iter.Value.(*dm.ContactRef)
             sv1.Push(contactRef.Id)
@@ -383,11 +384,11 @@ func (p *Pipeline) groupImport(cs ContactsService, ds DataStoreService, dsocialU
         changes[i] = iter.Value.(*dm.Change)
     }
     changeset := &dm.ChangeSet{
-        CreatedAt: time.UTC().Format(dm.UTC_DATETIME_FORMAT),
-        ChangedBy: group.ExternalServiceId,
+        CreatedAt:      time.UTC().Format(dm.UTC_DATETIME_FORMAT),
+        ChangedBy:      group.ExternalServiceId,
         ChangeImportId: group.ExternalGroupId,
-        RecordId: group.DsocialGroupId,
-        Changes: changes,
+        RecordId:       group.DsocialGroupId,
+        Changes:        changes,
     }
     _, err = ds.StoreGroupChangeSet(dsocialUserId, changeset)
     if err != nil {
@@ -437,7 +438,7 @@ func (p *Pipeline) addContactToGroupMappings(m map[string]*list.List, contact *d
                 m[groupRef.Name] = l
             }
             l.PushBack(&dm.ContactRef{
-                Id: contact.Id,
+                Id:   contact.Id,
                 Name: contact.DisplayName,
             })
         }
@@ -498,7 +499,7 @@ func (p *Pipeline) importConnections(client oauth2_client.OAuth2Client, ds DataS
             }
             if checkGroupsInContacts && finalContact != nil && finalContact != nil && finalContact.GroupReferences != nil && len(finalContact.GroupReferences) > 0 {
                 p.addContactToGroupMappings(groupMappings, finalContact)
-            } 
+            }
             if err != nil {
                 break
             }
@@ -607,7 +608,7 @@ func (p *Pipeline) Import(client oauth2_client.OAuth2Client, ds DataStoreService
     return
 }
 
-func (p *Pipeline) extractAllChangeSetIds(applyable []*dm.ChangeSetsToApply, changesets map[string]*dm.ChangeSet) ([]string) {
+func (p *Pipeline) extractAllChangeSetIds(applyable []*dm.ChangeSetsToApply, changesets map[string]*dm.ChangeSet) []string {
     arr := make(vector.StringVector, 0, len(changesets))
     for _, toApply := range applyable {
         for _, changesetId := range toApply.ChangeSetIds {
@@ -718,8 +719,6 @@ func (p *Pipeline) handleUpdateContact(client oauth2_client.OAuth2Client, ds Dat
     return
 }
 
-
-
 func (p *Pipeline) handleDeleteGroup(client oauth2_client.OAuth2Client, ds DataStoreService, cs ContactsService, dsocialUserId, externalServiceId, externalUserId, dsocialGroupId string) (err os.Error) {
     fmt.Printf("[PIPELINE]: Handling Delete Group...\n")
     externalGroupId, err := ds.ExternalGroupIdForDsocialId(externalServiceId, externalUserId, dsocialUserId, dsocialGroupId)
@@ -776,7 +775,6 @@ func (p *Pipeline) handleUpdateGroup(client oauth2_client.OAuth2Client, ds DataS
     return
 }
 
-
 func (p *Pipeline) applyContactChangeSets(client oauth2_client.OAuth2Client, ds DataStoreService, cs ContactsService, csSettings ContactsServiceSettings, dsocialUserId, meContactId string) (err os.Error) {
     externalServiceId := csSettings.Id()
     externalServiceName := csSettings.ContactsServiceId()
@@ -810,22 +808,22 @@ func (p *Pipeline) applyContactChangeSets(client oauth2_client.OAuth2Client, ds 
                     isUpdate = true
                 } else if len(changeset.Changes) == 1 {
                     switch changeset.Changes[0].ChangeType {
-                        case dm.CHANGE_TYPE_CREATE:
+                    case dm.CHANGE_TYPE_CREATE:
+                        isCreate = true
+                    case dm.CHANGE_TYPE_ADD:
+                        if changeset.Changes[0].Path == nil || len(changeset.Changes[0].Path) == 0 {
                             isCreate = true
-                        case dm.CHANGE_TYPE_ADD:
-                            if changeset.Changes[0].Path == nil || len(changeset.Changes[0].Path) == 0 {
-                                isCreate = true
-                            } else {
-                                isUpdate = true
-                            }
-                        case dm.CHANGE_TYPE_UPDATE:
+                        } else {
                             isUpdate = true
-                        case dm.CHANGE_TYPE_DELETE:
-                            if changeset.Changes[0].Path == nil || len(changeset.Changes[0].Path) == 0 {
-                                isDelete = true
-                            } else {
-                                isUpdate = true
-                            }
+                        }
+                    case dm.CHANGE_TYPE_UPDATE:
+                        isUpdate = true
+                    case dm.CHANGE_TYPE_DELETE:
+                        if changeset.Changes[0].Path == nil || len(changeset.Changes[0].Path) == 0 {
+                            isDelete = true
+                        } else {
+                            isUpdate = true
+                        }
                     }
                 }
                 if !(isCreate && canCreate) && !(isUpdate && canUpdate) && !(isDelete && canDelete) {
@@ -891,22 +889,22 @@ func (p *Pipeline) applyGroupChangeSets(client oauth2_client.OAuth2Client, ds Da
                     isUpdate = true
                 } else if len(changeset.Changes) == 1 {
                     switch changeset.Changes[0].ChangeType {
-                        case dm.CHANGE_TYPE_CREATE:
+                    case dm.CHANGE_TYPE_CREATE:
+                        isCreate = true
+                    case dm.CHANGE_TYPE_ADD:
+                        if changeset.Changes[0].Path == nil || len(changeset.Changes[0].Path) == 0 {
                             isCreate = true
-                        case dm.CHANGE_TYPE_ADD:
-                            if changeset.Changes[0].Path == nil || len(changeset.Changes[0].Path) == 0 {
-                                isCreate = true
-                            } else {
-                                isUpdate = true
-                            }
-                        case dm.CHANGE_TYPE_UPDATE:
+                        } else {
                             isUpdate = true
-                        case dm.CHANGE_TYPE_DELETE:
-                            if changeset.Changes[0].Path == nil || len(changeset.Changes[0].Path) == 0 {
-                                isDelete = true
-                            } else {
-                                isUpdate = true
-                            }
+                        }
+                    case dm.CHANGE_TYPE_UPDATE:
+                        isUpdate = true
+                    case dm.CHANGE_TYPE_DELETE:
+                        if changeset.Changes[0].Path == nil || len(changeset.Changes[0].Path) == 0 {
+                            isDelete = true
+                        } else {
+                            isUpdate = true
+                        }
                     }
                 }
                 if !(isCreate && canCreate) && !(isUpdate && canUpdate) && !(isDelete && canDelete) {
@@ -949,7 +947,7 @@ func (p *Pipeline) Export(client oauth2_client.OAuth2Client, ds DataStoreService
     } else {
         err = p.applyContactChangeSets(client, ds, cs, csSettings, dsocialUserId, meContactId)
         if err == nil {
-           err = p.applyGroupChangeSets(client, ds, cs, csSettings, dsocialUserId, meContactId)
+            err = p.applyGroupChangeSets(client, ds, cs, csSettings, dsocialUserId, meContactId)
         }
     }
     fmt.Printf("[PIPELINE]: Done exporting.\n")

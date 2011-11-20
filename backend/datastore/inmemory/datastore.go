@@ -12,19 +12,19 @@ import (
 type inMemoryObject interface{}
 
 type inMemoryCollection struct {
-    Data map[string]inMemoryObject  `json:"data"`
-    Name string                     `json:"name"`
+    Data map[string]inMemoryObject `json:"data"`
+    Name string                    `json:"name"`
 }
 
 type InMemoryDataStore struct {
-    Collections map[string]*inMemoryCollection  `json:"collections"`
-    NextId int64                                `json:"next_id"`
+    Collections map[string]*inMemoryCollection `json:"collections"`
+    NextId      int64                          `json:"next_id"`
 }
 
 func NewInMemoryDataStore() *InMemoryDataStore {
     return &InMemoryDataStore{
         Collections: make(map[string]*inMemoryCollection),
-        NextId: 1,
+        NextId:      1,
     }
 }
 
@@ -65,7 +65,7 @@ func (p *InMemoryDataStore) Decode(r io.Reader) os.Error {
     //m[_INMEMORY_INTERNAL_TO_EXTERNAL_GROUP_MAPPING_COLLECTION_NAME] = ""
     m[_INMEMORY_CHANGESETS_TO_APPLY_COLLECTION_NAME] = new(dm.ChangeSetsToApply)
     m[_INMEMORY_CHANGESETS_NOT_CURRENTLY_APPLYABLE_COLLECTION_NAME] = new(dm.ChangeSetsToApply)
-    
+
     for k, collection := range p.Collections {
         for k1, v1 := range collection.Data {
             m1, _ := jsonhelper.MarshalWithOptions(v1, dm.UTC_DATETIME_FORMAT)

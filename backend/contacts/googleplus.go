@@ -68,7 +68,6 @@ func (p *GooglePlusContactService) ConvertToExternalGroup(dsocialGroup *dm.Group
     return
 }
 
-
 func (p *GooglePlusContactService) CanRetrieveAllContacts() bool {
     return false
 }
@@ -199,11 +198,11 @@ func (p *GooglePlusContactService) RetrieveContact(client oauth2_client.OAuth2Cl
     dsocialContact := dm.GooglePlusPersonToDsocial(googleplusContact, origDsocialContact, dsocialUserId)
     contact := &Contact{
         ExternalServiceId: p.ServiceId(),
-        ExternalUserId: externalUserId,
+        ExternalUserId:    externalUserId,
         ExternalContactId: googleplusContact.Id,
-        DsocialUserId: dsocialUserId,
-        DsocialContactId: dsocialContactId,
-        Value: dsocialContact,
+        DsocialUserId:     dsocialUserId,
+        DsocialContactId:  dsocialContactId,
+        Value:             dsocialContact,
     }
     return contact, useErr
 }

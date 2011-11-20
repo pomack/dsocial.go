@@ -234,14 +234,11 @@ func FacebookContactToDsocial(fbContact *facebook.Contact, o *Contact, dsocialUs
     relationshipList := list.New()
     fbRelationshipToDsocial(fbContact.SignificantOther.Name, REL_RELATIONSHIP_SPOUSE, o.Relationships, dsocialUserId, relationshipList)
     c.Relationships = make([]*Relationship, relationshipList.Len())
-    for i, iter := 0, relationshipList.Front(); iter != nil; i, iter = i + 1, iter.Next() {
+    for i, iter := 0, relationshipList.Front(); iter != nil; i, iter = i+1, iter.Next() {
         c.Relationships[i] = iter.Value.(*Relationship)
     }
     return c
 }
-
-
-
 
 func dsocialDateToFacebook(thedate *Date) string {
     // known formats
@@ -313,8 +310,6 @@ func dsocialWorkPositionToFacebook(wh *WorkHistory, wp *WorkPosition, w *faceboo
     }
     return
 }
-
-
 
 func DsocialContactToFacebook(c *Contact, o *facebook.Contact) *facebook.Contact {
     if c == nil {

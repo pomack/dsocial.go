@@ -83,44 +83,42 @@ func (p *PersistableModel) Validate(createNew bool, errors map[string][]os.Error
     return
 }
 
-func (p *PersistableModel) BeforeCreate() (os.Error) {
+func (p *PersistableModel) BeforeCreate() os.Error {
     p.Etag = GenerateEtag()
     p.CreatedAt = time.UTC().Seconds()
     p.ModifiedAt = p.CreatedAt
     return nil
 }
 
-func (p *PersistableModel) BeforeUpdate() (os.Error) {
+func (p *PersistableModel) BeforeUpdate() os.Error {
     p.Etag = GenerateEtag()
     p.ModifiedAt = time.UTC().Seconds()
     return nil
 }
 
-func (p *PersistableModel) BeforeSave() (os.Error) {
+func (p *PersistableModel) BeforeSave() os.Error {
     return nil
 }
 
-func (p *PersistableModel) BeforeDelete() (os.Error) {
+func (p *PersistableModel) BeforeDelete() os.Error {
     return nil
 }
 
-func (p *PersistableModel) AfterCreate() (os.Error) {
+func (p *PersistableModel) AfterCreate() os.Error {
     return nil
 }
 
-func (p *PersistableModel) AfterUpdate() (os.Error) {
+func (p *PersistableModel) AfterUpdate() os.Error {
     return nil
 }
 
-func (p *PersistableModel) AfterSave() (os.Error) {
+func (p *PersistableModel) AfterSave() os.Error {
     return nil
 }
 
-func (p *PersistableModel) AfterDelete() (os.Error) {
+func (p *PersistableModel) AfterDelete() os.Error {
     return nil
 }
-
-
 
 func removeEmptyStrings(arr []string) []string {
     sv := new(vector.StringVector)

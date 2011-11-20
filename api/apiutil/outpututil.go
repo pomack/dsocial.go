@@ -9,7 +9,6 @@ import (
     "time"
 )
 
-
 func OutputErrorMessage(writer io.Writer, message string, result interface{}, statusCode int, headers http.Header) (int, http.Header, os.Error) {
     if statusCode == 0 {
         statusCode = 500
@@ -48,4 +47,3 @@ func OutputJSONObject(writer io.Writer, obj jsonhelper.JSONObject, lastModified 
     w.Encode(m)
     return statusCode, headers, nil
 }
-

@@ -5,11 +5,11 @@ import (
 )
 
 var (
-    ERR_MUST_SPECIFY_ID os.Error
-    ERR_INVALID_ID os.Error
+    ERR_MUST_SPECIFY_ID       os.Error
+    ERR_INVALID_ID            os.Error
     ERR_INVALID_EMAIL_ADDRESS os.Error
-    ERR_REQUIRED_FIELD os.Error
-    ERR_INVALID_FORMAT os.Error
+    ERR_REQUIRED_FIELD        os.Error
+    ERR_INVALID_FORMAT        os.Error
 )
 
 func init() {
@@ -19,4 +19,3 @@ func init() {
     ERR_REQUIRED_FIELD = os.NewError("Required Field")
     ERR_INVALID_FORMAT = os.NewError("Invalid Format")
 }
-

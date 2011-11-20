@@ -1,12 +1,10 @@
 package inmemory
 
-
 import (
     dm "github.com/pomack/dsocial.go/models/dsocial"
     ba "github.com/pomack/dsocial.go/backend/authorization"
     "os"
 )
-
 
 func (p *InMemoryDataStore) RetrieveSession(sessionId string) (session *dm.Session, err os.Error) {
     v, _ := p.retrieve(_INMEMORY_SESSIONS_COLLECTION_NAME, sessionId)
@@ -31,7 +29,7 @@ func (p *InMemoryDataStore) StoreSession(session *dm.Session) (*dm.Session, os.E
     return session, nil
 }
 
-func (p *InMemoryDataStore) DeleteSession(sessionId string) (os.Error) {
+func (p *InMemoryDataStore) DeleteSession(sessionId string) os.Error {
     oldValue, _ := p.delete(_INMEMORY_SESSIONS_COLLECTION_NAME, sessionId)
     if oldValue != nil {
         session, _ := oldValue.(*dm.Session)
@@ -90,7 +88,6 @@ func (p *InMemoryDataStore) RetrieveSessionsForExternalUserId(externalUserId str
     return sessions, nil, err
 }
 
-
 func (p *InMemoryDataStore) RetrieveAuthorizationToken(authTokenId string) (authToken *dm.AuthorizationToken, err os.Error) {
     v, _ := p.retrieve(_INMEMORY_AUTH_TOKENS_COLLECTION_NAME, authTokenId)
     if v != nil {
@@ -114,7 +111,7 @@ func (p *InMemoryDataStore) StoreAuthorizationToken(authToken *dm.AuthorizationT
     return authToken, nil
 }
 
-func (p *InMemoryDataStore) DeleteAuthorizationToken(authTokenId string) (os.Error) {
+func (p *InMemoryDataStore) DeleteAuthorizationToken(authTokenId string) os.Error {
     oldValue, _ := p.delete(_INMEMORY_AUTH_TOKENS_COLLECTION_NAME, authTokenId)
     if oldValue != nil {
         authToken, _ := oldValue.(*dm.AuthorizationToken)
@@ -173,6 +170,6 @@ func (p *InMemoryDataStore) RetrieveAuthorizationTokensForExternalUserId(externa
     return authTokens, nil, err
 }
 
-func (p *InMemoryDataStore) BackendAuthorizationDataStore() (ba.DataStore) {
+func (p *InMemoryDataStore) BackendAuthorizationDataStore() ba.DataStore {
     return p
 }

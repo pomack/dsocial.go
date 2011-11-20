@@ -26,12 +26,12 @@ type Change struct {
 }
 
 type ChangeSetsToApply struct {
-    Id                  string      `json:"id,omitempty"`
-    UserId              string      `json:"user_id,omitempty"`
-    RecordType          string      `json:"record_type,omitempty"`
-    ServiceId           string      `json:"service_id,omitempty"`
-    ServiceName         string      `json:"service_name,omitempty"`
-    ChangeSetIds        []string    `json:"changeset_ids,omitempty"`
+    Id           string   `json:"id,omitempty"`
+    UserId       string   `json:"user_id,omitempty"`
+    RecordType   string   `json:"record_type,omitempty"`
+    ServiceId    string   `json:"service_id,omitempty"`
+    ServiceName  string   `json:"service_name,omitempty"`
+    ChangeSetIds []string `json:"changeset_ids,omitempty"`
 }
 
 type ChangeType string
@@ -368,8 +368,8 @@ func ApplyUpdateChange(itemToModify interface{}, original interface{}, latest in
                         fieldKind := sfield.Type.Kind()
                         if sfield.Type.AssignableTo(latestType) {
                             //if reflect.DeepEqual(vField.Interface(), original) {
-                                fmt.Sprintf("Changing value from %#v to %#v", vField.Interface(), latestValue)
-                                vField.Set(latestValue)
+                            fmt.Sprintf("Changing value from %#v to %#v", vField.Interface(), latestValue)
+                            vField.Set(latestValue)
                             //} else {
                             //    panic(fmt.Sprintf("1 cannot update because field %s is %#v not %#v which was expected to update to %#v", sfield.Name, nextV.Interface(), original, latest))
                             //}

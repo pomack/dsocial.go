@@ -167,8 +167,6 @@ func googleplusEmailToDsocial(g *googleplus.Email, original []*Email, dsocialUse
     return e
 }
 
-
-
 func DsocialContactToGooglePlus(c *Contact, o *googleplus.Person) *googleplus.Person {
     if c == nil {
         return nil
@@ -193,7 +191,7 @@ func DsocialContactToGooglePlus(c *Contact, o *googleplus.Person) *googleplus.Pe
     case REL_GENDER_OTHER:
         g.Gender = googleplus.GENDER_OTHER
     }
-    
+
     g.Urls = make([]googleplus.Url, len(c.Uris))
     for i, uri := range c.Uris {
         dsocialUriToGooglePlus(uri, &g.Urls[i])
@@ -210,7 +208,7 @@ func DsocialContactToGooglePlus(c *Contact, o *googleplus.Person) *googleplus.Pe
             numPositions += len(wh.Positions)
         }
     }
-    g.Organizations = make([]googleplus.Organization, len(c.Educations) + numPositions)
+    g.Organizations = make([]googleplus.Organization, len(c.Educations)+numPositions)
     orgHasPrimary := false
     for i, ed := range c.Educations {
         orgHasPrimary = dsocialEducationToGooglePlus(ed, &g.Organizations[i], orgHasPrimary)
@@ -328,5 +326,3 @@ func dsocialEmailToGooglePlus(c *Email, g *googleplus.Email) {
     g.Primary = c.IsPrimary
     return
 }
-
-

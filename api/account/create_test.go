@@ -24,8 +24,8 @@ func TestCreateUserAccount(t *testing.T) {
     oldUser := new(dm.User)
     json.Unmarshal(buf.Bytes(), &oldUser)
     req, _ := http.NewRequest(webmachine.POST, "http://localhost/api/v1/json/account/user/create/", buf)
-    req.Header.Set("Content-Type", webmachine.MIME_TYPE_JSON + "; charset=utf-8")
-    req.Header.Set("Accept", webmachine.MIME_TYPE_JSON + "; charset=utf-8")
+    req.Header.Set("Content-Type", webmachine.MIME_TYPE_JSON+"; charset=utf-8")
+    req.Header.Set("Accept", webmachine.MIME_TYPE_JSON+"; charset=utf-8")
     req.Header.Set("Accept-Charset", "utf-8")
     req.Header.Set("Accept-Encoding", "identity")
     req.Header.Set("Accept-Language", "en-us")
@@ -50,19 +50,19 @@ func TestCreateUserAccount(t *testing.T) {
     }
     if user.Name != oldUser.Name {
         t.Error("Expected name = \"", oldUser.Name, "\", but was ", user.Name)
-    } 
+    }
     if user.Username != oldUser.Username {
         t.Error("Expected username = \"", oldUser.Username, "\", but was ", user.Username)
-    } 
+    }
     if user.Email != oldUser.Email {
         t.Error("Expected email = \"", oldUser.Email, "\", but was ", user.Email)
-    } 
+    }
     if user.PhoneNumber != oldUser.PhoneNumber {
         t.Error("Expected phone_number = \"", oldUser.PhoneNumber, "\", but was ", user.PhoneNumber)
-    } 
+    }
     if user.Address != oldUser.Address {
         t.Error("Expected address = \"", oldUser.Address, "\", but was ", user.Address)
-    } 
+    }
     if user.Role != dm.ROLE_STANDARD {
         t.Error("Expected role = ", dm.ROLE_STANDARD, " but was ", user.Role)
     }
@@ -70,7 +70,6 @@ func TestCreateUserAccount(t *testing.T) {
         t.Error("Expected id to be populated, but was empty")
     }
 }
-
 
 func TestCreateUserAccountMissingName(t *testing.T) {
     ds := inmemory.NewInMemoryDataStore()
@@ -80,8 +79,8 @@ func TestCreateUserAccountMissingName(t *testing.T) {
     oldUser := new(dm.User)
     json.Unmarshal(buf.Bytes(), &oldUser)
     req, _ := http.NewRequest(webmachine.POST, "http://localhost/api/v1/json/account/user/create/", buf)
-    req.Header.Set("Content-Type", webmachine.MIME_TYPE_JSON + "; charset=utf-8")
-    req.Header.Set("Accept", webmachine.MIME_TYPE_JSON + "; charset=utf-8")
+    req.Header.Set("Content-Type", webmachine.MIME_TYPE_JSON+"; charset=utf-8")
+    req.Header.Set("Accept", webmachine.MIME_TYPE_JSON+"; charset=utf-8")
     req.Header.Set("Accept-Charset", "utf-8")
     req.Header.Set("Accept-Encoding", "identity")
     req.Header.Set("Accept-Language", "en-us")
@@ -120,8 +119,8 @@ func TestCreateUserAccountMissingSeveralFields(t *testing.T) {
     oldUser := new(dm.User)
     json.Unmarshal(buf.Bytes(), &oldUser)
     req, _ := http.NewRequest(webmachine.POST, "http://localhost/api/v1/json/account/user/create/", buf)
-    req.Header.Set("Content-Type", webmachine.MIME_TYPE_JSON + "; charset=utf-8")
-    req.Header.Set("Accept", webmachine.MIME_TYPE_JSON + "; charset=utf-8")
+    req.Header.Set("Content-Type", webmachine.MIME_TYPE_JSON+"; charset=utf-8")
+    req.Header.Set("Accept", webmachine.MIME_TYPE_JSON+"; charset=utf-8")
     req.Header.Set("Accept-Charset", "utf-8")
     req.Header.Set("Accept-Encoding", "identity")
     req.Header.Set("Accept-Language", "en-us")
@@ -157,6 +156,3 @@ func TestCreateUserAccountMissingSeveralFields(t *testing.T) {
         }
     }
 }
-
-
-

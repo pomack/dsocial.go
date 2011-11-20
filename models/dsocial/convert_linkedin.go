@@ -318,7 +318,6 @@ func linkedinLanguageToDsocial(l *linkedin.LanguageWrapper, original []*Language
     return lang
 }
 
-
 func DsocialContactToLinkedIn(c *Contact, o *linkedin.Contact) (l *linkedin.Contact) {
     if c == nil {
         return
@@ -355,13 +354,13 @@ func DsocialContactToLinkedIn(c *Contact, o *linkedin.Contact) (l *linkedin.Cont
     size = imAccounts.Len()
     l.ImAccounts.Total = size
     l.ImAccounts.Values = make([]linkedin.ImAccount, size)
-    for i, e := 0, imAccounts.Front(); e != nil; i, e = i + 1, e.Next() {
+    for i, e := 0, imAccounts.Front(); e != nil; i, e = i+1, e.Next() {
         dsocialImToLinkedIn(e.Value.(*IM), &l.ImAccounts.Values[i])
     }
     size = twitterAccounts.Len()
     l.TwitterAccounts.Total = size
     l.TwitterAccounts.Values = make([]linkedin.TwitterAccount, size)
-    for i, e := 0, twitterAccounts.Front(); e != nil; i, e = i + 1, e.Next() {
+    for i, e := 0, twitterAccounts.Front(); e != nil; i, e = i+1, e.Next() {
         l.TwitterAccounts.Values[i].ProviderAccountName = e.Value.(*IM).Handle
     }
     l.MainAddress = c.PrimaryAddress
@@ -406,7 +405,7 @@ func DsocialContactToLinkedIn(c *Contact, o *linkedin.Contact) (l *linkedin.Cont
             offset -= 1
             continue
         }
-        dsocialUriToLinkedIn(uri, &l.Urls.Values[i + offset])
+        dsocialUriToLinkedIn(uri, &l.Urls.Values[i+offset])
     }
     size = len(c.PhoneNumbers)
     l.PhoneNumbers.Total = size
@@ -443,9 +442,15 @@ func DsocialContactToLinkedIn(c *Contact, o *linkedin.Contact) (l *linkedin.Cont
 
 func dsocialDateToLinkedIn(d *Date, l *linkedin.Date) {
     if d != nil && (d.Year != 0 || d.Month > 0 || d.Day > 0) {
-        if d.Year > 0 { l.Year = int(d.Year) }
-        if d.Month > 0 { l.Month = int(d.Month) }
-        if d.Day > 0 { l.Day = int(d.Day) }
+        if d.Year > 0 {
+            l.Year = int(d.Year)
+        }
+        if d.Month > 0 {
+            l.Month = int(d.Month)
+        }
+        if d.Day > 0 {
+            l.Day = int(d.Day)
+        }
     }
 }
 

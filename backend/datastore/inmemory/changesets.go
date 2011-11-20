@@ -54,7 +54,7 @@ func (p *InMemoryDataStore) retrieveChangeSets(dsocialId string, after *time.Tim
     return rc, nil, nil
 }
 
-func (p *InMemoryDataStore) retrieveChangeSetsById(ids []string, m map[string]*dm.ChangeSet) (map[string]*dm.ChangeSet) {
+func (p *InMemoryDataStore) retrieveChangeSetsById(ids []string, m map[string]*dm.ChangeSet) map[string]*dm.ChangeSet {
     if m == nil {
         m = make(map[string]*dm.ChangeSet)
     }
@@ -89,11 +89,11 @@ func (p *InMemoryDataStore) addChangeSetsToApply(dsocialUserId, collectionName, 
     }
     id = p.GenerateId(dsocialUserId, collectionName)
     l.PushBack(&dm.ChangeSetsToApply{
-        Id: id,
-        UserId: dsocialUserId,
-        RecordType: recordType,
-        ServiceId: serviceId,
-        ServiceName: serviceName,
+        Id:           id,
+        UserId:       dsocialUserId,
+        RecordType:   recordType,
+        ServiceId:    serviceId,
+        ServiceName:  serviceName,
         ChangeSetIds: changesetIds,
     })
     return

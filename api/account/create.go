@@ -15,7 +15,7 @@ import (
 
 type CreateAccountRequestHandler struct {
     wm.DefaultRequestHandler
-    ds acct.DataStore
+    ds  acct.DataStore
 }
 
 type CreateAccountContext interface {
@@ -32,9 +32,9 @@ type CreateAccountContext interface {
 }
 
 type createAccountContext struct {
-    theType string
-    user *dm.User
-    consumer *dm.Consumer
+    theType      string
+    user         *dm.User
+    consumer     *dm.Consumer
     externalUser *dm.ExternalUser
 }
 
@@ -132,13 +132,11 @@ func (p *createAccountContext) ETag() string {
     return etag
 }
 
-
-
 func NewCreateAccountRequestHandler(ds acct.DataStore) *CreateAccountRequestHandler {
     return &CreateAccountRequestHandler{ds: ds}
 }
 
-func (p *CreateAccountRequestHandler) GenerateContext(req wm.Request, cxt wm.Context) (CreateAccountContext) {
+func (p *CreateAccountRequestHandler) GenerateContext(req wm.Request, cxt wm.Context) CreateAccountContext {
     if cac, ok := cxt.(CreateAccountContext); ok {
         return cac
     }
@@ -150,7 +148,7 @@ func (p *CreateAccountRequestHandler) HandlerFor(req wm.Request, writer wm.Respo
     pathLen := len(path)
     if path[pathLen-1] == "" {
         // ignore trailing slash
-        pathLen = pathLen-1
+        pathLen = pathLen - 1
     }
     if pathLen >= 6 {
         if path[0] == "" && path[1] == "api" && path[2] == "v1" && path[3] == "json" && path[4] == "account" {
@@ -192,7 +190,6 @@ func (p *CreateAccountRequestHandler) ServiceAvailable(req wm.Request, cxt wm.Co
 func (p *CreateAccountRequestHandler) ResourceExists(req wm.Request, cxt wm.Context) (bool, wm.Request, wm.Context, int, os.Error) {
     return false, req, cxt, 0, nil
 }
-
 
 func (p *CreateAccountRequestHandler) AllowedMethods(req wm.Request, cxt wm.Context) ([]string, wm.Request, wm.Context, int, os.Error) {
     return []string{wm.POST, wm.PUT}, req, cxt, 0, nil
@@ -282,22 +279,22 @@ func (p *CreateAccountRequestHandler) ContentTypesAccepted(req wm.Request, cxt w
 
 /*
 func (p *CreateAccountRequestHandler) IsLanguageAvailable(languages []string, req wm.Request, cxt wm.Context) (bool, wm.Request, wm.Context, int, os.Error) {
-  
+
 }
 */
 /*
 func (p *CreateAccountRequestHandler) CharsetsProvided(charsets []string, req wm.Request, cxt wm.Context) ([]CharsetHandler, wm.Request, wm.Context, int, os.Error) {
-  
+
 }
 */
 /*
 func (p *CreateAccountRequestHandler) EncodingsProvided(encodings []string, req wm.Request, cxt wm.Context) ([]EncodingHandler, wm.Request, wm.Context, int, os.Error) {
-  
+
 }
 */
 /*
 func (p *CreateAccountRequestHandler) Variances(req wm.Request, cxt wm.Context) ([]string, wm.Request, wm.Context, int, os.Error) {
-  
+
 }
 */
 
@@ -315,17 +312,17 @@ func (p *CreateAccountRequestHandler) MultipleChoices(req wm.Request, cxt wm.Con
 
 /*
 func (p *CreateAccountRequestHandler) PreviouslyExisted(req wm.Request, cxt wm.Context) (bool, wm.Request, wm.Context, int, os.Error) {
-  
+
 }
 */
 /*
 func (p *CreateAccountRequestHandler) MovedPermanently(req wm.Request, cxt wm.Context) (string, wm.Request, wm.Context, int, os.Error) {
-  
+
 }
 */
 /*
 func (p *CreateAccountRequestHandler) MovedTemporarily(req wm.Request, cxt wm.Context) (string, wm.Request, wm.Context, int, os.Error) {
-  
+
 }
 */
 
@@ -333,14 +330,15 @@ func (p *CreateAccountRequestHandler) LastModified(req wm.Request, cxt wm.Contex
     cac := cxt.(CreateAccountContext)
     return cac.LastModified(), req, cxt, 0, nil
 }
+
 /*
 func (p *CreateAccountRequestHandler) Expires(req wm.Request, cxt wm.Context) (*time.Time, wm.Request, wm.Context, int, os.Error) {
-  
+
 }
 */
 /*
 func (p *CreateAccountRequestHandler) GenerateETag(req wm.Request, cxt wm.Context) (string, wm.Request, wm.Context, int, os.Error) {
-  
+
 }
 */
 
@@ -357,11 +355,11 @@ func (p *CreateAccountRequestHandler) ResponseIsRedirect(req wm.Request, cxt wm.
 */
 
 func (p *CreateAccountRequestHandler) HasRespBody(req wm.Request, cxt wm.Context) bool {
-  method := req.Method()
-  if method == wm.HEAD || method == wm.PUT || method == wm.DELETE {
-    return false
-  }
-  return true
+    method := req.Method()
+    if method == wm.HEAD || method == wm.PUT || method == wm.DELETE {
+        return false
+    }
+    return true
 }
 
 func (p *CreateAccountRequestHandler) HandleJSONObjectInputHandler(req wm.Request, cxt wm.Context, writer io.Writer, inputObj jsonhelper.JSONObject) (int, http.Header, os.Error) {
@@ -404,8 +402,3 @@ func (p *CreateAccountRequestHandler) HandleJSONObjectInputHandler(req wm.Reques
     jsonObj, _ := theobj.(jsonhelper.JSONObject)
     return apiutil.OutputJSONObject(writer, jsonObj, cac.LastModified(), cac.ETag(), 0, nil)
 }
-
-
-
-
-

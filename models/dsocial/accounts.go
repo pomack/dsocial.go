@@ -201,4 +201,3 @@ func (p *ExternalUser) Validate(createNew bool, errors map[string][]os.Error) (i
     isValid = len(errors) == 0
     return
 }
-

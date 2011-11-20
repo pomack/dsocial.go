@@ -5,7 +5,6 @@ import (
     "os"
 )
 
-
 type NextToken interface{}
 
 type DataStore interface {
@@ -14,16 +13,15 @@ type DataStore interface {
     RetrieveUserKey(userKeyId string) (*dm.UserKey, os.Error)
     RetrieveConsumerKeys(consumerId string, next NextToken, maxResults int) ([]*dm.ConsumerKey, NextToken, os.Error)
     RetrieveUserKeys(userId string, next NextToken, maxResults int) ([]*dm.UserKey, NextToken, os.Error)
-    
+
     StoreUserPassword(password *dm.UserPassword) (*dm.UserPassword, os.Error)
     StoreConsumerKey(key *dm.ConsumerKey) (*dm.ConsumerKey, os.Error)
     StoreUserKey(key *dm.UserKey) (*dm.UserKey, os.Error)
-    
+
     DeleteUserPassword(userId string) (*dm.UserPassword, os.Error)
     DeleteConsumerKey(consumerKeyId string) (*dm.ConsumerKey, os.Error)
     DeleteUserKey(userKeyId string) (*dm.UserKey, os.Error)
 }
-
 
 func SetUserPassword(ds DataStore, userId, password string) (*dm.UserPassword, os.Error) {
     pwd, err := ds.RetrieveUserPassword(userId)

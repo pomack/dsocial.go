@@ -105,9 +105,9 @@ func (p *InMemoryDataStore) DeleteUserKey(userKeyId string) (oldKey *dm.UserKey,
             oldKey = key
         }
     }
-    return 
+    return
 }
 
-func (p *InMemoryDataStore) BackendAuthenticationDataStore() (ba.DataStore) {
+func (p *InMemoryDataStore) BackendAuthenticationDataStore() ba.DataStore {
     return p
 }

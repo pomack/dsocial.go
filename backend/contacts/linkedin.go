@@ -12,7 +12,7 @@ import (
 )
 
 const (
-    _LINKEDIN_MAX_CONNECTIONS_PER_CALL = 500
+    _LINKEDIN_MAX_CONNECTIONS_PER_CALL        = 500
     _LINKEDIN_MAX_CONNECTIONS_PER_CALL_STRING = "500"
 )
 
@@ -75,7 +75,6 @@ func (p *LinkedInContactService) ConvertToDsocialGroup(externalGroup interface{}
 func (p *LinkedInContactService) ConvertToExternalGroup(dsocialGroup *dm.Group, originalExternalGroup interface{}, dsocialUserId string) (externalGroup interface{}) {
     return
 }
-
 
 func (p *LinkedInContactService) CanRetrieveAllContacts() bool {
     return false
@@ -169,7 +168,7 @@ func (p *LinkedInContactService) RetrieveAllContacts(client oauth2_client.OAuth2
         contacts, nextToken, err = p.RetrieveContacts(client, ds, dsocialUserId, nextToken)
     }
     contacts = make([]*Contact, l.Len())
-    for i, e := 0, l.Front(); e != nil; i, e = i + 1, e.Next() {
+    for i, e := 0, l.Front(); e != nil; i, e = i+1, e.Next() {
         contacts[i] = e.Value.(*Contact)
     }
     return contacts, err
@@ -257,11 +256,11 @@ func (p *LinkedInContactService) handleRetrievedContact(client oauth2_client.OAu
     dsocialContact := dm.LinkedInContactToDsocial(extContact, origDsocialContact, dsocialUserId)
     contact = &Contact{
         ExternalServiceId: p.ServiceId(),
-        ExternalUserId: externalUserId,
+        ExternalUserId:    externalUserId,
         ExternalContactId: extContact.Id,
-        DsocialUserId: dsocialUserId,
-        DsocialContactId: dsocialContactId,
-        Value: dsocialContact,
+        DsocialUserId:     dsocialUserId,
+        DsocialContactId:  dsocialContactId,
+        Value:             dsocialContact,
     }
     return contact, useErr
 }

@@ -9,7 +9,6 @@ import (
     "os"
 )
 
-
 type TwitterContactServiceSettings struct {
     StandardContactServiceSettings `json:"settings,omitempty,collapse"`
 }
@@ -69,7 +68,6 @@ func (p *TwitterContactService) ConvertToDsocialGroup(externalGroup interface{},
 func (p *TwitterContactService) ConvertToExternalGroup(dsocialGroup *dm.Group, originalExternalGroup interface{}, dsocialUserId string) (externalGroup interface{}) {
     return
 }
-
 
 func (p *TwitterContactService) CanRetrieveAllContacts() bool {
     return false
@@ -164,7 +162,7 @@ func (p *TwitterContactService) listToContacts(l *list.List) []*Contact {
         return make([]*Contact, 0)
     }
     arr := make([]*Contact, l.Len())
-    for i, e := 0, l.Front(); e != nil; i, e = i + 1, e.Next() {
+    for i, e := 0, l.Front(); e != nil; i, e = i+1, e.Next() {
         if c, ok := e.Value.(*Contact); ok {
             arr[i] = c
         }
@@ -220,11 +218,11 @@ func (p *TwitterContactService) handleRetrievedContact(client oauth2_client.OAut
     dsocialContact := dm.TwitterUserToDsocial(extContact, origDsocialContact, dsocialUserId)
     contact = &Contact{
         ExternalServiceId: p.ServiceId(),
-        ExternalUserId: externalUserId,
+        ExternalUserId:    externalUserId,
         ExternalContactId: externalContactId,
-        DsocialUserId: dsocialUserId,
-        DsocialContactId: dsocialContactId,
-        Value: dsocialContact,
+        DsocialUserId:     dsocialUserId,
+        DsocialContactId:  dsocialContactId,
+        Value:             dsocialContact,
     }
     return contact, useErr
 }

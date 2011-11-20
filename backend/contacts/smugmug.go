@@ -9,7 +9,6 @@ import (
     "os"
 )
 
-
 type SmugMugContactServiceSettings struct {
     StandardContactServiceSettings `json:"settings,omitempty,collapse"`
 }
@@ -69,7 +68,6 @@ func (p *SmugMugContactService) ConvertToDsocialGroup(externalGroup interface{},
 func (p *SmugMugContactService) ConvertToExternalGroup(dsocialGroup *dm.Group, originalExternalGroup interface{}, dsocialUserId string) (externalGroup interface{}) {
     return
 }
-
 
 func (p *SmugMugContactService) CanRetrieveAllContacts() bool {
     return false
@@ -163,7 +161,7 @@ func (p *SmugMugContactService) RetrieveAllContacts(client oauth2_client.OAuth2C
         contacts, nextToken, err = p.RetrieveContacts(client, ds, dsocialUserId, nextToken)
     }
     contacts = make([]*Contact, l.Len())
-    for i, e := 0, l.Front(); e != nil; i, e = i + 1, e.Next() {
+    for i, e := 0, l.Front(); e != nil; i, e = i+1, e.Next() {
         contacts[i] = e.Value.(*Contact)
     }
     return contacts, err
@@ -182,7 +180,7 @@ func (p *SmugMugContactService) listToContacts(l *list.List) []*Contact {
         return make([]*Contact, 0)
     }
     arr := make([]*Contact, l.Len())
-    for i, e := 0, l.Front(); e != nil; i, e = i + 1, e.Next() {
+    for i, e := 0, l.Front(); e != nil; i, e = i+1, e.Next() {
         if c, ok := e.Value.(*Contact); ok {
             arr[i] = c
         }
@@ -293,11 +291,11 @@ func (p *SmugMugContactService) handleRetrievedContact(client oauth2_client.OAut
     dsocialContact := dm.SmugMugUserToDsocial(extContact, origDsocialContact, dsocialUserId)
     contact = &Contact{
         ExternalServiceId: p.ServiceId(),
-        ExternalUserId: externalUserId,
+        ExternalUserId:    externalUserId,
         ExternalContactId: externalContactId,
-        DsocialUserId: dsocialUserId,
-        DsocialContactId: dsocialContactId,
-        Value: dsocialContact,
+        DsocialUserId:     dsocialUserId,
+        DsocialContactId:  dsocialContactId,
+        Value:             dsocialContact,
     }
     return contact, useErr
 }

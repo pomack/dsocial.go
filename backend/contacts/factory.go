@@ -1,13 +1,13 @@
 package contacts
 
 var (
-   contactServicesMap map[string]ContactsService
-   selfUpdateableContactServices []ContactsService
-   updateableContactServices []ContactsService
+    contactServicesMap            map[string]ContactsService
+    selfUpdateableContactServices []ContactsService
+    updateableContactServices     []ContactsService
 )
 
 func init() {
-    contactServicesMap = make(map[string]ContactsService) 
+    contactServicesMap = make(map[string]ContactsService)
     for _, service := range []ContactsService{
         NewFacebookContactService(),
         NewGoogleContactService(),

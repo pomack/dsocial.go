@@ -72,7 +72,7 @@ func (p *UserPassword) SetPassword(password string) {
     p.HashValue = generateHashedValued(p.HashType, p.Salt, password)
 }
 
-func (p *UserPassword) CheckPassword(password string) (bool) {
+func (p *UserPassword) CheckPassword(password string) bool {
     return checkHashedValue(p.HashType, p.Salt, password, p.HashValue)
 }
 
@@ -81,11 +81,11 @@ func (p *UserKey) GeneratePrivateKey() {
     p.HashType = DEFAULT_HASH_ALGORITHM
 }
 
-func (p *UserKey) CheckHashedValue(testData, testHashedValue string) (bool) {
+func (p *UserKey) CheckHashedValue(testData, testHashedValue string) bool {
     return checkHashedValue(p.HashType, p.PrivateKey, testData, testHashedValue)
 }
 
-func (p *UserKey) CheckHashedByteValue(testData []byte, testHashedValue string) (bool) {
+func (p *UserKey) CheckHashedByteValue(testData []byte, testHashedValue string) bool {
     return checkHashedByteValue(p.HashType, p.PrivateKey, testData, testHashedValue)
 }
 
@@ -94,16 +94,16 @@ func (p *ConsumerKey) GeneratePrivateKey() {
     p.HashType = DEFAULT_HASH_ALGORITHM
 }
 
-func (p *ConsumerKey) CheckHashedValue(testData, testHashedValue string) (bool) {
+func (p *ConsumerKey) CheckHashedValue(testData, testHashedValue string) bool {
     return checkHashedValue(p.HashType, p.PrivateKey, testData, testHashedValue)
 }
 
-func (p *ConsumerKey) CheckHashedByteValue(testData []byte, testHashedValue string) (bool) {
+func (p *ConsumerKey) CheckHashedByteValue(testData []byte, testHashedValue string) bool {
     return checkHashedByteValue(p.HashType, p.PrivateKey, testData, testHashedValue)
 }
 
-func generateSalt(length int) (string) {
-    l := length / 8 + 1
+func generateSalt(length int) string {
+    l := length/8 + 1
     arr := make([]string, l)
     for i := 0; i < l; i++ {
         s := strconv.Uitob(uint(rand.Uint32()), 16)
@@ -120,24 +120,24 @@ func generateSalt(length int) (string) {
     return salt
 }
 
-func generateHashedValued(hashType HashAlgorithm, salt, testData string) (string) {
+func generateHashedValued(hashType HashAlgorithm, salt, testData string) string {
     hasher := hashType.Hasher()
     hasher.Write([]byte(salt))
     hasher.Write([]byte(testData))
     return fmt.Sprintf("%x", hasher.Sum())
 }
 
-func checkHashedValue(hashType HashAlgorithm, salt, testData, testHashedValue string) (bool) {
+func checkHashedValue(hashType HashAlgorithm, salt, testData, testHashedValue string) bool {
     return testHashedValue == generateHashedValued(hashType, salt, testData)
 }
 
-func generateHashedByteValued(hashType HashAlgorithm, salt string, testData []byte) (string) {
+func generateHashedByteValued(hashType HashAlgorithm, salt string, testData []byte) string {
     hasher := hashType.Hasher()
     hasher.Write([]byte(salt))
     hasher.Write(testData)
     return fmt.Sprintf("%x", hasher.Sum())
 }
 
-func checkHashedByteValue(hashType HashAlgorithm, salt string, testData []byte, testHashedValue string) (bool) {
+func checkHashedByteValue(hashType HashAlgorithm, salt string, testData []byte, testHashedValue string) bool {
     return testHashedValue == generateHashedByteValued(hashType, salt, testData)
 }

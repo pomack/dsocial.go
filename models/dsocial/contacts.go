@@ -24,13 +24,13 @@ type ContactReference struct {
 }
 
 type ContactRef struct {
-    Id              string `json:"id,omitempty"`
-    Name            string `json:"name,omitempty"`
+    Id   string `json:"id,omitempty"`
+    Name string `json:"name,omitempty"`
 }
 
 type GroupRef struct {
-    Id              string `json:"id,omitempty"`
-    Name            string `json:"name,omitempty"`
+    Id   string `json:"id,omitempty"`
+    Name string `json:"name,omitempty"`
 }
 
 type PostalAddress struct {

@@ -83,7 +83,6 @@ func (p *GoogleContactService) ConvertToExternalGroup(dsocialGroup *dm.Group, or
     return
 }
 
-
 func (p *GoogleContactService) CanRetrieveAllContacts() bool {
     return false
 }
@@ -273,11 +272,11 @@ func (p *GoogleContactService) RetrieveContacts(client oauth2_client.OAuth2Clien
         dsocialContact := dm.GoogleContactToDsocial(&googleContact, origDsocialContact, dsocialUserId)
         contacts[i] = &Contact{
             ExternalServiceId: p.ServiceId(),
-            ExternalUserId: googleContact.ContactUserId(),
+            ExternalUserId:    googleContact.ContactUserId(),
             ExternalContactId: externalContactId,
-            DsocialUserId: dsocialUserId,
-            DsocialContactId: dsocialContactId,
-            Value: dsocialContact,
+            DsocialUserId:     dsocialUserId,
+            DsocialContactId:  dsocialContactId,
+            Value:             dsocialContact,
         }
     }
     return contacts, theNextToken, useErr
@@ -386,11 +385,11 @@ func (p *GoogleContactService) RetrieveGroups(client oauth2_client.OAuth2Client,
         var dsocialGroup *dm.Group = dm.GoogleGroupToDsocial(&googleGroup, origDsocialGroup, dsocialUserId)
         groups[i] = &Group{
             ExternalServiceId: p.ServiceId(),
-            ExternalUserId: googleGroup.GroupUserId(),
-            ExternalGroupId: googleGroup.GroupId(),
-            DsocialUserId: dsocialUserId,
-            DsocialGroupId: dsocialGroupId,
-            Value: dsocialGroup,
+            ExternalUserId:    googleGroup.GroupUserId(),
+            ExternalGroupId:   googleGroup.GroupId(),
+            DsocialUserId:     dsocialUserId,
+            DsocialGroupId:    dsocialGroupId,
+            Value:             dsocialGroup,
         }
     }
     return groups, theNextToken, useErr
@@ -425,11 +424,11 @@ func (p *GoogleContactService) RetrieveContact(client oauth2_client.OAuth2Client
     dsocialContact := dm.GoogleContactToDsocial(googleContact, origDsocialContact, dsocialUserId)
     contact := &Contact{
         ExternalServiceId: p.ServiceId(),
-        ExternalUserId: googleContact.ContactUserId(),
+        ExternalUserId:    googleContact.ContactUserId(),
         ExternalContactId: googleContact.ContactId(),
-        DsocialUserId: dsocialUserId,
-        DsocialContactId: dsocialContactId,
-        Value: dsocialContact,
+        DsocialUserId:     dsocialUserId,
+        DsocialContactId:  dsocialContactId,
+        Value:             dsocialContact,
     }
     return contact, useErr
 }
@@ -466,11 +465,11 @@ func (p *GoogleContactService) RetrieveGroup(client oauth2_client.OAuth2Client, 
     var dsocialGroup *dm.Group = dm.GoogleGroupToDsocial(googleGroup, origDsocialGroup, dsocialUserId)
     group := &Group{
         ExternalServiceId: p.ServiceId(),
-        ExternalUserId: externalUserId,
-        ExternalGroupId: externalGroupId,
-        DsocialUserId: dsocialUserId,
-        DsocialGroupId: dsocialGroupId,
-        Value: dsocialGroup,
+        ExternalUserId:    externalUserId,
+        ExternalGroupId:   externalGroupId,
+        DsocialUserId:     dsocialUserId,
+        DsocialGroupId:    dsocialGroupId,
+        Value:             dsocialGroup,
     }
     return group, useErr
 }

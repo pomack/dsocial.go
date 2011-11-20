@@ -22,8 +22,6 @@ func (p *InMemoryDataStore) retrieveGroupCollection() (m *inMemoryCollection) {
     return p.retrieveCollection(_INMEMORY_GROUP_COLLECTION_NAME)
 }
 
-
-    
 func (p *InMemoryDataStore) RetrieveAllContactsServiceSettingsForUser(dsocialUserId string) (settings []bc.ContactsServiceSettings, err os.Error) {
     v, ok := p.retrieve(_INMEMORY_USER_TO_CONTACT_SETTINGS_COLLECTION_NAME, dsocialUserId)
     if v == nil || !ok {
@@ -83,7 +81,7 @@ func (p *InMemoryDataStore) SetContactsServiceSettings(settings bc.ContactsServi
             }
         }
         if !found {
-            arr2 := make([]bc.ContactsServiceSettings, len(arr) + 1)
+            arr2 := make([]bc.ContactsServiceSettings, len(arr)+1)
             copy(arr2, arr)
             arr2[len(arr)] = settings
             arr = arr2
@@ -105,8 +103,6 @@ func (p *InMemoryDataStore) DeleteContactsServiceSettings(dsocialUserId, contact
     }
     return
 }
-
-
 
 func (p *InMemoryDataStore) SearchForDsocialContacts(dsocialUserId string, contact *dm.Contact) (contacts []*dm.Contact, err os.Error) {
     if contact == nil {
@@ -204,7 +200,7 @@ func (p *InMemoryDataStore) RetrieveGroupChangeSetsNotCurrentlyApplyable(dsocial
     return p.retrieveChangeSetsToApply(dsocialUserId, _INMEMORY_CHANGESETS_NOT_CURRENTLY_APPLYABLE_COLLECTION_NAME, _INMEMORY_GROUP_COLLECTION_NAME, serviceId, serviceName)
 }
 
-func (p *InMemoryDataStore) RemoveContactChangeSetsToApply(dsocialUserId, serviceId, serviceName string, changeSetIdsToApply []string) (os.Error) {
+func (p *InMemoryDataStore) RemoveContactChangeSetsToApply(dsocialUserId, serviceId, serviceName string, changeSetIdsToApply []string) os.Error {
     return p.removeChangeSetsToApply(dsocialUserId, _INMEMORY_CHANGESETS_TO_APPLY_COLLECTION_NAME, _INMEMORY_CONTACT_COLLECTION_NAME, serviceId, serviceName, changeSetIdsToApply)
 }
 
@@ -219,50 +215,50 @@ func (p *InMemoryDataStore) RemoveContactChangeSetsNotCurrentlyApplyable(dsocial
 func (p *InMemoryDataStore) RemoveGroupChangeSetsNotCurrentlyApplyable(dsocialUserId, serviceId, serviceName string, changeSetIdsToApply []string) (err os.Error) {
     return p.removeChangeSetsToApply(dsocialUserId, _INMEMORY_CHANGESETS_NOT_CURRENTLY_APPLYABLE_COLLECTION_NAME, _INMEMORY_GROUP_COLLECTION_NAME, serviceId, serviceName, changeSetIdsToApply)
 }
-    
-    // Retrieve the dsocial contact id for the specified external service/user id/contact id combo
-    // Returns:
-    //   dsocialContactId : the dsocial contact id if it exists or empty if not found
-    //   err : error or nil
+
+// Retrieve the dsocial contact id for the specified external service/user id/contact id combo
+// Returns:
+//   dsocialContactId : the dsocial contact id if it exists or empty if not found
+//   err : error or nil
 func (p *InMemoryDataStore) DsocialIdForExternalContactId(externalServiceId, externalUserId, dsocialUserId, externalContactId string) (dsocialContactId string, err os.Error) {
     k := strings.Join([]string{externalServiceId, externalUserId, externalContactId}, "|")
     id := dsocialUserId + "/" + k
     dsocialContactId, _ = p.retrieveString(_INMEMORY_EXTERNAL_TO_INTERNAL_CONTACT_MAPPING_COLLECTION_NAME, id)
     return
 }
-    // Retrieve the dsocial group id for the specified external service/user id/group id combo
-    // Returns:
-    //   dsocialGroupId : the dsocial group id if it exists or empty if not found
-    //   err : error or nil
+// Retrieve the dsocial group id for the specified external service/user id/group id combo
+// Returns:
+//   dsocialGroupId : the dsocial group id if it exists or empty if not found
+//   err : error or nil
 func (p *InMemoryDataStore) DsocialIdForExternalGroupId(externalServiceId, externalUserId, dsocialUserId, externalGroupId string) (dsocialGroupId string, err os.Error) {
     k := strings.Join([]string{externalServiceId, externalUserId, externalGroupId}, "|")
     id := dsocialUserId + "/" + k
     dsocialGroupId, _ = p.retrieveString(_INMEMORY_EXTERNAL_TO_INTERNAL_GROUP_MAPPING_COLLECTION_NAME, id)
     return
 }
-    // Retrieve the external contact id for the specified external service/external user id/dsocial user id/dsocial contact id combo
-    // Returns:
-    //   externalContactId : the dsocial contact id if it exists or empty if not found
-    //   err : error or nil
+// Retrieve the external contact id for the specified external service/external user id/dsocial user id/dsocial contact id combo
+// Returns:
+//   externalContactId : the dsocial contact id if it exists or empty if not found
+//   err : error or nil
 func (p *InMemoryDataStore) ExternalContactIdForDsocialId(externalServiceId, externalUserId, dsocialUserId, dsocialContactId string) (externalContactId string, err os.Error) {
     id := strings.Join([]string{externalServiceId, externalUserId}, "|")
     externalContactId, _ = p.retrieveFromStringMapCollection(dsocialUserId, _INMEMORY_INTERNAL_TO_EXTERNAL_CONTACT_MAPPING_COLLECTION_NAME, dsocialContactId, id)
     return
 }
-    // Retrieve the external group id for the specified external service/external user id/dsocial user id/dsocial group id combo
-    // Returns:
-    //   externalGroupId : the dsocial group id if it exists or empty if not found
-    //   err : error or nil
+// Retrieve the external group id for the specified external service/external user id/dsocial user id/dsocial group id combo
+// Returns:
+//   externalGroupId : the dsocial group id if it exists or empty if not found
+//   err : error or nil
 func (p *InMemoryDataStore) ExternalGroupIdForDsocialId(externalServiceId, externalUserId, dsocialUserId, dsocialGroupId string) (externalGroupId string, err os.Error) {
     id := strings.Join([]string{externalServiceId, externalUserId}, "|")
     externalGroupId, _ = p.retrieveFromStringMapCollection(dsocialUserId, _INMEMORY_INTERNAL_TO_EXTERNAL_GROUP_MAPPING_COLLECTION_NAME, dsocialGroupId, id)
     return
 }
-    // Stores the dsocial contact id <-> external contact id mapping
-    // Returns:
-    //   externalExisted : whether the external contact id mapping already existed and was overwritten
-    //   dsocialExisted : whether the dsocial contact id mapping already existed and was overwritten
-    //   err : error or nil
+// Stores the dsocial contact id <-> external contact id mapping
+// Returns:
+//   externalExisted : whether the external contact id mapping already existed and was overwritten
+//   dsocialExisted : whether the dsocial contact id mapping already existed and was overwritten
+//   err : error or nil
 func (p *InMemoryDataStore) StoreDsocialExternalContactMapping(externalServiceId, externalUserId, externalContactId, dsocialUserId, dsocialContactId string) (externalExisted, dsocialExisted bool, err os.Error) {
     k1 := strings.Join([]string{externalServiceId, externalUserId, externalContactId}, "|")
     k2 := strings.Join([]string{externalServiceId, externalUserId}, "|")
@@ -293,11 +289,11 @@ func (p *InMemoryDataStore) StoreDsocialExternalContactMapping(externalServiceId
     }
     return
 }
-    // Stores the dsocial contact id <-> external group id mapping
-    // Returns:
-    //   externalExisted : whether the external group id mapping already existed and was overwritten
-    //   dsocialExisted : whether the dsocial group id mapping already existed and was overwritten
-    //   err : error or nil
+// Stores the dsocial contact id <-> external group id mapping
+// Returns:
+//   externalExisted : whether the external group id mapping already existed and was overwritten
+//   dsocialExisted : whether the dsocial group id mapping already existed and was overwritten
+//   err : error or nil
 func (p *InMemoryDataStore) StoreDsocialExternalGroupMapping(externalServiceId, externalUserId, externalGroupId, dsocialUserId, dsocialGroupId string) (externalExisted, dsocialExisted bool, err os.Error) {
     k1 := strings.Join([]string{externalServiceId, externalUserId, externalGroupId}, "|")
     k2 := strings.Join([]string{externalServiceId, externalUserId}, "|")
@@ -326,32 +322,32 @@ func (p *InMemoryDataStore) StoreDsocialExternalGroupMapping(externalServiceId, 
     return
 }
 
-    // Retrieve external contact
-    // Returns:
-    //   externalContact : the contact as stored into the service using StoreExternalContact or nil if not found
-    //   id : the internal id used to store the external contact
-    //   err : error or nil
+// Retrieve external contact
+// Returns:
+//   externalContact : the contact as stored into the service using StoreExternalContact or nil if not found
+//   id : the internal id used to store the external contact
+//   err : error or nil
 func (p *InMemoryDataStore) RetrieveExternalContact(externalServiceId, externalUserId, dsocialUserId, externalContactId string) (externalContact interface{}, id string, err os.Error) {
     k := strings.Join([]string{externalServiceId, externalUserId, externalContactId}, "|")
     id = dsocialUserId + "/" + k
     externalContact, _ = p.retrieve(_INMEMORY_EXTERNAL_CONTACT_COLLECTION_NAME, id)
     return
 }
-    // Retrieve external group
-    // Returns:
-    //   externalGroup : the group as stored into the service using StoreExternalGroup or nil if not found
-    //   id : the internal id used to store the external group
-    //   err : error or nil
+// Retrieve external group
+// Returns:
+//   externalGroup : the group as stored into the service using StoreExternalGroup or nil if not found
+//   id : the internal id used to store the external group
+//   err : error or nil
 func (p *InMemoryDataStore) RetrieveExternalGroup(externalServiceId, externalUserId, dsocialUserId, externalGroupId string) (externalGroup interface{}, id string, err os.Error) {
     k := strings.Join([]string{externalServiceId, externalUserId, externalGroupId}, "|")
     id = dsocialUserId + "/" + k
     externalGroup, _ = p.retrieve(_INMEMORY_EXTERNAL_GROUP_COLLECTION_NAME, id)
     return
 }
-    // Stores external contact
-    // Returns:
-    //   id : the internal id used to store the external contact
-    //   err : error or nil
+// Stores external contact
+// Returns:
+//   id : the internal id used to store the external contact
+//   err : error or nil
 func (p *InMemoryDataStore) StoreExternalContact(externalServiceId, externalUserId, dsocialUserId, externalContactId string, contact interface{}) (id string, err os.Error) {
     //id = strings.Join([]string{dsocialUserId, externalServiceId, externalUserId, externalContactId}, "/")
     k := strings.Join([]string{externalServiceId, externalUserId, externalContactId}, "|")
@@ -368,10 +364,10 @@ func (p *InMemoryDataStore) StoreExternalContact(externalServiceId, externalUser
     id = externalContactId
     return
 }
-    // Stores external group
-    // Returns:
-    //   id : the internal id used to store the external group
-    //   err : error or nil
+// Stores external group
+// Returns:
+//   id : the internal id used to store the external group
+//   err : error or nil
 func (p *InMemoryDataStore) StoreExternalGroup(externalServiceId, externalUserId, dsocialUserId, externalGroupId string, group interface{}) (id string, err os.Error) {
     //id = strings.Join([]string{dsocialUserId, externalServiceId, externalUserId, externalGroupId}, "/")
     k := strings.Join([]string{externalServiceId, externalUserId, externalGroupId}, "|")
@@ -388,10 +384,10 @@ func (p *InMemoryDataStore) StoreExternalGroup(externalServiceId, externalUserId
     id = externalGroupId
     return
 }
-    // Deletes external contact
-    // Returns:
-    //   existed : whether the contact existed upon deletion
-    //   err : error or nil
+// Deletes external contact
+// Returns:
+//   existed : whether the contact existed upon deletion
+//   err : error or nil
 func (p *InMemoryDataStore) DeleteExternalContact(externalServiceId, externalUserId, dsocialUserId, externalContactId string) (existed bool, err os.Error) {
     //k := strings.Join([]string{dsocialUserId, externalServiceId, externalUserId, externalContactId}, "/")
     k := strings.Join([]string{externalServiceId, externalUserId, externalContactId}, "|")
@@ -399,10 +395,10 @@ func (p *InMemoryDataStore) DeleteExternalContact(externalServiceId, externalUse
     _, existed = p.delete(_INMEMORY_EXTERNAL_CONTACT_COLLECTION_NAME, id)
     return
 }
-    // Deletes external group
-    // Returns:
-    //   existed : whether the group existed upon deletion
-    //   err : error or nil
+// Deletes external group
+// Returns:
+//   existed : whether the group existed upon deletion
+//   err : error or nil
 func (p *InMemoryDataStore) DeleteExternalGroup(externalServiceId, externalUserId, dsocialUserId, externalGroupId string) (existed bool, err os.Error) {
     //k := strings.Join([]string{dsocialUserId, externalServiceId, externalUserId, externalGroupId}, "/")
     k := strings.Join([]string{externalServiceId, externalUserId, externalGroupId}, "|")
@@ -410,13 +406,12 @@ func (p *InMemoryDataStore) DeleteExternalGroup(externalServiceId, externalUserI
     _, existed = p.delete(_INMEMORY_EXTERNAL_GROUP_COLLECTION_NAME, id)
     return
 }
-    
-    
-    // Retrieve dsocial contact
-    // Returns:
-    //   dsocialContact : the contact as stored into the service using StoreDsocialContact or nil if not found
-    //   id : the internal id used to store the dsocial contact
-    //   err : error or nil
+
+// Retrieve dsocial contact
+// Returns:
+//   dsocialContact : the contact as stored into the service using StoreDsocialContact or nil if not found
+//   id : the internal id used to store the dsocial contact
+//   err : error or nil
 func (p *InMemoryDataStore) RetrieveDsocialContactForExternalContact(externalServiceId, externalUserId, externalContactId, dsocialUserId string) (dsocialContact *dm.Contact, id string, err os.Error) {
     //k := strings.Join([]string{dsocialUserId, externalServiceId, externalUserId, externalContactId}, "/")
     k := strings.Join([]string{externalServiceId, externalUserId, externalContactId}, "|")
@@ -430,11 +425,11 @@ func (p *InMemoryDataStore) RetrieveDsocialContactForExternalContact(externalSer
     }
     return
 }
-    // Retrieve dsocial group
-    // Returns:
-    //   dsocialGroup : the group as stored into the service using StoreDsocialGroup or nil if not found
-    //   id : the internal id used to store the dsocial group
-    //   err : error or nil
+// Retrieve dsocial group
+// Returns:
+//   dsocialGroup : the group as stored into the service using StoreDsocialGroup or nil if not found
+//   id : the internal id used to store the dsocial group
+//   err : error or nil
 func (p *InMemoryDataStore) RetrieveDsocialGroupForExternalGroup(externalServiceId, externalUserId, externalGroupId, dsocialUserId string) (dsocialGroup *dm.Group, id string, err os.Error) {
     //k := strings.Join([]string{dsocialUserId, externalServiceId, externalUserId, externalGroupId}, "/")
     k := strings.Join([]string{externalServiceId, externalUserId, externalGroupId}, "|")
@@ -448,10 +443,10 @@ func (p *InMemoryDataStore) RetrieveDsocialGroupForExternalGroup(externalService
     }
     return
 }
-    // Stores dsocial contact
-    // Returns:
-    //   dsocialContact : the contact, modified to include items like Id and LastModified/Created
-    //   err : error or nil
+// Stores dsocial contact
+// Returns:
+//   dsocialContact : the contact, modified to include items like Id and LastModified/Created
+//   err : error or nil
 func (p *InMemoryDataStore) StoreDsocialContactForExternalContact(externalServiceId, externalUserId, externalContactId, dsocialUserId string, contact *dm.Contact) (dsocialContact *dm.Contact, err os.Error) {
     //k := strings.Join([]string{dsocialUserId, externalServiceId, externalUserId, externalContactId}, "/")
     k := strings.Join([]string{externalServiceId, externalUserId, externalContactId}, "|")
@@ -469,10 +464,10 @@ func (p *InMemoryDataStore) StoreDsocialContactForExternalContact(externalServic
     dsocialContact = contact
     return
 }
-    // Stores dsocial group
-    // Returns:
-    //   dsocialGroup : the group, modified to include items like Id and LastModified/Created
-    //   err : error or nil
+// Stores dsocial group
+// Returns:
+//   dsocialGroup : the group, modified to include items like Id and LastModified/Created
+//   err : error or nil
 func (p *InMemoryDataStore) StoreDsocialGroupForExternalGroup(externalServiceId, externalUserId, externalGroupId, dsocialUserId string, group *dm.Group) (dsocialGroup *dm.Group, err os.Error) {
     //k := strings.Join([]string{dsocialUserId, externalServiceId, externalUserId, externalGroupId}, "/")
     k := strings.Join([]string{externalServiceId, externalUserId, externalGroupId}, "|")
@@ -491,10 +486,10 @@ func (p *InMemoryDataStore) StoreDsocialGroupForExternalGroup(externalServiceId,
     dsocialGroup = group
     return
 }
-    // Deletes dsocial contact
-    // Returns:
-    //   existed : whether the contact existed upon deletion
-    //   err : error or nil
+// Deletes dsocial contact
+// Returns:
+//   existed : whether the contact existed upon deletion
+//   err : error or nil
 func (p *InMemoryDataStore) DeleteDsocialContactForExternalContact(externalServiceId, externalUserId, externalContactId, dsocialUserId string) (existed bool, err os.Error) {
     //k := strings.Join([]string{dsocialUserId, externalServiceId, externalUserId, externalContactId}, "|")
     k := strings.Join([]string{externalServiceId, externalUserId, externalContactId}, "|")
@@ -502,10 +497,10 @@ func (p *InMemoryDataStore) DeleteDsocialContactForExternalContact(externalServi
     _, existed = p.delete(_INMEMORY_CONTACT_FOR_EXTERNAL_CONTACT_COLLECTION_NAME, extid)
     return
 }
-    // Deletes dsocial group
-    // Returns:
-    //   existed : whether the group existed upon deletion
-    //   err : error or nil
+// Deletes dsocial group
+// Returns:
+//   existed : whether the group existed upon deletion
+//   err : error or nil
 func (p *InMemoryDataStore) DeleteDsocialGroupForExternalGroup(externalServiceId, externalUserId, externalGroupId, dsocialUserId string) (existed bool, err os.Error) {
     //k := strings.Join([]string{dsocialUserId, externalServiceId, externalUserId, externalGroupId}, "/")
     k := strings.Join([]string{externalServiceId, externalUserId, externalGroupId}, "|")
@@ -514,12 +509,11 @@ func (p *InMemoryDataStore) DeleteDsocialGroupForExternalGroup(externalServiceId
     return
 }
 
-
-    // Retrieve dsocial contact
-    // Returns:
-    //   dsocialContact : the contact as stored into the service using StoreDsocialContact or nil if not found
-    //   id : the internal id used to store the dsocial contact
-    //   err : error or nil
+// Retrieve dsocial contact
+// Returns:
+//   dsocialContact : the contact as stored into the service using StoreDsocialContact or nil if not found
+//   id : the internal id used to store the dsocial contact
+//   err : error or nil
 func (p *InMemoryDataStore) RetrieveDsocialContact(dsocialUserId, dsocialContactId string) (dsocialContact *dm.Contact, id string, err os.Error) {
     //k := strings.Join([]string{dsocialUserId, dsocialContactId}, "/")
     v, _ := p.retrieve(_INMEMORY_CONTACT_COLLECTION_NAME, dsocialContactId)
@@ -530,13 +524,13 @@ func (p *InMemoryDataStore) RetrieveDsocialContact(dsocialUserId, dsocialContact
             id = dsocialContact.Id
         }
     }
-    return 
+    return
 }
-    // Retrieve dsocial group
-    // Returns:
-    //   dsocialGroup : the group as stored into the service using StoreDsocialGroup or nil if not found
-    //   id : the internal id used to store the dsocial group
-    //   err : error or nil
+// Retrieve dsocial group
+// Returns:
+//   dsocialGroup : the group as stored into the service using StoreDsocialGroup or nil if not found
+//   id : the internal id used to store the dsocial group
+//   err : error or nil
 func (p *InMemoryDataStore) RetrieveDsocialGroup(dsocialUserId, dsocialGroupId string) (dsocialGroup *dm.Group, id string, err os.Error) {
     //k := strings.Join([]string{dsocialUserId, dsocialGroupId}, "/")
     v, _ := p.retrieve(_INMEMORY_GROUP_COLLECTION_NAME, dsocialGroupId)
@@ -547,12 +541,12 @@ func (p *InMemoryDataStore) RetrieveDsocialGroup(dsocialUserId, dsocialGroupId s
             id = dsocialGroup.Id
         }
     }
-    return 
+    return
 }
-    // Stores dsocial contact
-    // Returns:
-    //   dsocialContact : the contact, modified to include items like Id and LastModified/Created
-    //   err : error or nil
+// Stores dsocial contact
+// Returns:
+//   dsocialContact : the contact, modified to include items like Id and LastModified/Created
+//   err : error or nil
 func (p *InMemoryDataStore) StoreDsocialContact(dsocialUserId, dsocialContactId string, contact *dm.Contact) (dsocialContact *dm.Contact, err os.Error) {
     if dsocialContactId == "" {
         dsocialContactId = p.GenerateId(dsocialUserId, "contact")
@@ -567,12 +561,12 @@ func (p *InMemoryDataStore) StoreDsocialContact(dsocialUserId, dsocialContactId 
     *c = *contact
     p.store(dsocialUserId, _INMEMORY_CONTACT_COLLECTION_NAME, dsocialContactId, c)
     dsocialContact = contact
-    return 
+    return
 }
-    // Stores dsocial group
-    // Returns:
-    //   dsocialGroup : the group, modified to include items like Id and LastModified/Created
-    //   err : error or nil
+// Stores dsocial group
+// Returns:
+//   dsocialGroup : the group, modified to include items like Id and LastModified/Created
+//   err : error or nil
 func (p *InMemoryDataStore) StoreDsocialGroup(dsocialUserId, dsocialGroupId string, group *dm.Group) (dsocialGroup *dm.Group, err os.Error) {
     if dsocialGroupId == "" {
         dsocialGroupId = p.GenerateId(dsocialUserId, "group")
@@ -586,28 +580,27 @@ func (p *InMemoryDataStore) StoreDsocialGroup(dsocialUserId, dsocialGroupId stri
     *g = *group
     p.store(dsocialUserId, _INMEMORY_GROUP_COLLECTION_NAME, dsocialGroupId, g)
     dsocialGroup = group
-    return 
+    return
 }
-    // Deletes dsocial contact
-    // Returns:
-    //   existed : whether the contact existed upon deletion
-    //   err : error or nil
+// Deletes dsocial contact
+// Returns:
+//   existed : whether the contact existed upon deletion
+//   err : error or nil
 func (p *InMemoryDataStore) DeleteDsocialContact(dsocialUserId, dsocialContactId string) (existed bool, err os.Error) {
     //k := strings.Join([]string{dsocialUserId, dsocialContactId}, "/")
     _, existed = p.delete(_INMEMORY_CONTACT_COLLECTION_NAME, dsocialContactId)
-    return 
+    return
 }
-    // Deletes dsocial group
-    // Returns:
-    //   existed : whether the group existed upon deletion
-    //   err : error or nil
+// Deletes dsocial group
+// Returns:
+//   existed : whether the group existed upon deletion
+//   err : error or nil
 func (p *InMemoryDataStore) DeleteDsocialGroup(dsocialUserId, dsocialGroupId string) (existed bool, err os.Error) {
     //k := strings.Join([]string{dsocialUserId, dsocialGroupId}, "/")
     _, existed = p.delete(_INMEMORY_GROUP_COLLECTION_NAME, dsocialGroupId)
-    return 
+    return
 }
 
-func (p *InMemoryDataStore) BackendContactsDataStoreService() (bc.DataStoreService) {
+func (p *InMemoryDataStore) BackendContactsDataStoreService() bc.DataStoreService {
     return p
 }
-

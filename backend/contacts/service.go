@@ -11,20 +11,20 @@ import (
 
 type Contact struct {
     ExternalServiceId string
-    ExternalUserId string
+    ExternalUserId    string
     ExternalContactId string
-    DsocialUserId string
-    DsocialContactId string
-    Value *dm.Contact
+    DsocialUserId     string
+    DsocialContactId  string
+    Value             *dm.Contact
 }
 
 type Group struct {
     ExternalServiceId string
-    ExternalUserId string
-    ExternalGroupId string
-    DsocialUserId string
-    DsocialGroupId string
-    Value *dm.Group
+    ExternalUserId    string
+    ExternalGroupId   string
+    DsocialUserId     string
+    DsocialGroupId    string
+    Value             *dm.Group
 }
 
 type ContactsServiceSettings interface {
@@ -46,40 +46,39 @@ type ContactsServiceSettings interface {
 type NextToken interface{}
 
 type DataStoreService interface {
-    
     RetrieveAllContactsServiceSettingsForUser(dsocialUserId string) (settings []ContactsServiceSettings, err os.Error)
     RetrieveContactsServiceSettingsForService(dsocialUserId, contactsServiceId string) (settings []ContactsServiceSettings, err os.Error)
     RetrieveContactsServiceSettings(dsocialUserId, contactsServiceId, id string) (settings ContactsServiceSettings, err os.Error)
     SetContactsServiceSettings(settings ContactsServiceSettings) (id string, err os.Error)
     DeleteContactsServiceSettings(dsocialUserId, contactsServiceId, id string) (err os.Error)
-    
+
     SearchForDsocialContacts(dsocialUserId string, contact *dm.Contact) (contacts []*dm.Contact, err os.Error)
     SearchForDsocialGroups(dsocialUserId string, groupName string) (groups []*dm.Group, err os.Error)
-    
+
     StoreContactChangeSet(dsocialUserId string, changeset *dm.ChangeSet) (*dm.ChangeSet, os.Error)
     RetrieveContactChangeSets(dsocialId string, after *time.Time) ([]*dm.ChangeSet, NextToken, os.Error)
-    
+
     StoreGroupChangeSet(dsocialUserId string, changeset *dm.ChangeSet) (*dm.ChangeSet, os.Error)
     RetrieveGroupChangeSets(dsocialId string, after *time.Time) ([]*dm.ChangeSet, NextToken, os.Error)
-    
+
     AddContactChangeSetsToApply(dsocialUserId, serviceId, serviceName string, changesetIds []string) (id string, err os.Error)
     AddGroupChangeSetsToApply(dsocialUserId, serviceId, serviceName string, changesetIds []string) (id string, err os.Error)
     AddContactChangeSetsNotCurrentlyApplyable(dsocialUserId, serviceId, serviceName string, changesetIds []string) (id string, err os.Error)
     AddGroupChangeSetsNotCurrentlyApplyable(dsocialUserId, serviceId, serviceName string, changesetIds []string) (id string, err os.Error)
-    
+
     RetrieveContactChangeSetsToApply(dsocialUserId, serviceId, serviceName string) ([]*dm.ChangeSetsToApply, map[string]*dm.ChangeSet, os.Error)
     RetrieveGroupChangeSetsToApply(dsocialUserId, serviceId, serviceName string) ([]*dm.ChangeSetsToApply, map[string]*dm.ChangeSet, os.Error)
     RetrieveContactChangeSetsNotCurrentlyApplyable(dsocialUserId, serviceId, serviceName string) ([]*dm.ChangeSetsToApply, map[string]*dm.ChangeSet, os.Error)
     RetrieveGroupChangeSetsNotCurrentlyApplyable(dsocialUserId, serviceId, serviceName string) ([]*dm.ChangeSetsToApply, map[string]*dm.ChangeSet, os.Error)
-    
-    RemoveContactChangeSetsToApply(dsocialUserId, serviceId, serviceName string, changeSetIdsToApply []string) (os.Error)
+
+    RemoveContactChangeSetsToApply(dsocialUserId, serviceId, serviceName string, changeSetIdsToApply []string) os.Error
     RemoveGroupChangeSetsToApply(dsocialUserId, serviceId, serviceName string, changeSetIdsToApply []string) (err os.Error)
     RemoveContactChangeSetsNotCurrentlyApplyable(dsocialUserId, serviceId, serviceName string, changeSetIdsToApply []string) (err os.Error)
     RemoveGroupChangeSetsNotCurrentlyApplyable(dsocialUserId, serviceId, serviceName string, changeSetIdsToApply []string) (err os.Error)
-    
+
     // Generates a new unique id for the specified collection name
     GenerateId(dsocialUserId, collectionName string) string
-    
+
     // Retrieve the dsocial contact id for the specified external service/user id/contact id combo
     // Returns:
     //   dsocialContactId : the dsocial contact id if it exists or empty if not found
@@ -145,8 +144,7 @@ type DataStoreService interface {
     //   existed : whether the group existed upon deletion
     //   err : error or nil
     DeleteExternalGroup(externalServiceId, externalUserId, dsocialUserId, externalGroupId string) (existed bool, err os.Error)
-    
-    
+
     // Retrieve dsocial contact
     // Returns:
     //   dsocialContact : the contact as stored into the service using StoreDsocialContact or nil if not found
@@ -179,7 +177,6 @@ type DataStoreService interface {
     //   existed : whether the group existed upon deletion
     //   err : error or nil
     DeleteDsocialGroupForExternalGroup(externalServiceId, externalUserId, externalGroupId, dsocialUserId string) (existed bool, err os.Error)
-
 
     // Retrieve dsocial contact
     // Returns:
@@ -227,7 +224,7 @@ type ContactsService interface {
     ConvertToDsocialGroup(externalGroup interface{}, originalDsocialGroup *dm.Group, dsocialUserId string) (dsocialGroup *dm.Group)
     // Convert the dsocial group to the external group for this Contacts Service or nil if input is nil
     ConvertToExternalGroup(dsocialGroup *dm.Group, originalExternalGroup interface{}, dsocialUserId string) (externalGroup interface{})
-    
+
     // Whether this service can retrieve all contacts at once
     CanRetrieveAllContacts() bool
     // Whether this service can retrieve all connections (partial contact info or even just ids) at once
@@ -348,15 +345,13 @@ type ContactsService interface {
     //DeleteGroup(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId, dsocialGroupId string) (existed bool, err os.Error)
 }
 
-
-
 type StandardContactServiceSettings struct {
-    FieldId                         string                  `json:"id"`
-    FieldDsocialUserId              string                  `json:"dsocial_user_id"`
-    FieldExternalUserId             string                  `json:"external_user_id"`
-    FieldClientProperties           jsonhelper.JSONObject   `json:"client_properties"`
-    FieldAllowRetrieveContactInfo   bool                    `json:"allow_retrieve_contact_info"`
-    FieldAllowModifyContactInfo     bool                    `json:"allow_modify_contact_info"`
+    FieldId                       string                `json:"id"`
+    FieldDsocialUserId            string                `json:"dsocial_user_id"`
+    FieldExternalUserId           string                `json:"external_user_id"`
+    FieldClientProperties         jsonhelper.JSONObject `json:"client_properties"`
+    FieldAllowRetrieveContactInfo bool                  `json:"allow_retrieve_contact_info"`
+    FieldAllowModifyContactInfo   bool                  `json:"allow_modify_contact_info"`
 }
 
 func (p *StandardContactServiceSettings) Id() string {
@@ -407,8 +402,6 @@ func (p *StandardContactServiceSettings) SetAllowModifyContactInfo(allow bool) {
     p.FieldAllowModifyContactInfo = allow
 }
 
-
-
 func addIdForAclPersistableModel(m *dm.AclPersistableModel, ds DataStoreService, collectionName string, ownerId string) {
     if m == nil {
         return
@@ -421,90 +414,147 @@ func addIdForAclPersistableModel(m *dm.AclPersistableModel, ds DataStoreService,
     }
 }
 
-
 func AddIdsForDsocialContact(c *dm.Contact, ds DataStoreService, dsocialUserId string) (err os.Error) {
     if c == nil {
         return
     }
-    if c.UserId == "" { c.UserId = dsocialUserId }
-    if c.Acl.OwnerId == "" { c.Acl.OwnerId = dsocialUserId }
-    if c.Id == "" { c.Id = ds.GenerateId(dsocialUserId, "contact") }
+    if c.UserId == "" {
+        c.UserId = dsocialUserId
+    }
+    if c.Acl.OwnerId == "" {
+        c.Acl.OwnerId = dsocialUserId
+    }
+    if c.Id == "" {
+        c.Id = ds.GenerateId(dsocialUserId, "contact")
+    }
     if c.PostalAddresses != nil {
         for _, addr := range c.PostalAddresses {
-            if addr.Acl.OwnerId == "" { addr.Acl.OwnerId = dsocialUserId }
-            if addr.Id == "" { addr.Id = ds.GenerateId(dsocialUserId, "address") }
+            if addr.Acl.OwnerId == "" {
+                addr.Acl.OwnerId = dsocialUserId
+            }
+            if addr.Id == "" {
+                addr.Id = ds.GenerateId(dsocialUserId, "address")
+            }
         }
     }
     if c.Educations != nil {
         for _, ed := range c.Educations {
-            if ed.Acl.OwnerId == "" { ed.Acl.OwnerId = dsocialUserId }
-            if ed.Id == "" { ed.Id = ds.GenerateId(dsocialUserId, "education") }
+            if ed.Acl.OwnerId == "" {
+                ed.Acl.OwnerId = dsocialUserId
+            }
+            if ed.Id == "" {
+                ed.Id = ds.GenerateId(dsocialUserId, "education")
+            }
         }
     }
     if c.WorkHistories != nil {
         for _, wh := range c.WorkHistories {
-            if wh.Acl.OwnerId == "" { wh.Acl.OwnerId = dsocialUserId }
-            if wh.Id == "" { wh.Id = ds.GenerateId(dsocialUserId, "workhistory") }
+            if wh.Acl.OwnerId == "" {
+                wh.Acl.OwnerId = dsocialUserId
+            }
+            if wh.Id == "" {
+                wh.Id = ds.GenerateId(dsocialUserId, "workhistory")
+            }
         }
     }
     if c.PhoneNumbers != nil {
         for _, p := range c.PhoneNumbers {
-            if p.Acl.OwnerId == "" { p.Acl.OwnerId = dsocialUserId }
-            if p.Id == "" { p.Id = ds.GenerateId(dsocialUserId, "phone") }
+            if p.Acl.OwnerId == "" {
+                p.Acl.OwnerId = dsocialUserId
+            }
+            if p.Id == "" {
+                p.Id = ds.GenerateId(dsocialUserId, "phone")
+            }
         }
     }
     if c.EmailAddresses != nil {
         for _, e := range c.EmailAddresses {
-            if e.Acl.OwnerId == "" { e.Acl.OwnerId = dsocialUserId }
-            if e.Id == "" { e.Id = ds.GenerateId(dsocialUserId, "email") }
+            if e.Acl.OwnerId == "" {
+                e.Acl.OwnerId = dsocialUserId
+            }
+            if e.Id == "" {
+                e.Id = ds.GenerateId(dsocialUserId, "email")
+            }
         }
     }
     if c.Uris != nil {
         for _, u := range c.Uris {
-            if u.Acl.OwnerId == "" { u.Acl.OwnerId = dsocialUserId }
-            if u.Id == "" { u.Id = ds.GenerateId(dsocialUserId, "uri") }
+            if u.Acl.OwnerId == "" {
+                u.Acl.OwnerId = dsocialUserId
+            }
+            if u.Id == "" {
+                u.Id = ds.GenerateId(dsocialUserId, "uri")
+            }
         }
     }
     if c.Ims != nil {
         for _, im := range c.Ims {
-            if im.Acl.OwnerId == "" { im.Acl.OwnerId = dsocialUserId }
-            if im.Id == "" { im.Id = ds.GenerateId(dsocialUserId, "im") }
+            if im.Acl.OwnerId == "" {
+                im.Acl.OwnerId = dsocialUserId
+            }
+            if im.Id == "" {
+                im.Id = ds.GenerateId(dsocialUserId, "im")
+            }
         }
     }
     if c.Relationships != nil {
         for _, r := range c.Relationships {
-            if r.Acl.OwnerId == "" { r.Acl.OwnerId = dsocialUserId }
-            if r.Id == "" { r.Id = ds.GenerateId(dsocialUserId, "relationship") }
+            if r.Acl.OwnerId == "" {
+                r.Acl.OwnerId = dsocialUserId
+            }
+            if r.Id == "" {
+                r.Id = ds.GenerateId(dsocialUserId, "relationship")
+            }
         }
     }
     if c.Dates != nil {
         for _, d := range c.Dates {
-            if d.Acl.OwnerId == "" { d.Acl.OwnerId = dsocialUserId }
-            if d.Id == "" { d.Id = ds.GenerateId(dsocialUserId, "date") }
+            if d.Acl.OwnerId == "" {
+                d.Acl.OwnerId = dsocialUserId
+            }
+            if d.Id == "" {
+                d.Id = ds.GenerateId(dsocialUserId, "date")
+            }
         }
     }
     if c.DateTimes != nil {
         for _, d := range c.DateTimes {
-            if d.Acl.OwnerId == "" { d.Acl.OwnerId = dsocialUserId }
-            if d.Id == "" { d.Id = ds.GenerateId(dsocialUserId, "datetime") }
+            if d.Acl.OwnerId == "" {
+                d.Acl.OwnerId = dsocialUserId
+            }
+            if d.Id == "" {
+                d.Id = ds.GenerateId(dsocialUserId, "datetime")
+            }
         }
     }
     if c.Certifications != nil {
         for _, cert := range c.Certifications {
-            if cert.Acl.OwnerId == "" { cert.Acl.OwnerId = dsocialUserId }
-            if cert.Id == "" { cert.Id = ds.GenerateId(dsocialUserId, "certification") }
+            if cert.Acl.OwnerId == "" {
+                cert.Acl.OwnerId = dsocialUserId
+            }
+            if cert.Id == "" {
+                cert.Id = ds.GenerateId(dsocialUserId, "certification")
+            }
         }
     }
     if c.Skills != nil {
         for _, s := range c.Skills {
-            if s.Acl.OwnerId == "" { s.Acl.OwnerId = dsocialUserId }
-            if s.Id == "" { s.Id = ds.GenerateId(dsocialUserId, "skill") }
+            if s.Acl.OwnerId == "" {
+                s.Acl.OwnerId = dsocialUserId
+            }
+            if s.Id == "" {
+                s.Id = ds.GenerateId(dsocialUserId, "skill")
+            }
         }
     }
     if c.Languages != nil {
         for _, l := range c.Languages {
-            if l.Acl.OwnerId == "" { l.Acl.OwnerId = dsocialUserId }
-            if l.Id == "" { l.Id = ds.GenerateId(dsocialUserId, "language") }
+            if l.Acl.OwnerId == "" {
+                l.Acl.OwnerId = dsocialUserId
+            }
+            if l.Id == "" {
+                l.Id = ds.GenerateId(dsocialUserId, "language")
+            }
         }
     }
     return
@@ -514,12 +564,17 @@ func AddIdsForDsocialGroup(g *dm.Group, ds DataStoreService, dsocialUserId strin
     if g == nil {
         return
     }
-    if g.UserId == "" { g.UserId = dsocialUserId }
-    if g.Acl.OwnerId == "" { g.Acl.OwnerId = dsocialUserId }
-    if g.Id == "" { g.Id = ds.GenerateId(dsocialUserId, "group") }
+    if g.UserId == "" {
+        g.UserId = dsocialUserId
+    }
+    if g.Acl.OwnerId == "" {
+        g.Acl.OwnerId = dsocialUserId
+    }
+    if g.Id == "" {
+        g.Id = ds.GenerateId(dsocialUserId, "group")
+    }
     return
 }
-
 
 func CreateContactOnExternalService(client oauth2_client.OAuth2Client, cs ContactsService, ds DataStoreService, dsocialUserId string, contact *dm.Contact) (*Contact, os.Error) {
     if contact == nil {
@@ -563,11 +618,11 @@ func CreateContactOnExternalService(client oauth2_client.OAuth2Client, cs Contac
     _, _, err = ds.StoreDsocialExternalContactMapping(externalServiceId, externalUserId, externalContactId, dsocialUserId, dsocialContactForExternal.Id)
     outContact := &Contact{
         ExternalServiceId: externalServiceId,
-        ExternalUserId: externalUserId,
+        ExternalUserId:    externalUserId,
         ExternalContactId: externalContactId,
-        DsocialUserId: dsocialUserId,
-        DsocialContactId: dsocialContactForExternal.Id,
-        Value: dsocialContactForExternal,
+        DsocialUserId:     dsocialUserId,
+        DsocialContactId:  dsocialContactForExternal.Id,
+        Value:             dsocialContactForExternal,
     }
     return outContact, err
 }
@@ -610,11 +665,11 @@ func CreateGroupOnExternalService(client oauth2_client.OAuth2Client, cs Contacts
     _, _, err = ds.StoreDsocialExternalGroupMapping(externalServiceId, externalUserId, externalGroupId, dsocialUserId, dsocialGroupForExternal.Id)
     outGroup := &Group{
         ExternalServiceId: externalServiceId,
-        ExternalUserId: externalUserId,
-        ExternalGroupId: externalGroupId,
-        DsocialUserId: dsocialUserId,
-        DsocialGroupId: dsocialGroupForExternal.Id,
-        Value: dsocialGroupForExternal,
+        ExternalUserId:    externalUserId,
+        ExternalGroupId:   externalGroupId,
+        DsocialUserId:     dsocialUserId,
+        DsocialGroupId:    dsocialGroupForExternal.Id,
+        Value:             dsocialGroupForExternal,
     }
     return outGroup, err
 }
@@ -659,11 +714,11 @@ func UpdateContactOnExternalService(client oauth2_client.OAuth2Client, cs Contac
     latestDsocialContactForExternal, err = ds.StoreDsocialContactForExternalContact(externalServiceId, externalUserId, externalContactId, dsocialUserId, latestDsocialContactForExternal)
     outContact := &Contact{
         ExternalServiceId: externalServiceId,
-        ExternalUserId: externalUserId,
+        ExternalUserId:    externalUserId,
         ExternalContactId: externalContactId,
-        DsocialUserId: dsocialUserId,
-        DsocialContactId: latestDsocialContactForExternal.Id,
-        Value: latestDsocialContactForExternal,
+        DsocialUserId:     dsocialUserId,
+        DsocialContactId:  latestDsocialContactForExternal.Id,
+        Value:             latestDsocialContactForExternal,
     }
     return outContact, err
 }
@@ -708,11 +763,11 @@ func UpdateGroupOnExternalService(client oauth2_client.OAuth2Client, cs Contacts
     latestDsocialGroupForExternal, err = ds.StoreDsocialGroupForExternalGroup(externalServiceId, externalUserId, externalGroupId, dsocialUserId, latestDsocialGroupForExternal)
     outGroup := &Group{
         ExternalServiceId: externalServiceId,
-        ExternalUserId: externalUserId,
-        ExternalGroupId: externalGroupId,
-        DsocialUserId: dsocialUserId,
-        DsocialGroupId: latestDsocialGroupForExternal.Id,
-        Value: latestDsocialGroupForExternal,
+        ExternalUserId:    externalUserId,
+        ExternalGroupId:   externalGroupId,
+        DsocialUserId:     dsocialUserId,
+        DsocialGroupId:    latestDsocialGroupForExternal.Id,
+        Value:             latestDsocialGroupForExternal,
     }
     return outGroup, err
 }
@@ -782,4 +837,3 @@ func DeleteGroupOnExternalService(client oauth2_client.OAuth2Client, cs Contacts
     _, err = ds.DeleteExternalGroup(externalServiceId, externalUserId, dsocialUserId, externalGroupId)
     return true, err
 }
-

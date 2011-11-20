@@ -27,7 +27,7 @@ func (p *InMemoryDataStore) retrieveExternalUserAccountCollection() (m *inMemory
     return p.retrieveCollection(_INMEMORY_EXTERNAL_USER_ACCOUNT_COLLECTION_NAME)
 }
 
-func (p *InMemoryDataStore) generateIdForAccount(collectionName string) (string) {
+func (p *InMemoryDataStore) generateIdForAccount(collectionName string) string {
     nextId := collectionName + "/" + strconv.Itoa64(p.NextId)
     p.NextId++
     return nextId
@@ -189,7 +189,6 @@ func (p *InMemoryDataStore) DeleteConsumerAccount(user *dm.Consumer) (*dm.Consum
     return user, nil
 }
 
-
 func (p *InMemoryDataStore) CreateExternalUserAccount(user *dm.ExternalUser) (*dm.ExternalUser, os.Error) {
     if user == nil {
         return nil, nil
@@ -252,7 +251,6 @@ func (p *InMemoryDataStore) DeleteExternalUserAccount(user *dm.ExternalUser) (*d
     return user, nil
 }
 
-
 func (p *InMemoryDataStore) RetrieveUserAccountById(id string) (*dm.User, os.Error) {
     user, _ := p.retrieve(_INMEMORY_USER_ACCOUNT_COLLECTION_NAME, id)
     if user != nil {
@@ -280,7 +278,6 @@ func (p *InMemoryDataStore) FindUserAccountsByEmail(email string, next ba.NextTo
     }
     return []*dm.User{user}, nil, err
 }
-
 
 func (p *InMemoryDataStore) RetrieveConsumerAccountById(id string) (*dm.Consumer, os.Error) {
     user, _ := p.retrieve(_INMEMORY_CONSUMER_ACCOUNT_COLLECTION_NAME, id)
@@ -321,7 +318,6 @@ func (p *InMemoryDataStore) FindConsumerAccountsByName(name string, exact bool, 
     return arr, nil, nil
 }
 
-
 func (p *InMemoryDataStore) RetrieveExternalUserAccountById(id string) (*dm.ExternalUser, os.Error) {
     user, _ := p.retrieve(_INMEMORY_EXTERNAL_USER_ACCOUNT_COLLECTION_NAME, id)
     if user != nil {
@@ -356,6 +352,6 @@ func (p *InMemoryDataStore) FindExternalUserAccountsByExternalUserId(externalUse
     return arr, nil, nil
 }
 
-func (p *InMemoryDataStore) BackendAccountsDataStore() (ba.DataStore) {
+func (p *InMemoryDataStore) BackendAccountsDataStore() ba.DataStore {
     return p
 }

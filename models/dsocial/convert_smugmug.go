@@ -25,7 +25,6 @@ func SmugMugUserToDsocial(s *smugmug.PersonReference, o *Contact, dsocialUserId 
     return c
 }
 
-
 func DsocialContactToSmugMug(c *Contact, o *smugmug.PersonReference) *smugmug.PersonReference {
     if c == nil {
         return nil

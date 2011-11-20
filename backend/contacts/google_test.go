@@ -589,8 +589,7 @@ const (
             ]
         }
     }`
-    
-    
+
     CONTACT_GEORGE_WASHINGTON = `
     {
         "version":"1.0",
@@ -919,8 +918,7 @@ const (
             ]
         }
     }`
-    
-    
+
     CONTACT_JOHN_ADAMS = `
     {
         "version":"1.0",
@@ -1237,8 +1235,7 @@ const (
             ]
         }
     }`
-    
-    
+
     CONTACT_MARIE_CURIE = `
     {
         "version":"1.0",
@@ -1502,8 +1499,7 @@ const (
             ]
         }
     }`
-    
-    
+
     CONTACT_ALBERT_EINSTEIN = `
     {
         "version":"1.0",
@@ -1850,8 +1846,7 @@ const (
             "user_id":"testname"
         }
     ]`
-    
-    
+
     EXISTING_CONTACTS = `
     [
         {
@@ -2192,14 +2187,12 @@ const (
             "user_id":"testname"
         }
     ]`
-    
 )
 
 var (
-    GOOGLE_USERINFO_RESULT oauth2_client.GoogleUserInfoResult
+    GOOGLE_USERINFO_RESULT  oauth2_client.GoogleUserInfoResult
     GOOGLE_USERINFO_RESULT2 oauth2_client.GoogleUserInfoResult
 )
-
 
 func init() {
     GOOGLE_USERINFO_RESULT = oauth2_client.NewGoogleUserInfoResult("test@example.com", "John", "test@example.com", "https://www.google.com/m8/feeds/contacts/test%40example.com/full", time.UTC())
@@ -2282,5 +2275,3 @@ func TestInitialSyncWithPartialDataStoreWithGoogleContacts(t *testing.T) {
     ds.Encode(buf)
     t.Fatalf("Final data store is:\n%s\n\n", buf.String())
 }
-
-

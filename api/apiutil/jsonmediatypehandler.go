@@ -13,17 +13,17 @@ import (
 )
 
 type JSONMediaTypeHandler struct {
-    obj jsonhelper.JSONObject
-    lastModified *time.Time
-    etag string
+    obj                 jsonhelper.JSONObject
+    lastModified        *time.Time
+    etag                string
     writtenStatusHeader bool
 }
 
 func NewJSONMediaTypeHandler(obj jsonhelper.JSONObject, lastModified *time.Time, etag string) *JSONMediaTypeHandler {
     return &JSONMediaTypeHandler{
-        obj: obj,
+        obj:          obj,
         lastModified: lastModified,
-        etag: etag,
+        etag:         etag,
     }
 }
 

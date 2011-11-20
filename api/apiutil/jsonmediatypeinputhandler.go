@@ -14,19 +14,19 @@ type JSONObjectInputHandler interface {
 }
 
 type JSONMediaTypeInputHandler struct {
-    charset string
-    language string
-    handler JSONObjectInputHandler
-    reader io.Reader
+    charset             string
+    language            string
+    handler             JSONObjectInputHandler
+    reader              io.Reader
     writtenStatusHeader bool
 }
 
 func NewJSONMediaTypeInputHandler(charset, language string, handler JSONObjectInputHandler, reader io.Reader) *JSONMediaTypeInputHandler {
     return &JSONMediaTypeInputHandler{
-        charset: charset,
+        charset:  charset,
         language: language,
-        handler: handler,
-        reader: reader,
+        handler:  handler,
+        reader:   reader,
     }
 }
 
