@@ -14,6 +14,7 @@ const (
 )
 
 var ErrorInvalidURI os.Error = os.NewError("Could not parse the URI")
+var ErrorInvalidAccessKeyId os.Error = os.NewError("Could not find the specified DSOCAccessKeyId")
 var ErrorSignatureDoesNotMatch os.Error = os.NewError("Signature does not match")
 var ErrorTimestampTooOld os.Error = os.NewError("Timestamp too old")
 var ErrorRequestExpired os.Error = os.NewError("Request Expired")
