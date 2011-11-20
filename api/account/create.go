@@ -3,15 +3,12 @@ package account
 import (
     "github.com/pomack/dsocial.go/api/apiutil"
     acct "github.com/pomack/dsocial.go/backend/accounts"
-    //"github.com/pomack/dsocial.go/backend/authentication"
-    //"github.com/pomack/dsocial.go/backend/authorization"
     dm "github.com/pomack/dsocial.go/models/dsocial"
     "github.com/pomack/jsonhelper.go/jsonhelper"
     wm "github.com/pomack/webmachine.go/webmachine"
     "bytes"
     "http"
     "io"
-    //"json"
     "os"
     "time"
 )
@@ -25,6 +22,7 @@ type CreateAccountContext interface {
     SetFromJSON(obj jsonhelper.JSONObject)
     CleanInput(createdByUser *dm.User)
     Type() string
+    SetType(theType string)
     User() *dm.User
     Consumer() *dm.Consumer
     ExternalUser() *dm.ExternalUser
@@ -45,22 +43,21 @@ func NewCreateAccountContext() CreateAccountContext {
 }
 
 func (p *createAccountContext) SetFromJSON(obj jsonhelper.JSONObject) {
-    p.theType = ""
     p.user = nil
     p.consumer = nil
     p.externalUser = nil
-    theType := obj.GetAsString("type")
+    theType := p.theType
+    if theType == "" {
+        theType = obj.GetAsString("type")
+    }
     switch theType {
     case "user":
-        p.theType = theType
         p.user = new(dm.User)
         p.user.InitFromJSONObject(obj)
     case "consumer":
-        p.theType = theType
         p.consumer = new(dm.Consumer)
         p.consumer.InitFromJSONObject(obj)
     case "external_user":
-        p.theType = theType
         p.externalUser = new(dm.ExternalUser)
         p.externalUser.InitFromJSONObject(obj)
     }
@@ -81,6 +78,10 @@ func (p *createAccountContext) CleanInput(createdByUser *dm.User) {
 
 func (p *createAccountContext) Type() string {
     return p.theType
+}
+
+func (p *createAccountContext) SetType(theType string) {
+    p.theType = theType
 }
 
 func (p *createAccountContext) User() *dm.User {
@@ -145,18 +146,40 @@ func (p *CreateAccountRequestHandler) GenerateContext(req wm.Request, cxt wm.Con
 }
 
 func (p *CreateAccountRequestHandler) HandlerFor(req wm.Request, writer wm.ResponseWriter) wm.RequestHandler {
-    path := req.URL().Path
-    if path == "/api/v1/json/account/create" || path == "/api/v1/json/account/create/" {
-        return p
+    path := req.URLParts()
+    pathLen := len(path)
+    if path[pathLen-1] == "" {
+        // ignore trailing slash
+        pathLen = pathLen-1
     }
-    if (path == "/api/v1/json/account" || path == "/api/v1/json/account/") && (req.Method() == wm.POST || req.Method() == wm.PUT) {
-        return p
+    if pathLen >= 6 {
+        if path[0] == "" && path[1] == "api" && path[2] == "v1" && path[3] == "json" && path[4] == "account" {
+            switch path[5] {
+            case "user", "consumer", "external_user":
+                switch pathLen {
+                case 6:
+                    if req.Method() == wm.POST || req.Method() == wm.PUT {
+                        // (PUT|POST) /api/v1/json/account/(user|consumer|external_user)
+                        return p
+                    }
+                case 7:
+                    if path[6] == "create" {
+                        // /api/v1/json/account/(user|consumer|external_user)/create
+                        return p
+                    }
+                }
+            }
+        }
     }
     return nil
 }
 
 func (p *CreateAccountRequestHandler) StartRequest(req wm.Request, cxt wm.Context) (wm.Request, wm.Context) {
     cac := p.GenerateContext(req, cxt)
+    path := req.URLParts()
+    if len(path) >= 6 {
+        cac.SetType(path[5])
+    }
     return req, cac
 }
 

@@ -20,10 +20,10 @@ func TestCreateUserAccount(t *testing.T) {
     ds := inmemory.NewInMemoryDataStore()
     wm := webmachine.NewWebMachine()
     wm.AddRouteHandler(account.NewCreateAccountRequestHandler(ds))
-    buf := bytes.NewBufferString(`{"type": "user", "role": 9999999999999999, "name": "George Washington", "username": "firstpresident", "email":"george@washington.com", "phone_number": "+1-405-555-5555", "address": "Valley Forge"}`)
+    buf := bytes.NewBufferString(`{"role": 9999999999999999, "name": "George Washington", "username": "firstpresident", "email":"george@washington.com", "phone_number": "+1-405-555-5555", "address": "Valley Forge"}`)
     oldUser := new(dm.User)
     json.Unmarshal(buf.Bytes(), &oldUser)
-    req, _ := http.NewRequest(webmachine.POST, "http://localhost/api/v1/json/account/create/", buf)
+    req, _ := http.NewRequest(webmachine.POST, "http://localhost/api/v1/json/account/user/create/", buf)
     req.Header.Set("Content-Type", webmachine.MIME_TYPE_JSON + "; charset=utf-8")
     req.Header.Set("Accept", webmachine.MIME_TYPE_JSON + "; charset=utf-8")
     req.Header.Set("Accept-Charset", "utf-8")
@@ -71,50 +71,15 @@ func TestCreateUserAccount(t *testing.T) {
     }
 }
 
-func TestCreateUserAccountMissingType(t *testing.T) {
-    ds := inmemory.NewInMemoryDataStore()
-    wm := webmachine.NewWebMachine()
-    wm.AddRouteHandler(account.NewCreateAccountRequestHandler(ds))
-    buf := bytes.NewBufferString(`{"role": 9999999999999999, "name": "George Washington", "username": "firstpresident", "email":"george@washington.com", "phone_number": "+1-405-555-5555", "address": "Valley Forge"}`)
-    oldUser := new(dm.User)
-    json.Unmarshal(buf.Bytes(), &oldUser)
-    req, _ := http.NewRequest(webmachine.POST, "http://localhost/api/v1/json/account/create/", buf)
-    req.Header.Set("Content-Type", webmachine.MIME_TYPE_JSON + "; charset=utf-8")
-    req.Header.Set("Accept", webmachine.MIME_TYPE_JSON + "; charset=utf-8")
-    req.Header.Set("Accept-Charset", "utf-8")
-    req.Header.Set("Accept-Encoding", "identity")
-    req.Header.Set("Accept-Language", "en-us")
-    req.Header.Set("Connection", "close")
-    resp := webmachine.NewMockResponseWriter(req)
-    wm.ServeHTTP(resp, req)
-    if resp.StatusCode != 400 {
-        t.Error("Expected 400 status code but received ", resp.StatusCode)
-    }
-    if resp.Header().Get("Content-Type") != req.Header.Get("Accept") {
-        t.Error("Expected Content-Type \"", req.Header.Get("Accept"), "\" but received ", resp.Header().Get("Content-Type"))
-    }
-    obj := jsonhelper.NewJSONObject()
-    err := json.Unmarshal(resp.Buffer.Bytes(), &obj)
-    if err != nil {
-        t.Error("Error while unmarshaling JSON: ", err.String())
-    }
-    if obj.GetAsString("status") != "error" {
-        t.Error("Expected status = \"error\", but was \"", obj.GetAsString("status"), "\"")
-    }
-    if obj.Get("result") != nil {
-        t.Error("Expected result = nil, but was \"", obj.Get("result"), "\"")
-    }
-}
-
 
 func TestCreateUserAccountMissingName(t *testing.T) {
     ds := inmemory.NewInMemoryDataStore()
     wm := webmachine.NewWebMachine()
     wm.AddRouteHandler(account.NewCreateAccountRequestHandler(ds))
-    buf := bytes.NewBufferString(`{"type": "user", "role": 9999999999999999, "username": "firstpresident", "email":"george@washington.com", "phone_number": "+1-405-555-5555", "address": "Valley Forge"}`)
+    buf := bytes.NewBufferString(`{"role": 9999999999999999, "username": "firstpresident", "email":"george@washington.com", "phone_number": "+1-405-555-5555", "address": "Valley Forge"}`)
     oldUser := new(dm.User)
     json.Unmarshal(buf.Bytes(), &oldUser)
-    req, _ := http.NewRequest(webmachine.POST, "http://localhost/api/v1/json/account/create/", buf)
+    req, _ := http.NewRequest(webmachine.POST, "http://localhost/api/v1/json/account/user/create/", buf)
     req.Header.Set("Content-Type", webmachine.MIME_TYPE_JSON + "; charset=utf-8")
     req.Header.Set("Accept", webmachine.MIME_TYPE_JSON + "; charset=utf-8")
     req.Header.Set("Accept-Charset", "utf-8")
@@ -151,10 +116,10 @@ func TestCreateUserAccountMissingSeveralFields(t *testing.T) {
     ds := inmemory.NewInMemoryDataStore()
     wm := webmachine.NewWebMachine()
     wm.AddRouteHandler(account.NewCreateAccountRequestHandler(ds))
-    buf := bytes.NewBufferString(`{"type": "user", "role": 9999999999999999, "name": "    ", "username": "\n\r\n", "email": "hi ho hi ho", "phone_number": "+1-405-555-5555", "address": "Valley Forge"}`)
+    buf := bytes.NewBufferString(`{"role": 9999999999999999, "name": "    ", "username": "\n\r\n", "email": "hi ho hi ho", "phone_number": "+1-405-555-5555", "address": "Valley Forge"}`)
     oldUser := new(dm.User)
     json.Unmarshal(buf.Bytes(), &oldUser)
-    req, _ := http.NewRequest(webmachine.POST, "http://localhost/api/v1/json/account/create/", buf)
+    req, _ := http.NewRequest(webmachine.POST, "http://localhost/api/v1/json/account/user/create/", buf)
     req.Header.Set("Content-Type", webmachine.MIME_TYPE_JSON + "; charset=utf-8")
     req.Header.Set("Accept", webmachine.MIME_TYPE_JSON + "; charset=utf-8")
     req.Header.Set("Accept-Charset", "utf-8")
