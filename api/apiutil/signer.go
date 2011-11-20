@@ -6,6 +6,7 @@ package apiutil
 
 import (
     dm "github.com/pomack/dsocial.go/models/dsocial"
+    auth "github.com/pomack/dsocial.go/backend/authentication"
     "bytes"
     "crypto"
     "crypto/hmac"
@@ -28,6 +29,7 @@ type Signer interface {
     SignString(h crypto.Hash, s string) (signature string, err os.Error)
     SignEncoded(h crypto.Hash, s string, enc *base64.Encoding) (signature []byte, err os.Error)
     SignRequest(req *http.Request, expiresIn int64)
+    CheckSignature(req *http.Request) (hasSignature, validSignature bool, err os.Error)
 }
 
 type signer struct {
@@ -192,6 +194,30 @@ func (p *signer) CheckSignature(req *http.Request) (hasSignature, validSignature
         err = ErrorSignatureDoesNotMatch
     } else {
         validSignature = true
+    }
+    return
+}
+
+func CheckSignature(ds auth.DataStore, req *http.Request) (hasSignature bool, userId, consumerId string, err os.Error) {
+    q := req.URL.Query()
+    signature := q.Get("Signature")
+    accessKeyId := q.Get("DSOCAccessKeyId")
+    if signature == "" || accessKeyId == "" {
+        return
+    }
+    hasSignature = true
+    accessKey, err := ds.RetrieveAccessKey(accessKeyId)
+    if err != nil {
+        return
+    }
+    if accessKey == nil {
+        err = ErrorInvalidAccessKeyId
+        return
+    }
+    signit := NewSigner(accessKeyId, accessKey.PrivateKey)
+    hasSignature, _, err = signit.CheckSignature(req)
+    if hasSignature && err == nil {
+        userId, consumerId = accessKey.UserId, accessKey.ConsumerId
     }
     return
 }
