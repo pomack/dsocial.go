@@ -3,6 +3,7 @@ package account
 import (
     "github.com/pomack/dsocial.go/api/apiutil"
     acct "github.com/pomack/dsocial.go/backend/accounts"
+    auth "github.com/pomack/dsocial.go/backend/authentication"
     dm "github.com/pomack/dsocial.go/models/dsocial"
     "github.com/pomack/jsonhelper.go/jsonhelper"
     wm "github.com/pomack/webmachine.go/webmachine"
@@ -16,6 +17,7 @@ import (
 type CreateAccountRequestHandler struct {
     wm.DefaultRequestHandler
     ds  acct.DataStore
+    authDS auth.DataStore
 }
 
 type CreateAccountContext interface {
@@ -29,6 +31,10 @@ type CreateAccountContext interface {
     LastModified() *time.Time
     ETag() string
     ToObject() interface{}
+    RequestingUser() *dm.User
+    SetRequestingUser(user *dm.User)
+    RequestingConsumer() *dm.Consumer
+    SetRequestingConsumer(consumer *dm.Consumer)
 }
 
 type createAccountContext struct {
@@ -36,6 +42,8 @@ type createAccountContext struct {
     user         *dm.User
     consumer     *dm.Consumer
     externalUser *dm.ExternalUser
+    requestingUser     *dm.User
+    requestingConsumer *dm.Consumer
 }
 
 func NewCreateAccountContext() CreateAccountContext {
@@ -132,8 +140,24 @@ func (p *createAccountContext) ETag() string {
     return etag
 }
 
-func NewCreateAccountRequestHandler(ds acct.DataStore) *CreateAccountRequestHandler {
-    return &CreateAccountRequestHandler{ds: ds}
+func (p *createAccountContext) RequestingUser() *dm.User {
+    return p.requestingUser
+}
+
+func (p *createAccountContext) SetRequestingUser(user *dm.User) {
+    p.requestingUser = user
+}
+
+func (p *createAccountContext) RequestingConsumer() *dm.Consumer {
+    return p.requestingConsumer
+}
+
+func (p *createAccountContext) SetRequestingConsumer(consumer *dm.Consumer) {
+    p.requestingConsumer = consumer
+}
+
+func NewCreateAccountRequestHandler(ds acct.DataStore, authDS auth.DataStore) *CreateAccountRequestHandler {
+    return &CreateAccountRequestHandler{ds: ds, authDS: authDS}
 }
 
 func (p *CreateAccountRequestHandler) GenerateContext(req wm.Request, cxt wm.Context) CreateAccountContext {
@@ -201,11 +225,30 @@ func (p *CreateAccountRequestHandler) IsAuthorized(req wm.Request, cxt wm.Contex
 }
 */
 
-/*
+
 func (p *CreateAccountRequestHandler) Forbidden(req wm.Request, cxt wm.Context) (bool, wm.Request, wm.Context, int, os.Error) {
+    cac := cxt.(CreateAccountContext)
+    hasSignature, userId, consumerId, err := apiutil.CheckSignature(p.authDS, req.UnderlyingRequest())
+    if err != nil {
+        return true, req, cxt, 403, err
+    }
+    if hasSignature {
+        if userId != "" {
+            user, _ := p.ds.RetrieveUserAccountById(userId)
+            cac.SetRequestingUser(user)
+        }
+        if consumerId != "" {
+            consumer, _ := p.ds.RetrieveConsumerAccountById(consumerId)
+            cac.SetRequestingConsumer(consumer)
+        }
+        if (userId != "" && cac.RequestingUser() == nil) && (consumerId != "" && cac.RequestingConsumer() == nil) {
+            // Cannot find user or consumer with specified id
+            return true, req, cxt, 0, nil
+        }
+    }
     return false, req, cxt, 0, nil
 }
-*/
+
 
 func (p *CreateAccountRequestHandler) AllowMissingPost(req wm.Request, cxt wm.Context) (bool, wm.Request, wm.Context, int, os.Error) {
     return true, req, cxt, 0, nil
@@ -244,7 +287,6 @@ func (p *CreateAccountRequestHandler) CreatePath(req wm.Request, cxt wm.Context)
 */
 
 func (p *CreateAccountRequestHandler) ProcessPost(req wm.Request, cxt wm.Context) (bool, wm.Request, wm.Context, int, os.Error) {
-    // TODO handle POST
     mths, req, cxt, code, err := p.ContentTypesAccepted(req, cxt)
     if len(mths) > 0 {
         buf := bytes.NewBufferString("")
@@ -365,8 +407,8 @@ func (p *CreateAccountRequestHandler) HasRespBody(req wm.Request, cxt wm.Context
 func (p *CreateAccountRequestHandler) HandleJSONObjectInputHandler(req wm.Request, cxt wm.Context, writer io.Writer, inputObj jsonhelper.JSONObject) (int, http.Header, os.Error) {
     cac := cxt.(CreateAccountContext)
     cac.SetFromJSON(inputObj)
-    // TODO add in ability to add user with credentials
-    cac.CleanInput(nil)
+    cac.CleanInput(cac.RequestingUser())
+    
     errors := make(map[string][]os.Error)
     var obj interface{}
     var err os.Error

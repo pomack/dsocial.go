@@ -19,7 +19,7 @@ type Stringer interface {
 func TestCreateUserAccount(t *testing.T) {
     ds := inmemory.NewInMemoryDataStore()
     wm := webmachine.NewWebMachine()
-    wm.AddRouteHandler(account.NewCreateAccountRequestHandler(ds))
+    wm.AddRouteHandler(account.NewCreateAccountRequestHandler(ds, ds))
     buf := bytes.NewBufferString(`{"role": 9999999999999999, "name": "George Washington", "username": "firstpresident", "email":"george@washington.com", "phone_number": "+1-405-555-5555", "address": "Valley Forge"}`)
     oldUser := new(dm.User)
     json.Unmarshal(buf.Bytes(), &oldUser)
@@ -74,7 +74,7 @@ func TestCreateUserAccount(t *testing.T) {
 func TestCreateUserAccountMissingName(t *testing.T) {
     ds := inmemory.NewInMemoryDataStore()
     wm := webmachine.NewWebMachine()
-    wm.AddRouteHandler(account.NewCreateAccountRequestHandler(ds))
+    wm.AddRouteHandler(account.NewCreateAccountRequestHandler(ds, ds))
     buf := bytes.NewBufferString(`{"role": 9999999999999999, "username": "firstpresident", "email":"george@washington.com", "phone_number": "+1-405-555-5555", "address": "Valley Forge"}`)
     oldUser := new(dm.User)
     json.Unmarshal(buf.Bytes(), &oldUser)
@@ -114,7 +114,7 @@ func TestCreateUserAccountMissingName(t *testing.T) {
 func TestCreateUserAccountMissingSeveralFields(t *testing.T) {
     ds := inmemory.NewInMemoryDataStore()
     wm := webmachine.NewWebMachine()
-    wm.AddRouteHandler(account.NewCreateAccountRequestHandler(ds))
+    wm.AddRouteHandler(account.NewCreateAccountRequestHandler(ds, ds))
     buf := bytes.NewBufferString(`{"role": 9999999999999999, "name": "    ", "username": "\n\r\n", "email": "hi ho hi ho", "phone_number": "+1-405-555-5555", "address": "Valley Forge"}`)
     oldUser := new(dm.User)
     json.Unmarshal(buf.Bytes(), &oldUser)
