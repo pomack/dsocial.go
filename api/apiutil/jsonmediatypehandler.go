@@ -36,8 +36,7 @@ func (p *JSONMediaTypeHandler) OutputTo(req wm.Request, cxt wm.Context, writer i
     enc := json.NewEncoder(buf)
     err := enc.Encode(p.obj)
     if err != nil {
-        headers := make(http.Header)
-        headers.Set("Content-Type", wm.MIME_TYPE_JSON)
+        //resp.Header().Set("Content-Type", wm.MIME_TYPE_JSON)
         if !p.writtenStatusHeader {
             resp.WriteHeader(500)
             p.writtenStatusHeader = true
@@ -50,7 +49,7 @@ func (p *JSONMediaTypeHandler) OutputTo(req wm.Request, cxt wm.Context, writer i
         w.Encode(m)
         return
     }
-    resp.Header().Set("Content-Type", wm.MIME_TYPE_JSON)
+    //resp.Header().Set("Content-Type", wm.MIME_TYPE_JSON)
     resp.Header().Set("Content-Length", strconv.Itoa(buf.Len()))
     if p.lastModified != nil {
         resp.Header().Set("Last-Modified", p.lastModified.Format(http.TimeFormat))

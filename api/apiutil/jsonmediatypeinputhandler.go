@@ -47,7 +47,7 @@ func (p *JSONMediaTypeInputHandler) OutputTo(req wm.Request, cxt wm.Context, wri
     err := dec.Decode(&obj)
     if err != nil {
         headers := make(http.Header)
-        headers.Set("Content-Type", wm.MIME_TYPE_JSON)
+        //headers.Set("Content-Type", wm.MIME_TYPE_JSON)
         m := jsonhelper.NewJSONObject()
         w := json.NewEncoder(writer)
         m.Set("status", "error")
