@@ -32,7 +32,7 @@ func (p *JSONMediaTypeHandler) MediaType() string {
 }
 
 func (p *JSONMediaTypeHandler) OutputTo(req wm.Request, cxt wm.Context, writer io.Writer, resp wm.ResponseWriter) {
-    buf := bytes.NewBuffer(make([]byte, 0, 4096))
+    buf := bytes.NewBufferString("")
     enc := json.NewEncoder(buf)
     err := enc.Encode(p.obj)
     if err != nil {
