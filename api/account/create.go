@@ -168,28 +168,18 @@ func (p *CreateAccountRequestHandler) GenerateContext(req wm.Request, cxt wm.Con
 }
 
 func (p *CreateAccountRequestHandler) HandlerFor(req wm.Request, writer wm.ResponseWriter) wm.RequestHandler {
+    // /api/v1/json/account/(user|consumer|external_user)/create
     path := req.URLParts()
     pathLen := len(path)
     if path[pathLen-1] == "" {
         // ignore trailing slash
         pathLen = pathLen - 1
     }
-    if pathLen >= 6 {
-        if path[0] == "" && path[1] == "api" && path[2] == "v1" && path[3] == "json" && path[4] == "account" {
+    if pathLen == 7 {
+        if path[0] == "" && path[1] == "api" && path[2] == "v1" && path[3] == "json" && path[4] == "account" && path[6] == "create" {
             switch path[5] {
             case "user", "consumer", "external_user":
-                switch pathLen {
-                case 6:
-                    if req.Method() == wm.POST || req.Method() == wm.PUT {
-                        // (PUT|POST) /api/v1/json/account/(user|consumer|external_user)
-                        return p
-                    }
-                case 7:
-                    if path[6] == "create" {
-                        // /api/v1/json/account/(user|consumer|external_user)/create
-                        return p
-                    }
-                }
+                return p
             }
         }
     }
