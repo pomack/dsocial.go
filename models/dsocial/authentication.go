@@ -32,17 +32,10 @@ type UserPassword struct {
     HashValue        string        `json:"hash_value,omitempty"`
 }
 
-type UserKey struct {
+type AccessKey struct {
     PersistableModel `json:"model,omitempty,collapse"`
     UserId           string        `json:"user_id,omitempty"`
-    HashType         HashAlgorithm `json:"hash_type,omitempty"`
-    PrivateKey       string        `json:"private_key,omitempty"`
-}
-
-type ConsumerKey struct {
-    PersistableModel `json:"model,omitempty,collapse"`
     ConsumerId       string        `json:"consumer_id,omitempty"`
-    HashType         HashAlgorithm `json:"hash_type,omitempty"`
     PrivateKey       string        `json:"private_key,omitempty"`
 }
 
@@ -66,6 +59,14 @@ func (p HashAlgorithm) Hasher() (hasher hash.Hash) {
     return
 }
 
+func (p HashAlgorithm) IsValid() (valid bool) {
+    switch p {
+    case MD5, SHA1, SHA224, SHA256, SHA384, SHA512:
+        valid = true
+    }
+    return
+}
+
 func (p *UserPassword) SetPassword(password string) {
     p.Salt = generateSalt(120)
     p.HashType = DEFAULT_HASH_ALGORITHM
@@ -76,30 +77,16 @@ func (p *UserPassword) CheckPassword(password string) bool {
     return checkHashedValue(p.HashType, p.Salt, password, p.HashValue)
 }
 
-func (p *UserKey) GeneratePrivateKey() {
+func (p *AccessKey) GeneratePrivateKey() {
     p.PrivateKey = generateSalt(512)
-    p.HashType = DEFAULT_HASH_ALGORITHM
 }
 
-func (p *UserKey) CheckHashedValue(testData, testHashedValue string) bool {
-    return checkHashedValue(p.HashType, p.PrivateKey, testData, testHashedValue)
+func (p *AccessKey) CheckHashedValue(hashType HashAlgorithm, testData, testHashedValue string) bool {
+    return checkHashedValue(hashType, p.PrivateKey, testData, testHashedValue)
 }
 
-func (p *UserKey) CheckHashedByteValue(testData []byte, testHashedValue string) bool {
-    return checkHashedByteValue(p.HashType, p.PrivateKey, testData, testHashedValue)
-}
-
-func (p *ConsumerKey) GeneratePrivateKey() {
-    p.PrivateKey = generateSalt(512)
-    p.HashType = DEFAULT_HASH_ALGORITHM
-}
-
-func (p *ConsumerKey) CheckHashedValue(testData, testHashedValue string) bool {
-    return checkHashedValue(p.HashType, p.PrivateKey, testData, testHashedValue)
-}
-
-func (p *ConsumerKey) CheckHashedByteValue(testData []byte, testHashedValue string) bool {
-    return checkHashedByteValue(p.HashType, p.PrivateKey, testData, testHashedValue)
+func (p *AccessKey) CheckHashedByteValue(hashType HashAlgorithm, testData []byte, testHashedValue string) bool {
+    return checkHashedByteValue(hashType, p.PrivateKey, testData, testHashedValue)
 }
 
 func generateSalt(length int) string {
