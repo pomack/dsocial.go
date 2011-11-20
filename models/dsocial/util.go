@@ -52,12 +52,14 @@ type Location struct {
 
 type PersistableModel struct {
     Id         string `json:"id,omitempty"`
+    Etag       string `json:"etag,omitempty"`
     CreatedAt  int64  `json:"created_at,omitempty"`
     ModifiedAt int64  `json:"modified_at,omitempty"`
 }
 
 func (p *PersistableModel) InitFromJSONObject(obj jsonhelper.JSONObject) {
     p.Id = obj.GetAsString("id")
+    p.Etag = obj.GetAsString("etag")
     p.CreatedAt = obj.GetAsInt64("created_at")
     p.ModifiedAt = obj.GetAsInt64("modified_at")
 }
@@ -82,12 +84,14 @@ func (p *PersistableModel) Validate(createNew bool, errors map[string][]os.Error
 }
 
 func (p *PersistableModel) BeforeCreate() (os.Error) {
+    p.Etag = GenerateEtag()
     p.CreatedAt = time.UTC().Seconds()
     p.ModifiedAt = p.CreatedAt
     return nil
 }
 
 func (p *PersistableModel) BeforeUpdate() (os.Error) {
+    p.Etag = GenerateEtag()
     p.ModifiedAt = time.UTC().Seconds()
     return nil
 }
@@ -248,4 +252,8 @@ func ParseName(s string, c *Contact) {
         c.MiddleName = strings.Join(nameParts[1:len(nameParts)-1], " ")
         c.Surname = nameParts[len(nameParts)-1]
     }
+}
+
+func GenerateEtag() string {
+    return generateSalt(24)
 }

@@ -4,6 +4,7 @@ include $(GOROOT)/src/Make.inc
 all: Make.deps install
 
 DIRS=\
+	apiutil/\
 	account/\
 	auth/\
 	contacts/\
