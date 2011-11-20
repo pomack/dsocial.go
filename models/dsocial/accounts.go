@@ -154,7 +154,8 @@ func (p *User) Validate(createNew bool, errors map[string][]os.Error) (isValid b
     if p.Role == 0 {
         p.Role = ROLE_STANDARD
     }
-    p.Username, _ = validateAlphaNumeric(p.Username, true, false, true, false, false, "short_name", errors)
+    p.Name, _ = validateNonEmpty(p.Name, true, "name", errors)
+    p.Username, _ = validateAlphaNumeric(p.Username, true, false, true, false, false, "username", errors)
     p.Email, _ = validateEmail(p.Email, false, "email", errors)
     p.PhoneNumber = strings.TrimSpace(p.PhoneNumber)
     p.Address = strings.TrimSpace(p.Address)
