@@ -22,6 +22,7 @@ func initializeDeleteUserAccountDS() (ds *inmemory.InMemoryDataStore, wm webmach
         Email: "george@washington.com",
         PhoneNumber: "+1-405-555-5555",
         Address: "Valley Forge",
+        AllowLogin: true,
     })
     ds.CreateUserAccount(&dm.User{
         Role: dm.ROLE_STANDARD,
@@ -30,6 +31,7 @@ func initializeDeleteUserAccountDS() (ds *inmemory.InMemoryDataStore, wm webmach
         Email: "thomas@jefferson.com",
         PhoneNumber: "+1-401-555-5555",
         Address: "Virginia",
+        AllowLogin: true,
     })
     ds.CreateUserAccount(&dm.User{
         Role: dm.ROLE_TECHNICAL_SUPPORT,
@@ -38,6 +40,7 @@ func initializeDeleteUserAccountDS() (ds *inmemory.InMemoryDataStore, wm webmach
         Email: "john@adams.com",
         PhoneNumber: "+1-402-555-5555",
         Address: "Boston, MA",
+        AllowLogin: true,
     })
     authentication.GenerateNewAccessKey(ds, gw.Id, "")
     wm = webmachine.NewWebMachine()
