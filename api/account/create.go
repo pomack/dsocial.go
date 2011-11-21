@@ -257,7 +257,7 @@ func (p *CreateAccountRequestHandler) URITooLong(req wm.Request, cxt wm.Context)
 */
 
 func (p *CreateAccountRequestHandler) DeleteResource(req wm.Request, cxt wm.Context) (bool, wm.Request, wm.Context, int, os.Error) {
-    return false, req, cxt, 500, nil
+    return false, req, cxt, http.StatusInternalServerError, nil
 }
 
 /*
@@ -425,10 +425,10 @@ func (p *CreateAccountRequestHandler) HandleJSONObjectInputHandler(req wm.Reques
         return apiutil.OutputErrorMessage(writer, "\"type\" must be \"user\", \"consumer\", or \"external_user\"", nil, 400, nil)
     }
     if len(errors) > 0 {
-        return apiutil.OutputErrorMessage(writer, "Value errors. See result", errors, 400, nil)
+        return apiutil.OutputErrorMessage(writer, "Value errors. See result", errors, http.StatusBadRequest, nil)
     }
     if err != nil {
-        return apiutil.OutputErrorMessage(writer, err.String(), nil, 500, nil)
+        return apiutil.OutputErrorMessage(writer, err.String(), nil, http.StatusInternalServerError, nil)
     }
     theobj, _ := jsonhelper.MarshalWithOptions(obj, dm.UTC_DATETIME_FORMAT)
     jsonObj, _ := theobj.(jsonhelper.JSONObject)

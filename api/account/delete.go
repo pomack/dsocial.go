@@ -222,7 +222,7 @@ func (p *DeleteAccountRequestHandler) IsAuthorized(req wm.Request, cxt wm.Contex
     dac := cxt.(DeleteAccountContext)
     hasSignature, userId, consumerId, err := apiutil.CheckSignature(p.authDS, req.UnderlyingRequest())
     if !hasSignature || err != nil {
-        return hasSignature, "dsocial", req, cxt, 401, err
+        return hasSignature, "dsocial", req, cxt, http.StatusUnauthorized, err
     }
     if userId != "" {
         user, _ := p.ds.RetrieveUserAccountById(userId)
@@ -275,7 +275,7 @@ func (p *DeleteAccountRequestHandler) DeleteResource(req wm.Request, cxt wm.Cont
     }
     dac.MarkAsDeleted()
     if err != nil {
-        return false, req, cxt, 500, err
+        return false, req, cxt, http.StatusInternalServerError, err
     }
     return true, req, cxt, 0, nil
 }
@@ -325,16 +325,19 @@ func (p *DeleteAccountRequestHandler) IsLanguageAvailable(languages []string, re
 
 }
 */
+
 /*
 func (p *DeleteAccountRequestHandler) CharsetsProvided(charsets []string, req wm.Request, cxt wm.Context) ([]CharsetHandler, wm.Request, wm.Context, int, os.Error) {
 
 }
 */
+
 /*
 func (p *DeleteAccountRequestHandler) EncodingsProvided(encodings []string, req wm.Request, cxt wm.Context) ([]EncodingHandler, wm.Request, wm.Context, int, os.Error) {
 
 }
 */
+
 /*
 func (p *DeleteAccountRequestHandler) Variances(req wm.Request, cxt wm.Context) ([]string, wm.Request, wm.Context, int, os.Error) {
 
@@ -358,26 +361,31 @@ func (p *DeleteAccountRequestHandler) PreviouslyExisted(req wm.Request, cxt wm.C
 
 }
 */
+
 /*
 func (p *DeleteAccountRequestHandler) MovedPermanently(req wm.Request, cxt wm.Context) (string, wm.Request, wm.Context, int, os.Error) {
 
 }
 */
+
 /*
 func (p *DeleteAccountRequestHandler) MovedTemporarily(req wm.Request, cxt wm.Context) (string, wm.Request, wm.Context, int, os.Error) {
 
 }
 */
 
+/*
 func (p *DeleteAccountRequestHandler) LastModified(req wm.Request, cxt wm.Context) (*time.Time, wm.Request, wm.Context, int, os.Error) {
     return nil, req, cxt, 0, nil
 }
+*/
 
 /*
 func (p *DeleteAccountRequestHandler) Expires(req wm.Request, cxt wm.Context) (*time.Time, wm.Request, wm.Context, int, os.Error) {
 
 }
 */
+
 /*
 func (p *DeleteAccountRequestHandler) GenerateETag(req wm.Request, cxt wm.Context) (string, wm.Request, wm.Context, int, os.Error) {
 
@@ -411,7 +419,7 @@ func (p *DeleteAccountRequestHandler) HandleJSONObjectInputHandler(req wm.Reques
         _, req, cxt, _, err = p.DeleteResource(req, cxt)
     }
     if err != nil {
-        return apiutil.OutputErrorMessage(writer, err.String(), nil, 500, nil)
+        return apiutil.OutputErrorMessage(writer, err.String(), nil, http.StatusInternalServerError, nil)
     }
     theobj, _ := jsonhelper.MarshalWithOptions(obj, dm.UTC_DATETIME_FORMAT)
     jsonObj, _ := theobj.(jsonhelper.JSONObject)
