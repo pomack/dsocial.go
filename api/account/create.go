@@ -231,7 +231,7 @@ func (p *CreateAccountRequestHandler) Forbidden(req wm.Request, cxt wm.Context) 
             consumer, _ := p.ds.RetrieveConsumerAccountById(consumerId)
             cac.SetRequestingConsumer(consumer)
         }
-        if (userId != "" && cac.RequestingUser() == nil) && (consumerId != "" && cac.RequestingConsumer() == nil) {
+        if (userId != "" && (cac.RequestingUser() == nil || !cac.RequestingUser().Accessible())) && (consumerId != "" && (cac.RequestingConsumer() == nil || !cac.RequestingConsumer().Accessible())) {
             // Cannot find user or consumer with specified id
             return true, req, cxt, 0, nil
         }

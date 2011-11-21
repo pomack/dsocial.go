@@ -238,11 +238,11 @@ func (p *DeleteAccountRequestHandler) IsAuthorized(req wm.Request, cxt wm.Contex
 
 func (p *DeleteAccountRequestHandler) Forbidden(req wm.Request, cxt wm.Context) (bool, wm.Request, wm.Context, int, os.Error) {
     dac := cxt.(DeleteAccountContext)
-    if dac.RequestingUser() == nil || dac.RequestingUser().Role != dm.ROLE_ADMIN {
-        // Cannot find user or consumer with specified id
-        return true, req, cxt, 0, nil
+    if dac.RequestingUser() != nil && dac.RequestingUser().Accessible() && (dac.RequestingUser().Role == dm.ROLE_ADMIN || (dac.User() != nil && dac.RequestingUser().Id == dac.User().Id)) {
+        return false, req, cxt, 0, nil
     }
-    return false, req, cxt, 0, nil
+    // Cannot find user or consumer with specified id
+    return true, req, cxt, 0, nil
 }
 
 /*
