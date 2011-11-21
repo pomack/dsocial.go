@@ -405,7 +405,7 @@ func (p *DeleteAccountRequestHandler) HasRespBody(req wm.Request, cxt wm.Context
 func (p *DeleteAccountRequestHandler) HandleJSONObjectInputHandler(req wm.Request, cxt wm.Context, writer io.Writer, inputObj jsonhelper.JSONObject) (int, http.Header, os.Error) {
     dac := cxt.(DeleteAccountContext)
     
-    var obj interface{}
+    obj := dac.ToObject()
     var err os.Error
     if !dac.Deleted() {
         _, req, cxt, _, err = p.DeleteResource(req, cxt)
@@ -415,5 +415,5 @@ func (p *DeleteAccountRequestHandler) HandleJSONObjectInputHandler(req wm.Reques
     }
     theobj, _ := jsonhelper.MarshalWithOptions(obj, dm.UTC_DATETIME_FORMAT)
     jsonObj, _ := theobj.(jsonhelper.JSONObject)
-    return apiutil.OutputJSONObject(writer, jsonObj, dac.LastModified(), dac.ETag(), 0, nil)
+    return apiutil.OutputJSONObject(writer, jsonObj, nil, "", 0, nil)
 }
