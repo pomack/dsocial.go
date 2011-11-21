@@ -8,7 +8,6 @@ import (
     "crypto/sha512"
     "fmt"
     "rand"
-    "strconv"
     "strings"
 )
 
@@ -23,6 +22,13 @@ const (
     SHA512                 HashAlgorithm = iota
     DEFAULT_HASH_ALGORITHM HashAlgorithm = SHA512
 )
+
+var validSaltCharacters = []string{
+    "0", "1", "2", "3", "4", "5", "6", "7", "8", "9",
+    "a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z",
+    "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z",
+    "!", "@", "(", ")", "-", "_", "|", ";", ":", ",", ".", "$", "*", "[", "]", "{", "}",
+}
 
 type UserPassword struct {
     PersistableModel `json:"model,omitempty,collapse"`
@@ -89,22 +95,13 @@ func (p *AccessKey) CheckHashedByteValue(hashType HashAlgorithm, testData []byte
     return checkHashedByteValue(hashType, p.PrivateKey, testData, testHashedValue)
 }
 
-func generateSalt(length int) string {
-    l := length/8 + 1
+func generateSalt(l int) string {
+    chars := len(validSaltCharacters)
     arr := make([]string, l)
     for i := 0; i < l; i++ {
-        s := strconv.Uitob(uint(rand.Uint32()), 16)
-        for len(s) < 8 {
-            s = "0" + s
-        }
-        arr[i] = s
+        arr[i] = validSaltCharacters[rand.Intn(chars)]
     }
-    salt := strings.Join(arr, "")
-    l = len(salt)
-    if l > length {
-        salt = salt[l-length:]
-    }
-    return salt
+    return strings.Join(arr, "")
 }
 
 func generateHashedValued(hashType HashAlgorithm, salt, testData string) string {
