@@ -87,6 +87,10 @@ func (p *AccessKey) GeneratePrivateKey() {
     p.PrivateKey = generateSalt(512)
 }
 
+func (p *AccessKey) GenerateId() {
+    p.Id = generateSalt(40)
+}
+
 func (p *AccessKey) CheckHashedValue(hashType HashAlgorithm, testData, testHashedValue string) bool {
     return checkHashedValue(hashType, p.PrivateKey, testData, testHashedValue)
 }
