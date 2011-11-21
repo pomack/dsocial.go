@@ -35,6 +35,7 @@ func SetUserPassword(ds DataStore, userId, password string) (*dm.UserPassword, o
 func GenerateNewAccessKey(ds DataStore, userId, consumerId string) (*dm.AccessKey, os.Error) {
     pwd := &dm.AccessKey{UserId: userId, ConsumerId: consumerId}
     pwd.GeneratePrivateKey()
+    pwd.GenerateId()
     return ds.StoreAccessKey(pwd)
 }
 
