@@ -42,6 +42,9 @@ func (p *JSONMediaTypeInputHandler) OutputTo(req wm.Request, cxt wm.Context, wri
             }
         }
     }()
+    if p.reader == nil {
+        return p.handler.HandleJSONObjectInputHandler(req, cxt, writer, nil)
+    }
     obj := jsonhelper.NewJSONObject()
     dec := json.NewDecoder(p.reader)
     err := dec.Decode(&obj)
