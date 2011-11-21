@@ -4,6 +4,7 @@ import (
     "github.com/pomack/jsonhelper.go/jsonhelper"
     "os"
     "strings"
+    "time"
 )
 
 type UserRole int32
@@ -56,6 +57,19 @@ type ExternalUser struct {
     Name             string `json:"name,omitempty"`
 }
 
+func (p *Consumer) Accessible() bool {
+    if p == nil {
+        return false
+    }
+    if p.AllowLogin == false {
+        return false
+    }
+    if p.DisableLoginAt > 0 && p.DisableLoginAt < time.UTC().Seconds() {
+        return false
+    }
+    return true
+}
+
 func (p *Consumer) InitFromJSONObject(obj jsonhelper.JSONObject) {
     p.PersistableModel.InitFromJSONObject(obj)
     p.DomainName = obj.GetAsString("domain_name")
@@ -104,6 +118,19 @@ func (p *Consumer) Validate(createNew bool, errors map[string][]os.Error) (isVal
     p.PhoneNumber = strings.TrimSpace(p.PhoneNumber)
     isValid = len(errors) == 0
     return
+}
+
+func (p *User) Accessible() bool {
+    if p == nil {
+        return false
+    }
+    if p.AllowLogin == false {
+        return false
+    }
+    if p.DisableLoginAt > 0 && p.DisableLoginAt < time.UTC().Seconds() {
+        return false
+    }
+    return true
 }
 
 func (p *User) InitFromJSONObject(obj jsonhelper.JSONObject) {
