@@ -58,14 +58,22 @@ func (p *InMemoryDataStore) StoreUserPassword(password *dm.UserPassword) (*dm.Us
 }
 
 func (p *InMemoryDataStore) StoreAccessKey(key *dm.AccessKey) (*dm.AccessKey, os.Error) {
-    uid := key.UserId
-    colName := _INMEMORY_ACCESS_KEYS_FOR_USER_ID_COLLECTION_NAME
-    if uid == "" {
-        uid = key.ConsumerId
-        colName = _INMEMORY_ACCESS_KEYS_FOR_CONSUMER_ID_COLLECTION_NAME
+    if key.UserId == "" && key.ConsumerId == "" {
+        return key, nil
     }
-    p.store(uid, _INMEMORY_ACCESS_KEYS_COLLECTION_NAME, key.Id, key)
-    p.addToStringMapCollection(uid, colName, uid, key.Id, key.Id)
+    if key.Id == "" {
+        key.GenerateId()
+    }
+    if key.PrivateKey == "" {
+        key.GeneratePrivateKey()
+    }
+    p.store("", _INMEMORY_ACCESS_KEYS_COLLECTION_NAME, key.Id, key)
+    if key.UserId != "" {
+        p.addToStringMapCollection(key.UserId, _INMEMORY_ACCESS_KEYS_FOR_USER_ID_COLLECTION_NAME, key.UserId, key.Id, key.Id)
+    }
+    if key.ConsumerId != "" {
+        p.addToStringMapCollection(key.ConsumerId, _INMEMORY_ACCESS_KEYS_FOR_CONSUMER_ID_COLLECTION_NAME, key.ConsumerId, key.Id, key.Id)
+    }
     return key, nil
 }
 
