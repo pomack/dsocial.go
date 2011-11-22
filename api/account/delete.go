@@ -215,7 +215,7 @@ func (p *DeleteAccountRequestHandler) ResourceExists(req wm.Request, cxt wm.Cont
 }
 
 func (p *DeleteAccountRequestHandler) AllowedMethods(req wm.Request, cxt wm.Context) ([]string, wm.Request, wm.Context, int, os.Error) {
-    return []string{wm.POST, wm.PUT}, req, cxt, 0, nil
+    return []string{wm.POST, wm.DELETE}, req, cxt, 0, nil
 }
 
 func (p *DeleteAccountRequestHandler) IsAuthorized(req wm.Request, cxt wm.Context) (bool, string, wm.Request, wm.Context, int, os.Error) {
