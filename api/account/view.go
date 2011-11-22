@@ -148,7 +148,7 @@ func (p *ViewAccountRequestHandler) GenerateContext(req wm.Request, cxt wm.Conte
 }
 
 func (p *ViewAccountRequestHandler) HandlerFor(req wm.Request, writer wm.ResponseWriter) wm.RequestHandler {
-    // /api/v1/json/account/(user|consumer|external_user)/delete/
+    // /api/v1/json/account/(user|consumer|external_user)/view/(id)
     path := req.URLParts()
     pathLen := len(path)
     if path[pathLen-1] == "" {

@@ -158,7 +158,7 @@ func (p *DeleteAccountRequestHandler) GenerateContext(req wm.Request, cxt wm.Con
 }
 
 func (p *DeleteAccountRequestHandler) HandlerFor(req wm.Request, writer wm.ResponseWriter) wm.RequestHandler {
-    // /api/v1/json/account/(user|consumer|external_user)/delete/
+    // /api/v1/json/account/(user|consumer|external_user)/delete/(id)
     path := req.URLParts()
     pathLen := len(path)
     if path[pathLen-1] == "" {
