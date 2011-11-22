@@ -33,8 +33,11 @@ func (p *JSONMediaTypeHandler) MediaType() string {
 
 func (p *JSONMediaTypeHandler) OutputTo(req wm.Request, cxt wm.Context, writer io.Writer, resp wm.ResponseWriter) {
     buf := bytes.NewBufferString("")
+    obj := jsonhelper.NewJSONObject()
     enc := json.NewEncoder(buf)
-    err := enc.Encode(p.obj)
+    obj.Set("status", "success")
+    obj.Set("result", p.obj)
+    err := enc.Encode(obj)
     if err != nil {
         //resp.Header().Set("Content-Type", wm.MIME_TYPE_JSON)
         if !p.writtenStatusHeader {
