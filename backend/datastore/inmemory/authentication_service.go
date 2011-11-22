@@ -67,12 +67,24 @@ func (p *InMemoryDataStore) StoreAccessKey(key *dm.AccessKey) (*dm.AccessKey, os
     if key.PrivateKey == "" {
         key.GeneratePrivateKey()
     }
+    if err := key.BeforeCreate(); err != nil {
+        return key, err
+    }
+    if err := key.BeforeSave(); err != nil {
+        return key, err
+    }
     p.store("", _INMEMORY_ACCESS_KEYS_COLLECTION_NAME, key.Id, key)
     if key.UserId != "" {
         p.addToStringMapCollection(key.UserId, _INMEMORY_ACCESS_KEYS_FOR_USER_ID_COLLECTION_NAME, key.UserId, key.Id, key.Id)
     }
     if key.ConsumerId != "" {
         p.addToStringMapCollection(key.ConsumerId, _INMEMORY_ACCESS_KEYS_FOR_CONSUMER_ID_COLLECTION_NAME, key.ConsumerId, key.Id, key.Id)
+    }
+    if err := key.AfterSave(); err != nil {
+        return key, err
+    }
+    if err := key.AfterCreate(); err != nil {
+        return key, err
     }
     return key, nil
 }
