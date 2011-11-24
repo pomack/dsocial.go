@@ -58,7 +58,7 @@ func (p *JSONMediaTypeHandler) OutputTo(req wm.Request, cxt wm.Context, writer i
         resp.Header().Set("Last-Modified", p.lastModified.Format(http.TimeFormat))
     }
     if len(p.etag) > 0 {
-        resp.Header().Set("ETag", p.etag)
+        resp.Header().Set("ETag", strconv.Quote(p.etag))
     }
     handler := wm.NewPassThroughMediaTypeHandler(wm.MIME_TYPE_JSON, ioutil.NopCloser(bytes.NewBuffer(buf.Bytes())), int64(buf.Len()), p.lastModified)
     handler.OutputTo(req, cxt, writer, resp)
