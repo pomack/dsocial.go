@@ -156,7 +156,11 @@ func (p *User) CleanFromUser(user *User, original *User) {
         p.PersistableModel.CleanFromUser(user, &original.PersistableModel)
     }
     if user == nil || user.Role != ROLE_ADMIN {
-        p.Role = ROLE_STANDARD
+        if original == nil {
+            p.Role = ROLE_STANDARD
+        } else {
+            p.Role = original.Role
+        }
     }
     if original == nil {
         p.ContactId = ""
@@ -179,7 +183,7 @@ func (p *User) Validate(createNew bool, errors map[string][]os.Error) (isValid b
         errors = make(map[string][]os.Error)
     }
     p.PersistableModel.Validate(createNew, errors)
-    p.Role = p.Role & ROLE_STANDARD & ROLE_BUSINESS_SUPPORT & ROLE_TECHNICAL_SUPPORT & ROLE_BACKUP_OPERATOR & ROLE_SECURITY_OFFICER & ROLE_OWNER & ROLE_ADMIN
+    p.Role = p.Role & (ROLE_STANDARD | ROLE_BUSINESS_SUPPORT | ROLE_TECHNICAL_SUPPORT | ROLE_BACKUP_OPERATOR | ROLE_SECURITY_OFFICER | ROLE_OWNER | ROLE_ADMIN)
     if p.Role == 0 {
         p.Role = ROLE_STANDARD
     }
