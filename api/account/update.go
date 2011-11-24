@@ -10,6 +10,7 @@ import (
     "bytes"
     "http"
     "io"
+    //"log"
     "os"
     "strings"
     "time"
@@ -41,6 +42,7 @@ type UpdateAccountContext interface {
     SetRequestingConsumer(consumer *dm.Consumer)
     OriginalValue() interface{}
     SetOriginalValue(value interface{})
+    InputValidated() bool
 }
 
 type updateAccountContext struct {
@@ -51,6 +53,7 @@ type updateAccountContext struct {
     requestingUser     *dm.User
     requestingConsumer *dm.Consumer
     originalValue interface{}
+    inputValidated bool
 }
 
 func NewUpdateAccountContext() UpdateAccountContext {
@@ -89,6 +92,7 @@ func (p *updateAccountContext) CleanInput(createdByUser *dm.User, originalUser i
         p.externalUser.Id = ""
         p.externalUser.CleanFromUser(createdByUser, originalUser.(*dm.ExternalUser))
     }
+    p.inputValidated = true
 }
 
 func (p *updateAccountContext) Type() string {
@@ -183,6 +187,10 @@ func (p *updateAccountContext) SetOriginalValue(value interface{}) {
     p.originalValue = value
 }
 
+func (p *updateAccountContext) InputValidated() bool {
+    return p.inputValidated
+}
+
 func NewUpdateAccountRequestHandler(ds acct.DataStore, authDS auth.DataStore) *UpdateAccountRequestHandler {
     return &UpdateAccountRequestHandler{ds: ds, authDS: authDS}
 }
@@ -202,7 +210,7 @@ func (p *UpdateAccountRequestHandler) HandlerFor(req wm.Request, writer wm.Respo
         // ignore trailing slash
         pathLen = pathLen - 1
     }
-    if pathLen == 7 {
+    if pathLen >= 8 {
         if path[0] == "" && path[1] == "api" && path[2] == "v1" && path[3] == "json" && path[4] == "account" && path[6] == "update" {
             switch path[5] {
             case "user", "consumer", "external_user":
@@ -229,15 +237,29 @@ func (p *UpdateAccountRequestHandler) StartRequest(req wm.Request, cxt wm.Contex
         case "user":
             user, _ := p.ds.RetrieveUserAccountById(id)
             uac.SetUser(user)
-            uac.SetOriginalValue(user)
+            if user == nil {
+                //log.Printf("[UARH]: Setting original value for user: %#v\n", nil)
+                uac.SetOriginalValue(nil)
+            } else {
+                //log.Printf("[UARH]: Setting original value for user: %#v\n", user)
+                uac.SetOriginalValue(user)
+            }
         case "consumer":
             consumer, _ := p.ds.RetrieveConsumerAccountById(id)
             uac.SetConsumer(consumer)
-            uac.SetOriginalValue(consumer)
+            if consumer == nil {
+                uac.SetOriginalValue(nil)
+            } else {
+                uac.SetOriginalValue(consumer)
+            }
         case "external_user":
             externalUser, _ := p.ds.RetrieveExternalUserAccountById(id)
             uac.SetExternalUser(externalUser)
-            uac.SetOriginalValue(externalUser)
+            if externalUser == nil {
+                uac.SetOriginalValue(nil)
+            } else {
+                uac.SetOriginalValue(externalUser)
+            }
         }
     }
     return req, uac
@@ -251,6 +273,8 @@ func (p *UpdateAccountRequestHandler) ServiceAvailable(req wm.Request, cxt wm.Co
 
 func (p *UpdateAccountRequestHandler) ResourceExists(req wm.Request, cxt wm.Context) (bool, wm.Request, wm.Context, int, os.Error) {
     uac := cxt.(UpdateAccountContext)
+    //log.Printf("[UARH]: Checking original value: %#v vs. %v\n", uac.OriginalValue(), uac.OriginalValue() != nil)
+    
     return uac.OriginalValue() != nil, req, cxt, 0, nil
 }
 
@@ -384,11 +408,20 @@ func (p *UpdateAccountRequestHandler) IsConflict(req wm.Request, cxt wm.Context)
 }
 */
 
-/*
+
 func (p *UpdateAccountRequestHandler) MultipleChoices(req wm.Request, cxt wm.Context) (bool, http.Header, wm.Request, wm.Context, int, os.Error) {
-  return false, nil, req, cxt, 0, nil
+    uac := cxt.(UpdateAccountContext)
+    if !uac.InputValidated() {
+        var httpCode int
+        var httpError os.Error
+        _, req, cxt, httpCode, httpError = p.ProcessPost(req, cxt)
+        if httpCode != 0 || httpError != nil {
+            return false, nil, req, cxt, httpCode, httpError
+        }
+    }
+    return false, nil, req, cxt, 0, nil
 }
-*/
+
 
 /*
 func (p *UpdateAccountRequestHandler) PreviouslyExisted(req wm.Request, cxt wm.Context) (bool, wm.Request, wm.Context, int, os.Error) {
@@ -435,10 +468,6 @@ func (p *UpdateAccountRequestHandler) ResponseIsRedirect(req wm.Request, cxt wm.
 */
 
 func (p *UpdateAccountRequestHandler) HasRespBody(req wm.Request, cxt wm.Context) bool {
-    method := req.Method()
-    if method == wm.HEAD || method == wm.PUT || method == wm.DELETE {
-        return false
-    }
     return true
 }
 
@@ -446,29 +475,35 @@ func (p *UpdateAccountRequestHandler) HandleJSONObjectInputHandler(req wm.Reques
     uac := cxt.(UpdateAccountContext)
     uac.SetFromJSON(inputObj)
     uac.CleanInput(uac.RequestingUser(), uac.OriginalValue())
-    
+    //log.Print("[UARH]: HandleJSONObjectInputHandler()")
     errors := make(map[string][]os.Error)
     var obj interface{}
     var err os.Error
     ds := p.ds
     if user := uac.User(); user != nil {
+        //log.Printf("[UARH]: user is not nil1: %v\n", user)
         user.Validate(false, errors)
         if len(errors) == 0 {
             user, err = ds.UpdateUserAccount(user)
+            //log.Printf("[UARH]: user after errors is %v\n", user)
         }
         obj = user
+        uac.SetUser(user)
+        //log.Printf("[UARH]: setUser to %v\n", user)
     } else if user := uac.Consumer(); user != nil {
         user.Validate(false, errors)
         if len(errors) == 0 {
             user, err = ds.UpdateConsumerAccount(user)
         }
         obj = user
+        uac.SetConsumer(user)
     } else if user := uac.ExternalUser(); user != nil {
         user.Validate(false, errors)
         if len(errors) == 0 {
             user, err = ds.UpdateExternalUserAccount(user)
         }
         obj = user
+        uac.SetExternalUser(user)
     } else {
         return apiutil.OutputErrorMessage(writer, "\"type\" must be \"user\", \"consumer\", or \"external_user\"", nil, 400, nil)
     }
@@ -480,5 +515,7 @@ func (p *UpdateAccountRequestHandler) HandleJSONObjectInputHandler(req wm.Reques
     }
     theobj, _ := jsonhelper.MarshalWithOptions(obj, dm.UTC_DATETIME_FORMAT)
     jsonObj, _ := theobj.(jsonhelper.JSONObject)
+    //log.Printf("[UARH]: obj was: \n%v\n", obj)
+    //log.Printf("[UARH]: Going to output:\n%s\n", jsonObj)
     return apiutil.OutputJSONObject(writer, jsonObj, uac.LastModified(), uac.ETag(), 0, nil)
 }
