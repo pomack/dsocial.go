@@ -97,6 +97,7 @@ func (p *Consumer) CleanFromUser(user *User, original *Consumer) {
         p.AllowLogin = true
         p.DisableLoginAt = 0
     } else {
+        p.ShortName = original.ShortName
         p.IsTrusted = original.IsTrusted
         p.IsSuggested = original.IsSuggested
         p.AllowLogin = original.AllowLogin
@@ -164,6 +165,7 @@ func (p *User) CleanFromUser(user *User, original *User) {
         p.Notes = ""
         p.DisableLoginAt = 0
     } else {
+        p.Username = original.Username
         p.ContactId = original.ContactId
         p.AllowLogin = original.AllowLogin
         p.IsPayingUser = original.IsPayingUser
