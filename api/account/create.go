@@ -387,10 +387,6 @@ func (p *CreateAccountRequestHandler) ResponseIsRedirect(req wm.Request, cxt wm.
 */
 
 func (p *CreateAccountRequestHandler) HasRespBody(req wm.Request, cxt wm.Context) bool {
-    method := req.Method()
-    if method == wm.HEAD || method == wm.PUT || method == wm.DELETE {
-        return false
-    }
     return true
 }
 
