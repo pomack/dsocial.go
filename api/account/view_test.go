@@ -59,7 +59,6 @@ func TestViewUserAccount(t *testing.T) {
     accessKey := accessKeys[0]
     otherUser := gw
     req, _ := http.NewRequest(webmachine.GET, "http://localhost/api/v1/json/account/user/view/" + otherUser.Id, nil)
-    req.Header.Set("Content-Type", webmachine.MIME_TYPE_JSON+"; charset=utf-8")
     req.Header.Set("Accept", webmachine.MIME_TYPE_JSON+"; charset=utf-8")
     req.Header.Set("Accept-Charset", "utf-8")
     req.Header.Set("Accept-Encoding", "identity")
@@ -142,7 +141,6 @@ func TestViewUserAccountAsAdmin(t *testing.T) {
     accessKey := accessKeys[0]
     otherUser, _ := ds.FindUserAccountByUsername("thirdpresident")
     req, _ := http.NewRequest(webmachine.GET, "http://localhost/api/v1/json/account/user/view/" + otherUser.Id, nil)
-    req.Header.Set("Content-Type", webmachine.MIME_TYPE_JSON+"; charset=utf-8")
     req.Header.Set("Accept", webmachine.MIME_TYPE_JSON+"; charset=utf-8")
     req.Header.Set("Accept-Charset", "utf-8")
     req.Header.Set("Accept-Encoding", "identity")
@@ -224,7 +222,6 @@ func TestViewUserAccountAsNonAdminSelf(t *testing.T) {
     accessKey := accessKeys[0]
     otherUser, _ := ds.FindUserAccountByUsername("thirdpresident")
     req, _ := http.NewRequest(webmachine.GET, "http://localhost/api/v1/json/account/user/view/" + otherUser.Id, nil)
-    req.Header.Set("Content-Type", webmachine.MIME_TYPE_JSON+"; charset=utf-8")
     req.Header.Set("Accept", webmachine.MIME_TYPE_JSON+"; charset=utf-8")
     req.Header.Set("Accept-Charset", "utf-8")
     req.Header.Set("Accept-Encoding", "identity")
@@ -306,7 +303,6 @@ func TestViewUserAccountAsNonAdminForOtherUser(t *testing.T) {
     accessKey := accessKeys[0]
     otherUser, _ := ds.FindUserAccountByUsername("secondpresident")
     req, _ := http.NewRequest(webmachine.GET, "http://localhost/api/v1/json/account/user/view/" + otherUser.Id, nil)
-    req.Header.Set("Content-Type", webmachine.MIME_TYPE_JSON+"; charset=utf-8")
     req.Header.Set("Accept", webmachine.MIME_TYPE_JSON+"; charset=utf-8")
     req.Header.Set("Accept-Charset", "utf-8")
     req.Header.Set("Accept-Encoding", "identity")
@@ -326,7 +322,6 @@ func TestViewUserAccountMissingId(t *testing.T) {
     accessKeys, _, _ := ds.RetrieveUserKeys(gw.Id, nil, 1)
     accessKey := accessKeys[0]
     req, _ := http.NewRequest(webmachine.GET, "http://localhost/api/v1/json/account/user/view/", nil)
-    req.Header.Set("Content-Type", webmachine.MIME_TYPE_JSON+"; charset=utf-8")
     req.Header.Set("Accept", webmachine.MIME_TYPE_JSON+"; charset=utf-8")
     req.Header.Set("Accept-Charset", "utf-8")
     req.Header.Set("Accept-Encoding", "identity")
@@ -346,7 +341,6 @@ func TestViewUserAccountInvalidUserId(t *testing.T) {
     accessKeys, _, _ := ds.RetrieveUserKeys(gw.Id, nil, 1)
     accessKey := accessKeys[0]
     req, _ := http.NewRequest(webmachine.GET, "http://localhost/api/v1/json/account/user/view/sdflsjflsjfslf", nil)
-    req.Header.Set("Content-Type", webmachine.MIME_TYPE_JSON+"; charset=utf-8")
     req.Header.Set("Accept", webmachine.MIME_TYPE_JSON+"; charset=utf-8")
     req.Header.Set("Accept-Charset", "utf-8")
     req.Header.Set("Accept-Encoding", "identity")
@@ -364,7 +358,6 @@ func TestViewUserAccountMissingSignature(t *testing.T) {
     ds, wm := initializeViewUserAccountDS()
     gw, _ := ds.FindUserAccountByUsername("firstpresident")
     req, _ := http.NewRequest(webmachine.GET, "http://localhost/api/v1/json/account/user/view/" + gw.Id, nil)
-    req.Header.Set("Content-Type", webmachine.MIME_TYPE_JSON+"; charset=utf-8")
     req.Header.Set("Accept", webmachine.MIME_TYPE_JSON+"; charset=utf-8")
     req.Header.Set("Accept-Charset", "utf-8")
     req.Header.Set("Accept-Encoding", "identity")
