@@ -112,7 +112,7 @@ func (p *InMemoryDataStore) UpdateUserAccount(user *dm.User) (*dm.User, os.Error
     if err := user.AfterUpdate(); err != nil {
         return user, err
     }
-    return nil, nil
+    return user, nil
 }
 
 func (p *InMemoryDataStore) DeleteUserAccount(user *dm.User) (*dm.User, os.Error) {
