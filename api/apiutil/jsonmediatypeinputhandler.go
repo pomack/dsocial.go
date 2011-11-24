@@ -6,6 +6,7 @@ import (
     "http"
     "io"
     "json"
+    //"log"
     "os"
 )
 
@@ -42,6 +43,7 @@ func (p *JSONMediaTypeInputHandler) OutputTo(req wm.Request, cxt wm.Context, wri
             }
         }
     }()
+    //log.Printf("[JSONMTIH]: Calling OutputTo with reader %v\n", p.reader)
     if p.reader == nil {
         return p.handler.HandleJSONObjectInputHandler(req, cxt, writer, nil)
     }
