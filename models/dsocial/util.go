@@ -69,6 +69,7 @@ func (p *PersistableModel) CleanFromUser(user *User, original *PersistableModel)
         p.CreatedAt = 0
         p.ModifiedAt = 0
     } else {
+        p.Id = original.Id
         p.CreatedAt = original.CreatedAt
         p.ModifiedAt = original.ModifiedAt
     }
