@@ -7,7 +7,6 @@ import (
     dm "github.com/pomack/dsocial.go/models/dsocial"
     "github.com/pomack/jsonhelper.go/jsonhelper"
     wm "github.com/pomack/webmachine.go/webmachine"
-    "bytes"
     "http"
     "io"
     "os"
@@ -35,6 +34,7 @@ type CreateAccountContext interface {
     SetRequestingUser(user *dm.User)
     RequestingConsumer() *dm.Consumer
     SetRequestingConsumer(consumer *dm.Consumer)
+    Password() string
 }
 
 type createAccountContext struct {
@@ -44,6 +44,7 @@ type createAccountContext struct {
     externalUser *dm.ExternalUser
     requestingUser     *dm.User
     requestingConsumer *dm.Consumer
+    password     string
 }
 
 func NewCreateAccountContext() CreateAccountContext {
@@ -54,6 +55,7 @@ func (p *createAccountContext) SetFromJSON(obj jsonhelper.JSONObject) {
     p.user = nil
     p.consumer = nil
     p.externalUser = nil
+    p.password = ""
     theType := p.theType
     if theType == "" {
         theType = obj.GetAsString("type")
@@ -62,6 +64,7 @@ func (p *createAccountContext) SetFromJSON(obj jsonhelper.JSONObject) {
     case "user":
         p.user = new(dm.User)
         p.user.InitFromJSONObject(obj)
+        p.password = obj.GetAsString("password")
     case "consumer":
         p.consumer = new(dm.Consumer)
         p.consumer.InitFromJSONObject(obj)
@@ -154,6 +157,10 @@ func (p *createAccountContext) RequestingConsumer() *dm.Consumer {
 
 func (p *createAccountContext) SetRequestingConsumer(consumer *dm.Consumer) {
     p.requestingConsumer = consumer
+}
+
+func (p *createAccountContext) Password() string {
+    return p.password
 }
 
 func NewCreateAccountRequestHandler(ds acct.DataStore, authDS auth.DataStore) *CreateAccountRequestHandler {
@@ -276,19 +283,13 @@ func (p *CreateAccountRequestHandler) CreatePath(req wm.Request, cxt wm.Context)
 }
 */
 
-func (p *CreateAccountRequestHandler) ProcessPost(req wm.Request, cxt wm.Context) (bool, wm.Request, wm.Context, int, os.Error) {
+func (p *CreateAccountRequestHandler) ProcessPost(req wm.Request, cxt wm.Context) (wm.Request, wm.Context, int, http.Header, io.WriterTo, os.Error) {
     mths, req, cxt, code, err := p.ContentTypesAccepted(req, cxt)
     if len(mths) > 0 {
-        buf := bytes.NewBufferString("")
-        httpCode, _, httpError := mths[0].OutputTo(req, cxt, buf)
-        if httpCode > 0 {
-            if httpError == nil && buf.Len() > 0 {
-                return false, req, cxt, httpCode, buf
-            }
-        }
-        return false, req, cxt, httpCode, httpError
+        httpCode, httpHeaders, writerTo := mths[0].MediaTypeHandleInputFrom(req, cxt)
+        return req, cxt, httpCode, httpHeaders, writerTo, nil
     }
-    return false, req, cxt, code, err
+    return req, cxt, code, nil, nil, err
 }
 
 func (p *CreateAccountRequestHandler) ContentTypesProvided(req wm.Request, cxt wm.Context) ([]wm.MediaTypeHandler, wm.Request, wm.Context, int, os.Error) {
@@ -390,43 +391,71 @@ func (p *CreateAccountRequestHandler) HasRespBody(req wm.Request, cxt wm.Context
     return true
 }
 
-func (p *CreateAccountRequestHandler) HandleJSONObjectInputHandler(req wm.Request, cxt wm.Context, writer io.Writer, inputObj jsonhelper.JSONObject) (int, http.Header, os.Error) {
+func (p *CreateAccountRequestHandler) HandleJSONObjectInputHandler(req wm.Request, cxt wm.Context, inputObj jsonhelper.JSONObject) (int, http.Header, io.WriterTo) {
     cac := cxt.(CreateAccountContext)
     cac.SetFromJSON(inputObj)
     cac.CleanInput(cac.RequestingUser())
     
     errors := make(map[string][]os.Error)
-    var obj interface{}
+    var obj map[string]interface{}
+    var accessKey *dm.AccessKey
     var err os.Error
     ds := p.ds
+    authDS := p.authDS
     if user := cac.User(); user != nil {
+        var userPassword *dm.UserPassword
         user.Validate(true, errors)
         if len(errors) == 0 {
             user, err = ds.CreateUserAccount(user)
+            if err == nil && user != nil {
+                accessKey, err = authDS.StoreAccessKey(dm.NewAccessKey(user.Id, ""))
+            }
         }
-        obj = user
+        if cac.Password() != "" && user != nil && user.Id != "" {
+            userPassword = dm.NewUserPassword(user.Id, cac.Password())
+            userPassword.Validate(true, errors)
+            if len(errors) == 0 && err == nil {
+                userPassword, err = authDS.StoreUserPassword(userPassword)
+            }
+        }
+        obj = make(map[string]interface{})
+        obj["user"] = user
+        obj["type"] = "user"
+        obj["key"]  = accessKey
     } else if user := cac.Consumer(); user != nil {
         user.Validate(true, errors)
         if len(errors) == 0 {
             user, err = ds.CreateConsumerAccount(user)
+            if err == nil && user != nil {
+                accessKey, err = authDS.StoreAccessKey(dm.NewAccessKey("", user.Id))
+            }
         }
-        obj = user
+        obj = make(map[string]interface{})
+        obj["consumer"] = user
+        obj["type"] = "consumer"
+        obj["key"]  = accessKey
     } else if user := cac.ExternalUser(); user != nil {
         user.Validate(true, errors)
         if len(errors) == 0 {
             user, err = ds.CreateExternalUserAccount(user)
+            if err == nil && user != nil {
+                accessKey, err = authDS.StoreAccessKey(dm.NewAccessKey(user.Id, user.ConsumerId))
+            }
         }
-        obj = user
+        obj = make(map[string]interface{})
+        obj["external_user"] = user
+        obj["type"] = "external_user"
+        obj["key"]  = accessKey
     } else {
-        return apiutil.OutputErrorMessage(writer, "\"type\" must be \"user\", \"consumer\", or \"external_user\"", nil, 400, nil)
+        return apiutil.OutputErrorMessage("\"type\" must be \"user\", \"consumer\", or \"external_user\"", nil, 400, nil)
     }
     if len(errors) > 0 {
-        return apiutil.OutputErrorMessage(writer, "Value errors. See result", errors, http.StatusBadRequest, nil)
+        return apiutil.OutputErrorMessage("Value errors. See result", errors, http.StatusBadRequest, nil)
     }
     if err != nil {
-        return apiutil.OutputErrorMessage(writer, err.String(), nil, http.StatusInternalServerError, nil)
+        return apiutil.OutputErrorMessage(err.String(), nil, http.StatusInternalServerError, nil)
     }
     theobj, _ := jsonhelper.MarshalWithOptions(obj, dm.UTC_DATETIME_FORMAT)
     jsonObj, _ := theobj.(jsonhelper.JSONObject)
-    return apiutil.OutputJSONObject(writer, jsonObj, cac.LastModified(), cac.ETag(), 0, nil)
+    return apiutil.OutputJSONObject(jsonObj, cac.LastModified(), cac.ETag(), 0, nil)
 }

@@ -286,9 +286,11 @@ func (p *DeleteAccountRequestHandler) DeleteCompleted(req wm.Request, cxt wm.Con
 }
 */
 
+/*
 func (p *DeleteAccountRequestHandler) PostIsCreate(req wm.Request, cxt wm.Context) (bool, wm.Request, wm.Context, int, os.Error) {
-    return true, req, cxt, 0, nil
+    return false, req, cxt, 0, nil
 }
+*/
 
 /*
 func (p *DeleteAccountRequestHandler) CreatePath(req wm.Request, cxt wm.Context) (string, wm.Request, wm.Context, int, os.Error) {
@@ -297,8 +299,9 @@ func (p *DeleteAccountRequestHandler) CreatePath(req wm.Request, cxt wm.Context)
 */
 
 
-func (p *DeleteAccountRequestHandler) ProcessPost(req wm.Request, cxt wm.Context) (bool, wm.Request, wm.Context, int, os.Error) {
-    return p.DeleteResource(req, cxt)
+func (p *DeleteAccountRequestHandler) ProcessPost(req wm.Request, cxt wm.Context) (wm.Request, wm.Context, int, http.Header, io.WriterTo, os.Error) {
+    _, req, cxt, httpCode, httpError := p.DeleteResource(req, cxt)
+    return req, cxt, httpCode, nil, nil, httpError
 }
 
 
@@ -410,7 +413,7 @@ func (p *DeleteAccountRequestHandler) HasRespBody(req wm.Request, cxt wm.Context
 }
 
 
-func (p *DeleteAccountRequestHandler) HandleJSONObjectInputHandler(req wm.Request, cxt wm.Context, writer io.Writer, inputObj jsonhelper.JSONObject) (int, http.Header, os.Error) {
+func (p *DeleteAccountRequestHandler) HandleJSONObjectInputHandler(req wm.Request, cxt wm.Context, inputObj jsonhelper.JSONObject) (int, http.Header, io.WriterTo) {
     dac := cxt.(DeleteAccountContext)
     
     obj := dac.ToObject()
@@ -419,9 +422,9 @@ func (p *DeleteAccountRequestHandler) HandleJSONObjectInputHandler(req wm.Reques
         _, req, cxt, _, err = p.DeleteResource(req, cxt)
     }
     if err != nil {
-        return apiutil.OutputErrorMessage(writer, err.String(), nil, http.StatusInternalServerError, nil)
+        return apiutil.OutputErrorMessage(err.String(), nil, http.StatusInternalServerError, nil)
     }
     theobj, _ := jsonhelper.MarshalWithOptions(obj, dm.UTC_DATETIME_FORMAT)
     jsonObj, _ := theobj.(jsonhelper.JSONObject)
-    return apiutil.OutputJSONObject(writer, jsonObj, nil, "", 0, nil)
+    return apiutil.OutputJSONObject(jsonObj, nil, "", 0, nil)
 }

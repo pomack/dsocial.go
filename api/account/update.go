@@ -7,7 +7,6 @@ import (
     dm "github.com/pomack/dsocial.go/models/dsocial"
     "github.com/pomack/jsonhelper.go/jsonhelper"
     wm "github.com/pomack/webmachine.go/webmachine"
-    "bytes"
     "http"
     "io"
     //"log"
@@ -338,9 +337,11 @@ func (p *UpdateAccountRequestHandler) DeleteCompleted(req wm.Request, cxt wm.Con
 }
 */
 
-func (p *UpdateAccountRequestHandler) PostIsUpdate(req wm.Request, cxt wm.Context) (bool, wm.Request, wm.Context, int, os.Error) {
-    return true, req, cxt, 0, nil
+/*
+func (p *UpdateAccountRequestHandler) PostIsCreate(req wm.Request, cxt wm.Context) (bool, wm.Request, wm.Context, int, os.Error) {
+    return false, req, cxt, 0, nil
 }
+*/
 
 /*
 func (p *UpdateAccountRequestHandler) CreatePath(req wm.Request, cxt wm.Context) (string, wm.Request, wm.Context, int, os.Error) {
@@ -348,19 +349,13 @@ func (p *UpdateAccountRequestHandler) CreatePath(req wm.Request, cxt wm.Context)
 }
 */
 
-func (p *UpdateAccountRequestHandler) ProcessPost(req wm.Request, cxt wm.Context) (bool, wm.Request, wm.Context, int, os.Error) {
+func (p *UpdateAccountRequestHandler) ProcessPost(req wm.Request, cxt wm.Context) (wm.Request, wm.Context, int, http.Header, io.WriterTo, os.Error) {
     mths, req, cxt, code, err := p.ContentTypesAccepted(req, cxt)
     if len(mths) > 0 {
-        buf := bytes.NewBufferString("")
-        httpCode, _, httpError := mths[0].OutputTo(req, cxt, buf)
-        if httpCode > 0 {
-            if httpError == nil && buf.Len() > 0 {
-                return false, req, cxt, httpCode, buf
-            }
-        }
-        return false, req, cxt, httpCode, httpError
+        httpCode, httpHeaders, writerTo := mths[0].MediaTypeHandleInputFrom(req, cxt)
+        return req, cxt, httpCode, httpHeaders, writerTo, nil
     }
-    return false, req, cxt, code, err
+    return req, cxt, code, nil, nil, err
 }
 
 func (p *UpdateAccountRequestHandler) ContentTypesProvided(req wm.Request, cxt wm.Context) ([]wm.MediaTypeHandler, wm.Request, wm.Context, int, os.Error) {
@@ -408,20 +403,11 @@ func (p *UpdateAccountRequestHandler) IsConflict(req wm.Request, cxt wm.Context)
 }
 */
 
-
+/*
 func (p *UpdateAccountRequestHandler) MultipleChoices(req wm.Request, cxt wm.Context) (bool, http.Header, wm.Request, wm.Context, int, os.Error) {
-    uac := cxt.(UpdateAccountContext)
-    if !uac.InputValidated() {
-        var httpCode int
-        var httpError os.Error
-        _, req, cxt, httpCode, httpError = p.ProcessPost(req, cxt)
-        if httpCode != 0 || httpError != nil {
-            return false, nil, req, cxt, httpCode, httpError
-        }
-    }
     return false, nil, req, cxt, 0, nil
 }
-
+*/
 
 /*
 func (p *UpdateAccountRequestHandler) PreviouslyExisted(req wm.Request, cxt wm.Context) (bool, wm.Request, wm.Context, int, os.Error) {
@@ -449,11 +435,21 @@ func (p *UpdateAccountRequestHandler) Expires(req wm.Request, cxt wm.Context) (*
 
 }
 */
-/*
-func (p *UpdateAccountRequestHandler) GenerateETag(req wm.Request, cxt wm.Context) (string, wm.Request, wm.Context, int, os.Error) {
 
+func (p *UpdateAccountRequestHandler) GenerateETag(req wm.Request, cxt wm.Context) (string, wm.Request, wm.Context, int, os.Error) {
+    var etag string
+    uac := cxt.(UpdateAccountContext)
+    switch uac.Type() {
+    case "user":
+        etag = uac.User().Etag
+    case "consumer":
+        etag = uac.Consumer().Etag
+    case "external_user":
+        etag = uac.ExternalUser().Etag
+    }
+    return etag, req, cxt, 0, nil
 }
-*/
+
 
 /*
 func (p *UpdateAccountRequestHandler) FinishRequest(req wm.Request, cxt wm.Context) (bool, wm.Request, wm.Context, int, os.Error) {
@@ -471,7 +467,7 @@ func (p *UpdateAccountRequestHandler) HasRespBody(req wm.Request, cxt wm.Context
     return true
 }
 
-func (p *UpdateAccountRequestHandler) HandleJSONObjectInputHandler(req wm.Request, cxt wm.Context, writer io.Writer, inputObj jsonhelper.JSONObject) (int, http.Header, os.Error) {
+func (p *UpdateAccountRequestHandler) HandleJSONObjectInputHandler(req wm.Request, cxt wm.Context, inputObj jsonhelper.JSONObject) (int, http.Header, io.WriterTo) {
     uac := cxt.(UpdateAccountContext)
     uac.SetFromJSON(inputObj)
     uac.CleanInput(uac.RequestingUser(), uac.OriginalValue())
@@ -480,42 +476,49 @@ func (p *UpdateAccountRequestHandler) HandleJSONObjectInputHandler(req wm.Reques
     var obj interface{}
     var err os.Error
     ds := p.ds
-    if user := uac.User(); user != nil {
-        //log.Printf("[UARH]: user is not nil1: %v\n", user)
-        user.Validate(false, errors)
-        if len(errors) == 0 {
-            user, err = ds.UpdateUserAccount(user)
-            //log.Printf("[UARH]: user after errors is %v\n", user)
+    switch uac.Type() {
+    case "user":
+        if user := uac.User(); user != nil {
+            //log.Printf("[UARH]: user is not nil1: %v\n", user)
+            user.Validate(false, errors)
+            if len(errors) == 0 {
+                user, err = ds.UpdateUserAccount(user)
+                //log.Printf("[UARH]: user after errors is %v\n", user)
+            }
+            obj = user
+            uac.SetUser(user)
+            //log.Printf("[UARH]: setUser to %v\n", user)
         }
-        obj = user
-        uac.SetUser(user)
-        //log.Printf("[UARH]: setUser to %v\n", user)
-    } else if user := uac.Consumer(); user != nil {
-        user.Validate(false, errors)
-        if len(errors) == 0 {
-            user, err = ds.UpdateConsumerAccount(user)
+    case "consumer":
+        if user := uac.Consumer(); user != nil {
+            user.Validate(false, errors)
+            if len(errors) == 0 {
+                user, err = ds.UpdateConsumerAccount(user)
+            }
+            obj = user
+            uac.SetConsumer(user)
         }
-        obj = user
-        uac.SetConsumer(user)
-    } else if user := uac.ExternalUser(); user != nil {
-        user.Validate(false, errors)
-        if len(errors) == 0 {
-            user, err = ds.UpdateExternalUserAccount(user)
+    case "external_user":
+        if user := uac.ExternalUser(); user != nil {
+            user.Validate(false, errors)
+            if len(errors) == 0 {
+                user, err = ds.UpdateExternalUserAccount(user)
+            }
+            obj = user
+            uac.SetExternalUser(user)
         }
-        obj = user
-        uac.SetExternalUser(user)
-    } else {
-        return apiutil.OutputErrorMessage(writer, "\"type\" must be \"user\", \"consumer\", or \"external_user\"", nil, 400, nil)
+    default:
+        return apiutil.OutputErrorMessage("\"type\" must be \"user\", \"consumer\", or \"external_user\"", nil, 400, nil)
     }
     if len(errors) > 0 {
-        return apiutil.OutputErrorMessage(writer, "Value errors. See result", errors, http.StatusBadRequest, nil)
+        return apiutil.OutputErrorMessage("Value errors. See result", errors, http.StatusBadRequest, nil)
     }
     if err != nil {
-        return apiutil.OutputErrorMessage(writer, err.String(), nil, http.StatusInternalServerError, nil)
+        return apiutil.OutputErrorMessage(err.String(), nil, http.StatusInternalServerError, nil)
     }
     theobj, _ := jsonhelper.MarshalWithOptions(obj, dm.UTC_DATETIME_FORMAT)
     jsonObj, _ := theobj.(jsonhelper.JSONObject)
     //log.Printf("[UARH]: obj was: \n%v\n", obj)
     //log.Printf("[UARH]: Going to output:\n%s\n", jsonObj)
-    return apiutil.OutputJSONObject(writer, jsonObj, uac.LastModified(), uac.ETag(), 0, nil)
+    return apiutil.OutputJSONObject(jsonObj, uac.LastModified(), uac.ETag(), 0, nil)
 }

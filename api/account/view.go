@@ -394,15 +394,15 @@ func (p *ViewAccountRequestHandler) HasRespBody(req wm.Request, cxt wm.Context) 
 }
 
 
-func (p *ViewAccountRequestHandler) HandleJSONObjectInputHandler(req wm.Request, cxt wm.Context, writer io.Writer, inputObj jsonhelper.JSONObject) (int, http.Header, os.Error) {
+func (p *ViewAccountRequestHandler) HandleJSONObjectInputHandler(req wm.Request, cxt wm.Context, inputObj jsonhelper.JSONObject) (int, http.Header, io.WriterTo) {
     vac := cxt.(ViewAccountContext)
     
     obj := vac.ToObject()
     var err os.Error
     if err != nil {
-        return apiutil.OutputErrorMessage(writer, err.String(), nil, http.StatusInternalServerError, nil)
+        return apiutil.OutputErrorMessage(err.String(), nil, http.StatusInternalServerError, nil)
     }
     theobj, _ := jsonhelper.MarshalWithOptions(obj, dm.UTC_DATETIME_FORMAT)
     jsonObj, _ := theobj.(jsonhelper.JSONObject)
-    return apiutil.OutputJSONObject(writer, jsonObj, vac.LastModified(), vac.ETag(), 0, nil)
+    return apiutil.OutputJSONObject(jsonObj, vac.LastModified(), vac.ETag(), 0, nil)
 }
