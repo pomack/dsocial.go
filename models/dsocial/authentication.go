@@ -89,6 +89,13 @@ func (p *UserPassword) CheckPassword(password string) bool {
     return checkHashedValue(p.HashType, p.Salt, password, p.HashValue)
 }
 
+func NewAccessKey(userId, consumerId string) *AccessKey {
+    key := &AccessKey{UserId: userId, ConsumerId: consumerId}
+    key.GeneratePrivateKey()
+    key.GenerateId()
+    return key
+}
+
 func (p *AccessKey) GeneratePrivateKey() {
     p.PrivateKey = generateSalt(512)
 }
