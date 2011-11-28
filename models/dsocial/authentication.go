@@ -73,6 +73,12 @@ func (p HashAlgorithm) IsValid() (valid bool) {
     return
 }
 
+func NewUserPassword(userId, password string) *UserPassword {
+    p := &UserPassword{UserId:userId}
+    p.SetPassword(password)
+    return p
+}
+
 func (p *UserPassword) SetPassword(password string) {
     p.Salt = generateSalt(120)
     p.HashType = DEFAULT_HASH_ALGORITHM
