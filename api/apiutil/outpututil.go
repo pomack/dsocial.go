@@ -9,7 +9,29 @@ import (
     "time"
 )
 
-func OutputErrorMessage(writer io.Writer, message string, result interface{}, statusCode int, headers http.Header) (int, http.Header, os.Error) {
+type jsonWriter struct {
+    obj jsonhelper.JSONObject
+}
+
+func newJSONWriter(obj jsonhelper.JSONObject) *jsonWriter {
+    return &jsonWriter{obj:obj}
+}
+
+func (p *jsonWriter) WriteTo(writer io.Writer) (n int64, err os.Error) {
+    w := json.NewEncoder(writer)
+    err = w.Encode(p.obj)
+    return
+}
+
+func (p *jsonWriter) String() string {
+    b, err := json.Marshal(p.obj)
+    if err != nil {
+        return err.String()
+    }
+    return string(b)
+}
+
+func OutputErrorMessage(message string, result interface{}, statusCode int, headers http.Header) (int, http.Header, io.WriterTo) {
     if statusCode == 0 {
         statusCode = 500
     }
@@ -18,15 +40,13 @@ func OutputErrorMessage(writer io.Writer, message string, result interface{}, st
     }
     //headers.Set("Content-Type", wm.MIME_TYPE_JSON)
     m := jsonhelper.NewJSONObject()
-    w := json.NewEncoder(writer)
     m.Set("status", "error")
     m.Set("message", message)
     m.Set("result", result)
-    w.Encode(m)
-    return statusCode, headers, nil
+    return statusCode, headers, newJSONWriter(m)
 }
 
-func OutputJSONObject(writer io.Writer, obj jsonhelper.JSONObject, lastModified *time.Time, etag string, statusCode int, headers http.Header) (int, http.Header, os.Error) {
+func OutputJSONObject(obj jsonhelper.JSONObject, lastModified *time.Time, etag string, statusCode int, headers http.Header) (int, http.Header, io.WriterTo) {
     if statusCode == 0 {
         statusCode = 200
     }
@@ -41,9 +61,7 @@ func OutputJSONObject(writer io.Writer, obj jsonhelper.JSONObject, lastModified 
         headers.Set("ETag", etag)
     }
     m := jsonhelper.NewJSONObject()
-    w := json.NewEncoder(writer)
     m.Set("status", "success")
     m.Set("result", obj)
-    w.Encode(m)
-    return statusCode, headers, nil
+    return statusCode, headers, newJSONWriter(m)
 }

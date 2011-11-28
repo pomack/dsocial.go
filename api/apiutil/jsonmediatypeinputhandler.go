@@ -7,11 +7,10 @@ import (
     "io"
     "json"
     //"log"
-    "os"
 )
 
 type JSONObjectInputHandler interface {
-    HandleJSONObjectInputHandler(req wm.Request, cxt wm.Context, writer io.Writer, inputObj jsonhelper.JSONObject) (int, http.Header, os.Error)
+    HandleJSONObjectInputHandler(req wm.Request, cxt wm.Context, inputObj jsonhelper.JSONObject) (int, http.Header, io.WriterTo)
 }
 
 type JSONMediaTypeInputHandler struct {
@@ -31,11 +30,11 @@ func NewJSONMediaTypeInputHandler(charset, language string, handler JSONObjectIn
     }
 }
 
-func (p *JSONMediaTypeInputHandler) MediaType() string {
+func (p *JSONMediaTypeInputHandler) MediaTypeInput() string {
     return wm.MIME_TYPE_JSON
 }
 
-func (p *JSONMediaTypeInputHandler) OutputTo(req wm.Request, cxt wm.Context, writer io.Writer) (int, http.Header, os.Error) {
+func (p *JSONMediaTypeInputHandler) MediaTypeHandleInputFrom(req wm.Request, cxt wm.Context) (int, http.Header, io.WriterTo) {
     defer func() {
         if p.reader != nil {
             if closer, ok := p.reader.(io.Closer); ok {
@@ -45,23 +44,16 @@ func (p *JSONMediaTypeInputHandler) OutputTo(req wm.Request, cxt wm.Context, wri
     }()
     //log.Printf("[JSONMTIH]: Calling OutputTo with reader %v\n", p.reader)
     if p.reader == nil {
-        return p.handler.HandleJSONObjectInputHandler(req, cxt, writer, nil)
+        return p.handler.HandleJSONObjectInputHandler(req, cxt, nil)
     }
     obj := jsonhelper.NewJSONObject()
     dec := json.NewDecoder(p.reader)
     err := dec.Decode(&obj)
     if err != nil {
         headers := make(http.Header)
-        //headers.Set("Content-Type", wm.MIME_TYPE_JSON)
-        m := jsonhelper.NewJSONObject()
-        w := json.NewEncoder(writer)
-        m.Set("status", "error")
-        m.Set("message", err.String())
-        m.Set("result", nil)
-        w.Encode(m)
-        return 500, headers, err
+        return OutputErrorMessage(err.String(), nil, 500, headers)
     }
-    return p.handler.HandleJSONObjectInputHandler(req, cxt, writer, obj)
+    return p.handler.HandleJSONObjectInputHandler(req, cxt, obj)
 }
 
 func (p *JSONMediaTypeInputHandler) MediaTypeInputHandler() wm.MediaTypeInputHandler {

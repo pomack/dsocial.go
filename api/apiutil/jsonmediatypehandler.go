@@ -27,11 +27,11 @@ func NewJSONMediaTypeHandler(obj jsonhelper.JSONObject, lastModified *time.Time,
     }
 }
 
-func (p *JSONMediaTypeHandler) MediaType() string {
+func (p *JSONMediaTypeHandler) MediaTypeOutput() string {
     return wm.MIME_TYPE_JSON
 }
 
-func (p *JSONMediaTypeHandler) OutputTo(req wm.Request, cxt wm.Context, writer io.Writer, resp wm.ResponseWriter) {
+func (p *JSONMediaTypeHandler) MediaTypeHandleOutputTo(req wm.Request, cxt wm.Context, writer io.Writer, resp wm.ResponseWriter) {
     buf := bytes.NewBufferString("")
     obj := jsonhelper.NewJSONObject()
     enc := json.NewEncoder(buf)
@@ -61,7 +61,7 @@ func (p *JSONMediaTypeHandler) OutputTo(req wm.Request, cxt wm.Context, writer i
         resp.Header().Set("ETag", strconv.Quote(p.etag))
     }
     handler := wm.NewPassThroughMediaTypeHandler(wm.MIME_TYPE_JSON, ioutil.NopCloser(bytes.NewBuffer(buf.Bytes())), int64(buf.Len()), p.lastModified)
-    handler.OutputTo(req, cxt, writer, resp)
+    handler.MediaTypeHandleOutputTo(req, cxt, writer, resp)
 }
 
 func (p *JSONMediaTypeHandler) MediaTypeHandler() wm.MediaTypeHandler {
