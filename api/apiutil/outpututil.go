@@ -65,3 +65,13 @@ func OutputJSONObject(obj jsonhelper.JSONObject, lastModified *time.Time, etag s
     m.Set("result", obj)
     return statusCode, headers, newJSONWriter(m)
 }
+
+func AddNoCacheHeaders(headers http.Header) http.Header {
+    if headers == nil {
+        headers = make(http.Header)
+    }
+    headers.Set("Pragma", "no-cache")
+    headers.Set("Cache-Control", "no-cache")
+    headers.Set("Expires", "Thu, 01 Jan 1970 00:00:00 GMT")
+    return headers
+}
