@@ -20,6 +20,8 @@ type GeneratePrivateKeyRequestHandler struct {
 type GeneratePrivateKeyContext interface {
     User() *dm.User
     SetUser(user *dm.User)
+    Consumer() *dm.Consumer
+    SetConsumer(consumer *dm.Consumer)
     AccessKey() *dm.AccessKey
     SetAccessKey(accessKey *dm.AccessKey)
 }
@@ -27,6 +29,7 @@ type GeneratePrivateKeyContext interface {
 type generatePrivateKeyContext struct {
     accessKey       *dm.AccessKey
     user            *dm.User
+    consumer        *dm.Consumer
 }
 
 func NewGeneratePrivateKeyContext() GeneratePrivateKeyContext {
@@ -39,6 +42,14 @@ func (p *generatePrivateKeyContext) User() *dm.User {
 
 func (p *generatePrivateKeyContext) SetUser(user *dm.User) {
     p.user = user
+}
+
+func (p *generatePrivateKeyContext) Consumer() *dm.Consumer {
+    return p.consumer
+}
+
+func (p *generatePrivateKeyContext) SetConsumer(consumer *dm.Consumer) {
+    p.consumer = consumer
 }
 
 func (p *generatePrivateKeyContext) AccessKey() *dm.AccessKey {
@@ -106,15 +117,21 @@ func (p *GeneratePrivateKeyRequestHandler) AllowedMethods(req wm.Request, cxt wm
 
 func (p *GeneratePrivateKeyRequestHandler) IsAuthorized(req wm.Request, cxt wm.Context) (bool, string, wm.Request, wm.Context, int, os.Error) {
     gpkc := cxt.(GeneratePrivateKeyContext)
-    hasSignature, userId, _, err := apiutil.CheckSignature(p.authDS, req.UnderlyingRequest())
+    hasSignature, userId, consumerId, err := apiutil.CheckSignature(p.authDS, req.UnderlyingRequest())
     if !hasSignature || err != nil {
         return hasSignature, "dsocial", req, cxt, http.StatusUnauthorized, err
     }
-    accessKey, _ := apiutil.RetrieveAccessKeyFromRequest(p.authDS, req.UnderlyingRequest())
-    gpkc.SetAccessKey(accessKey)
     if userId != "" {
         user, _ := p.ds.RetrieveUserAccountById(userId)
         gpkc.SetUser(user)
+    }
+    if consumerId != "" {
+        consumer, _ := p.ds.RetrieveConsumerAccountById(consumerId)
+        gpkc.SetConsumer(consumer)
+    }
+    if (userId != "" && gpkc.User() == nil) || (consumerId != "" && gpkc.Consumer() == nil) {
+        gpkc.SetUser(nil)
+        gpkc.SetConsumer(nil)
     }
     return true, "", req, cxt, 0, nil
 }
@@ -123,11 +140,19 @@ func (p *GeneratePrivateKeyRequestHandler) IsAuthorized(req wm.Request, cxt wm.C
 
 func (p *GeneratePrivateKeyRequestHandler) Forbidden(req wm.Request, cxt wm.Context) (bool, wm.Request, wm.Context, int, os.Error) {
     gpkc := cxt.(GeneratePrivateKeyContext)
-    if gpkc.User() != nil && gpkc.User().Accessible() {
-        return false, req, cxt, 0, nil
+    if gpkc.User() == nil && gpkc.Consumer() == nil {
+        // cannot find user or consumer with specified ids
+        return true, req, cxt, 0, nil
     }
-    // Cannot find user with specified id
-    return true, req, cxt, 0, nil
+    if gpkc.User() != nil && !gpkc.User().Accessible() {
+        // user is not accessible
+        return true, req, cxt, 0, nil
+    }
+    if gpkc.Consumer() != nil && !gpkc.Consumer().Accessible() {
+        // consumer is not accessible
+        return true, req, cxt, 0, nil
+    }
+    return false, req, cxt, 0, nil
 }
 
 
@@ -182,12 +207,26 @@ func (p *GeneratePrivateKeyRequestHandler) ProcessPost(req wm.Request, cxt wm.Co
 func (p *GeneratePrivateKeyRequestHandler) ContentTypesProvided(req wm.Request, cxt wm.Context) ([]wm.MediaTypeHandler, wm.Request, wm.Context, int, os.Error) {
     gpkc := cxt.(GeneratePrivateKeyContext)
     user := gpkc.User()
-    accessKey, err := p.authDS.StoreAccessKey(dm.NewAccessKey(user.Id, ""))
+    consumer := gpkc.Consumer()
+    var userId, consumerId string
+    if user != nil {
+        userId = user.Id
+    }
+    if consumer != nil {
+        consumerId = consumer.Id
+    }
+    accessKey, err := p.authDS.StoreAccessKey(dm.NewAccessKey(userId, consumerId))
     gpkc.SetAccessKey(accessKey)
     obj := make(map[string]interface{})
-    obj["user_id"] = user.Id
-    obj["username"] = user.Username
-    obj["name"] = user.Name
+    if user != nil {
+        obj["user_id"] = user.Id
+        obj["username"] = user.Username
+        obj["name"] = user.Name
+    }
+    if consumer != nil {
+        obj["consumer_id"] = consumer.Id
+        obj["consumer_short_name"] = consumer.ShortName
+    }
     if accessKey != nil {
         obj["access_key_id"] = accessKey.Id
         obj["private_key"] = accessKey.PrivateKey
