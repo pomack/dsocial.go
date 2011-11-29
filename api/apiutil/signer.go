@@ -221,3 +221,12 @@ func CheckSignature(ds auth.DataStore, req *http.Request) (hasSignature bool, us
     }
     return
 }
+
+func RetrieveAccessKeyFromRequest(ds auth.DataStore, req *http.Request) (*dm.AccessKey, os.Error) {
+    q := req.URL.Query()
+    accessKeyId := q.Get("DSOCAccessKeyId")
+    if accessKeyId == "" {
+        return nil, nil
+    }
+    return ds.RetrieveAccessKey(accessKeyId)
+}
