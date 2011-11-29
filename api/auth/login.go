@@ -126,8 +126,8 @@ func (p *LoginAccountRequestHandler) HandlerFor(req wm.Request, writer wm.Respon
         // ignore trailing slash
         pathLen = pathLen - 1
     }
-    if pathLen == 5 {
-        if path[0] == "" && path[1] == "api" && path[2] == "v1" && path[3] == "json" && path[4] == "auth" {
+    if pathLen == 6 {
+        if path[0] == "" && path[1] == "api" && path[2] == "v1" && path[3] == "json" && path[4] == "auth" && path[5] == "login" {
             return p
         }
     }
