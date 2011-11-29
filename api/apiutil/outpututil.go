@@ -33,7 +33,7 @@ func (p *jsonWriter) String() string {
 
 func OutputErrorMessage(message string, result interface{}, statusCode int, headers http.Header) (int, http.Header, io.WriterTo) {
     if statusCode == 0 {
-        statusCode = 500
+        statusCode = http.StatusInternalServerError
     }
     if headers == nil {
         headers = make(http.Header)
@@ -48,7 +48,7 @@ func OutputErrorMessage(message string, result interface{}, statusCode int, head
 
 func OutputJSONObject(obj jsonhelper.JSONObject, lastModified *time.Time, etag string, statusCode int, headers http.Header) (int, http.Header, io.WriterTo) {
     if statusCode == 0 {
-        statusCode = 200
+        statusCode = http.StatusOK
     }
     if headers == nil {
         headers = make(http.Header)
