@@ -8,6 +8,7 @@ GOFILES=\
 	jsonmediatypeinputhandler.go\
 	outpututil.go\
 	signer.go\
+	urlencodedmediatypeinputhandler.go\
 
 
 include $(GOROOT)/src/Make.pkg
