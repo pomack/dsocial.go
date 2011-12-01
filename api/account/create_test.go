@@ -31,6 +31,7 @@ func TestCreateUserAccount(t *testing.T) {
     req.Header.Set("Accept-Language", "en-us")
     req.Header.Set("Connection", "close")
     resp := webmachine.NewMockResponseWriter(req)
+    reqb, _ := http.DumpRequest(req, true)
     wm.ServeHTTP(resp, req)
     if resp.StatusCode != 200 {
         t.Error("Expected 200 status code but received ", resp.StatusCode)
@@ -41,7 +42,7 @@ func TestCreateUserAccount(t *testing.T) {
     user := new(dm.User)
     obj := jsonhelper.NewJSONObject()
     err := json.Unmarshal(resp.Buffer.Bytes(), &obj)
-    user.InitFromJSONObject(obj.GetAsObject("result"))
+    user.InitFromJSONObject(obj.GetAsObject("result").GetAsObject("user"))
     if err != nil {
         t.Error("Error while unmarshaling JSON: ", err.String())
     }
@@ -49,6 +50,8 @@ func TestCreateUserAccount(t *testing.T) {
         t.Error("Expected status = \"success\", but was \"", obj.GetAsString("status"), "\"")
     }
     if user.Name != oldUser.Name {
+        t.Logf("Request was\n%s\n================\n", string(reqb))
+        t.Log("Response is:\n", resp.String(), "\n\n")
         t.Error("Expected name = \"", oldUser.Name, "\", but was ", user.Name)
     }
     if user.Username != oldUser.Username {
