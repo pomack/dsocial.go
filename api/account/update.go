@@ -520,5 +520,5 @@ func (p *UpdateAccountRequestHandler) HandleJSONObjectInputHandler(req wm.Reques
     jsonObj, _ := theobj.(jsonhelper.JSONObject)
     //log.Printf("[UARH]: obj was: \n%v\n", obj)
     //log.Printf("[UARH]: Going to output:\n%s\n", jsonObj)
-    return apiutil.OutputJSONObject(jsonObj, uac.LastModified(), uac.ETag(), 0, nil)
+    return apiutil.OutputJSONObject(jsonObj, uac.LastModified(), uac.ETag(), http.StatusOK, nil)
 }
