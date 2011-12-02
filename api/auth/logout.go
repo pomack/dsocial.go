@@ -122,7 +122,7 @@ func (p *LogoutAccountRequestHandler) IsAuthorized(req wm.Request, cxt wm.Contex
 
 
 func (p *LogoutAccountRequestHandler) Forbidden(req wm.Request, cxt wm.Context) (bool, wm.Request, wm.Context, int, os.Error) {
-    lac := cxt.(LoginAccountContext)
+    lac := cxt.(LogoutAccountContext)
     if lac.User() != nil && lac.User().Accessible() {
         return false, req, cxt, 0, nil
     }
@@ -186,7 +186,7 @@ func (p *LogoutAccountRequestHandler) ProcessPost(req wm.Request, cxt wm.Context
     if err != nil {
         code, headers, writerTo = apiutil.OutputErrorMessage("Unable to process logout request", nil, http.StatusInternalServerError, httpHeaders)
     } else {
-        code, headers, writerTo = apiutil.OutputJSONObject(nil, nil, "", http.StatusNoContent, httpHeaders)
+        code, headers, writerTo = apiutil.OutputJSONObject(nil, nil, "", http.StatusOK, httpHeaders)
     }
     return req, cxt, code, headers, writerTo, nil
 }
