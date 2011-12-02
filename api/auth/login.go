@@ -9,8 +9,8 @@ import (
     wm "github.com/pomack/webmachine.go/webmachine"
     "http"
     "io"
-    //"log"
     "os"
+    "time"
     "url"
 )
 
@@ -18,6 +18,7 @@ var (
     ERR_INVALID_USERNAME_PASSWORD_COMBO = os.NewError("Invalid combination of username/password")
     ERR_MUST_SPECIFY_USERNAME = os.NewError("Must specify username")
     ERR_MUST_SPECIFY_PASSWORD = os.NewError("Must specify password")
+    ERR_VALUE_ERRORS = os.NewError("Value errors. See result")
 )
 
 type LoginAccountRequestHandler struct {
@@ -34,6 +35,8 @@ type LoginAccountContext interface {
     Username() string
     Password() string
     InputValidated() bool
+    SetResult(obj jsonhelper.JSONObject)
+    Result() jsonhelper.JSONObject
 }
 
 type loginAccountContext struct {
@@ -41,6 +44,7 @@ type loginAccountContext struct {
     password        string
     inputValidated  bool
     user            *dm.User
+    result          jsonhelper.JSONObject
 }
 
 func NewLoginAccountContext() LoginAccountContext {
@@ -52,6 +56,7 @@ func (p *loginAccountContext) SetFromJSON(obj jsonhelper.JSONObject) {
     p.password = obj.GetAsString("password")
     p.inputValidated = false
     p.user = nil
+    p.result = nil
 }
 
 func (p *loginAccountContext) SetFromUrlEncoded(values url.Values) {
@@ -59,6 +64,7 @@ func (p *loginAccountContext) SetFromUrlEncoded(values url.Values) {
     p.password = values.Get("password")
     p.inputValidated = false
     p.user = nil
+    p.result = nil
 }
 
 func (p *loginAccountContext) ValidateLogin(acctDS acct.DataStore, authDS authentication.DataStore, errors map[string][]os.Error) (*dm.User, os.Error) {
@@ -72,7 +78,7 @@ func (p *loginAccountContext) ValidateLogin(acctDS acct.DataStore, authDS authen
         errors["password"] = []os.Error{ERR_MUST_SPECIFY_PASSWORD}
     }
     p.inputValidated = true
-    if len(errors) == 0 {
+    if len(errors) != 0 {
         return nil, nil
     }
     user, err := acctDS.FindUserAccountByUsername(p.username)
@@ -83,7 +89,7 @@ func (p *loginAccountContext) ValidateLogin(acctDS acct.DataStore, authDS authen
     if pwd == nil || err != nil {
         return nil, ERR_INVALID_USERNAME_PASSWORD_COMBO
     }
-    if !pwd.CheckPassword(p.password) {
+    if !user.Accessible() || !pwd.CheckPassword(p.password) {
         return nil, ERR_INVALID_USERNAME_PASSWORD_COMBO
     }
     p.user = user
@@ -105,6 +111,15 @@ func (p *loginAccountContext) Password() string {
 func (p *loginAccountContext) InputValidated() bool {
     return p.inputValidated
 }
+
+func (p *loginAccountContext) Result() jsonhelper.JSONObject {
+    return p.result
+}
+
+func (p *loginAccountContext) SetResult(result jsonhelper.JSONObject) {
+    p.result = result
+}
+
 
 func NewLoginAccountRequestHandler(ds acct.DataStore, authDS authentication.DataStore) *LoginAccountRequestHandler {
     return &LoginAccountRequestHandler{ds: ds, authDS: authDS}
@@ -223,13 +238,17 @@ func (p *LoginAccountRequestHandler) ProcessPost(req wm.Request, cxt wm.Context)
     return req, cxt, code, nil, nil, err
 }
 
-/*
+
 func (p *LoginAccountRequestHandler) ContentTypesProvided(req wm.Request, cxt wm.Context) ([]wm.MediaTypeHandler, wm.Request, wm.Context, int, os.Error) {
-    lac := cxt.(LoginAccountContext)
-    jsonObj := jsonhelper.NewJSONObject()
-    return []wm.MediaTypeHandler{apiutil.NewJSONMediaTypeHandler(jsonObj, nil, "")}, req, lac, 0, nil
+    genFunc := func() (jsonhelper.JSONObject, *time.Time, string, int, http.Header) {
+        lac := cxt.(LoginAccountContext)
+        jsonObj := lac.Result()
+        headers := apiutil.AddNoCacheHeaders(nil)
+        return jsonObj, nil, "", http.StatusOK, headers
+    }
+    return []wm.MediaTypeHandler{apiutil.NewJSONMediaTypeHandlerWithGenerator(genFunc, nil, "")}, req, cxt, 0, nil
 }
-*/
+
 
 func (p *LoginAccountRequestHandler) ContentTypesAccepted(req wm.Request, cxt wm.Context) ([]wm.MediaTypeInputHandler, wm.Request, wm.Context, int, os.Error) {
     arr := []wm.MediaTypeInputHandler{
@@ -341,23 +360,27 @@ func (p *LoginAccountRequestHandler) HandleInputHandlerAfterSetup(lac LoginAccou
         if err != nil {
             return apiutil.OutputErrorMessage(err.String(), errors, http.StatusBadRequest, nil)
         }
-        return apiutil.OutputErrorMessage("Value errors. See result", errors, http.StatusUnauthorized, nil)
+        return apiutil.OutputErrorMessage(ERR_VALUE_ERRORS.String(), errors, http.StatusUnauthorized, nil)
     }
-    if user == nil || err != nil {
-        return apiutil.OutputErrorMessage("Unable to process login request", nil, http.StatusInternalServerError, nil)
+    if err == ERR_INVALID_USERNAME_PASSWORD_COMBO {
+        return apiutil.OutputErrorMessage(err.String(), nil, http.StatusUnauthorized, nil)
+    }
+    if err != nil {
+        return apiutil.OutputErrorMessage("Unable to process login request: ", nil, http.StatusInternalServerError, nil)
+    }
+    if user == nil {
+        return apiutil.OutputErrorMessage("Unable to process login request: no such username", nil, http.StatusUnauthorized, nil)
     }
     accessKey, err := p.authDS.StoreAccessKey(dm.NewAccessKey(user.Id, ""))
     if err != nil {
-        return apiutil.OutputErrorMessage("Unable to process login request", nil, http.StatusInternalServerError, nil)
+        return apiutil.OutputErrorMessage("Unable to process login request: " + err.String(), nil, http.StatusInternalServerError, nil)
     }
-    obj := make(map[string]interface{})
-    obj["user_id"] = user.Id
-    obj["username"] = user.Username
-    obj["name"] = user.Name
-    obj["access_key_id"] = accessKey.Id
-    obj["private_key"] = accessKey.PrivateKey
-    theobj, _ := jsonhelper.MarshalWithOptions(obj, dm.UTC_DATETIME_FORMAT)
-    jsonObj, _ := theobj.(jsonhelper.JSONObject)
-    headers := apiutil.AddNoCacheHeaders(nil)
-    return apiutil.OutputJSONObject(jsonObj, nil, "", http.StatusOK, headers)
+    obj := jsonhelper.NewJSONObject()
+    obj.Set("user_id", user.Id)
+    obj.Set("username", user.Username)
+    obj.Set("name", user.Name)
+    obj.Set("access_key_id", accessKey.Id)
+    obj.Set("private_key", accessKey.PrivateKey)
+    lac.SetResult(obj)
+    return 0, nil, nil
 }
