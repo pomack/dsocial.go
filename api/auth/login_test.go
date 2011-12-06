@@ -52,6 +52,7 @@ func initializeAuthUserAccountDS() (ds *inmemory.InMemoryDataStore, wm webmachin
     wm = webmachine.NewWebMachine()
     wm.AddRouteHandler(auth.NewLoginAccountRequestHandler(ds, ds))
     wm.AddRouteHandler(auth.NewLogoutAccountRequestHandler(ds, ds))
+    wm.AddRouteHandler(auth.NewSetPasswordRequestHandler(ds, ds))
     return
 }
 
