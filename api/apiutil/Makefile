@@ -6,6 +6,7 @@ GOFILES=\
 	escape.go\
 	jsonmediatypehandler.go\
 	jsonmediatypeinputhandler.go\
+	requestparser.go\
 	outpututil.go\
 	signer.go\
 	urlencodedmediatypeinputhandler.go\
