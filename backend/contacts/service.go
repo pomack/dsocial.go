@@ -178,6 +178,13 @@ type DataStoreService interface {
     //   err : error or nil
     DeleteDsocialGroupForExternalGroup(externalServiceId, externalUserId, externalGroupId, dsocialUserId string) (existed bool, err os.Error)
 
+    // List dsocial contacts
+    // Returns:
+    //   dsocialContacts : list of contacts stored in the service
+    //   next : token for the next list of contacts
+    //   err : error or nil
+    ListDsocialContacts(dsocialUserId string, from NextToken, maxCount int) (dsocialContacts []*dm.Contact, next NextToken, err os.Error)
+
     // Retrieve dsocial contact
     // Returns:
     //   dsocialContact : the contact as stored into the service using StoreDsocialContact or nil if not found

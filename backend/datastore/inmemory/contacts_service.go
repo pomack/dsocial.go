@@ -509,6 +509,45 @@ func (p *InMemoryDataStore) DeleteDsocialGroupForExternalGroup(externalServiceId
     return
 }
 
+ 
+ // List dsocial contacts
+ // Returns:
+ //   dsocialContacts : list of contacts stored in the service
+ //   next : token for the next list of contacts
+ //   err : error or nil
+func (p *InMemoryDataStore) ListDsocialContacts(dsocialUserId string, from bc.NextToken, maxCount int) (dsocialContacts []*dm.Contact, next bc.NextToken, err os.Error) {
+    if maxCount <= 0 || maxCount > 100 {
+        maxCount = 100
+    }
+    fromUidString := ""
+    if from != nil {
+        fromUidString, _ = from.(string)
+    }
+    skip := fromUidString != ""
+    count := 0
+    dsocialContacts = make([]*dm.Contact, maxCount)
+    next = ""
+    for uid, contact := range p.retrieveCollection(_INMEMORY_CONTACT_COLLECTION_NAME).Data {
+        if skip {
+            if fromUidString != uid {
+                continue
+            }
+            skip = false
+        }
+        if count > maxCount {
+            next = uid
+            break
+        }
+        dsocialContacts[count] = contact.(*dm.Contact)
+        count++
+    }
+    if count != maxCount {
+        dsocialContacts = dsocialContacts[0:count]
+    }
+    return
+}
+
+
 // Retrieve dsocial contact
 // Returns:
 //   dsocialContact : the contact as stored into the service using StoreDsocialContact or nil if not found
