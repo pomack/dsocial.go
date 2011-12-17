@@ -8,11 +8,12 @@ import (
     bc "github.com/pomack/dsocial.go/backend/contacts"
     dm "github.com/pomack/dsocial.go/models/dsocial"
     wm "github.com/pomack/webmachine.go/webmachine"
+    "container/list"
     "http"
     "io"
+    "json"
     //"log"
     "os"
-    "strings"
     "time"
 )
 
@@ -20,6 +21,7 @@ type UpdateContactRequestHandler struct {
     wm.DefaultRequestHandler
     ds  acct.DataStore
     authDS auth.DataStore
+    contactsDS bc.DataStoreService
 }
 
 type UpdateContactContext interface {
@@ -45,13 +47,11 @@ type UpdateContactContext interface {
 type updateContactContext struct {
     authUser        *dm.User
     user            *dm.User
-    lastModified    *time.Time
-    etag            string
     contactId       string
-    originalContact *dm.Contact
     contact         *dm.Contact
+    originalContact *dm.Contact
     result          jsonhelper.JSONObject
-    inputValidated bool
+    inputValidated  bool
 }
 
 func NewUpdateContactContext() UpdateContactContext {
@@ -59,46 +59,29 @@ func NewUpdateContactContext() UpdateContactContext {
 }
 
 func (p *updateContactContext) SetFromJSON(obj jsonhelper.JSONObject) {
-    p.user = nil
-    p.consumer = nil
-    p.externalUser = nil
-    theType := p.theType
-    if theType == "" {
-        theType = obj.GetAsString("type")
+    contact := new(dm.Contact)
+    if obj == nil {
+        contact = nil
+    } else {
+        json.Unmarshal([]byte(obj.String()), contact)
     }
-    switch theType {
-    case "user":
-        p.user = new(dm.User)
-        p.user.InitFromJSONObject(obj)
-    case "consumer":
-        p.consumer = new(dm.Consumer)
-        p.consumer.InitFromJSONObject(obj)
-    case "external_user":
-        p.externalUser = new(dm.ExternalUser)
-        p.externalUser.InitFromJSONObject(obj)
-    }
+    p.contact = contact
 }
 
-func (p *updateContactContext) CleanInput(createdByUser *dm.User, originalUser interface{}) {
-    if p.user != nil {
-        p.user.Id = ""
-        p.user.CleanFromUser(createdByUser, originalUser.(*dm.User))
-    } else if p.consumer != nil {
-        p.consumer.Id = ""
-        p.consumer.CleanFromUser(createdByUser, originalUser.(*dm.Consumer))
-    } else if p.externalUser != nil {
-        p.externalUser.Id = ""
-        p.externalUser.CleanFromUser(createdByUser, originalUser.(*dm.ExternalUser))
+func (p *updateContactContext) CleanInput(createdByUser *dm.User, originalUser *dm.Contact) {
+    if p.user != nil && p.authUser != nil && p.user.Id == p.authUser.Id {
+        p.contact.Id = p.contactId
+        p.contact.UserId = p.user.Id
     }
     p.inputValidated = true
 }
 
-func (p *updateContactContext) Type() string {
-    return p.theType
+func (p *updateContactContext) AuthUser() *dm.User {
+    return p.authUser
 }
 
-func (p *updateContactContext) SetType(theType string) {
-    p.theType = theType
+func (p *updateContactContext) SetAuthUser(authUser *dm.User) {
+    p.authUser = authUser
 }
 
 func (p *updateContactContext) User() *dm.User {
@@ -109,88 +92,64 @@ func (p *updateContactContext) SetUser(user *dm.User) {
     p.user = user
 }
 
-func (p *updateContactContext) Consumer() *dm.Consumer {
-    return p.consumer
-}
-
-func (p *updateContactContext) SetConsumer(consumer *dm.Consumer) {
-    p.consumer = consumer
-}
-
-func (p *updateContactContext) ExternalUser() *dm.ExternalUser {
-    return p.externalUser
-}
-
-func (p *updateContactContext) SetExternalUser(externalUser *dm.ExternalUser) {
-    p.externalUser = externalUser
-}
-
 func (p *updateContactContext) LastModified() *time.Time {
     var lastModified *time.Time
-    if p.user != nil && p.user.ModifiedAt != 0 {
-        lastModified = time.SecondsToUTC(p.user.ModifiedAt)
-    } else if p.consumer != nil && p.consumer.ModifiedAt != 0 {
-        lastModified = time.SecondsToUTC(p.consumer.ModifiedAt)
-    } else if p.externalUser != nil && p.externalUser.ModifiedAt != 0 {
-        lastModified = time.SecondsToUTC(p.externalUser.ModifiedAt)
+    if p.contact != nil && p.contact.ModifiedAt > 0 {
+        lastModified = time.SecondsToUTC(p.contact.ModifiedAt)
+    } else if p.originalContact != nil && p.originalContact.ModifiedAt > 0 {
+        lastModified = time.SecondsToUTC(p.originalContact.ModifiedAt)
     }
     return lastModified
 }
 
-func (p *updateContactContext) ToObject() interface{} {
-    var user interface{}
-    if p.user != nil {
-        user = p.user
-    } else if p.consumer != nil {
-        user = p.consumer
-    } else if p.externalUser != nil {
-        user = p.externalUser
-    }
-    return user
-}
-
 func (p *updateContactContext) ETag() string {
-    var etag string
-    if p.user != nil {
-        etag = p.user.Etag
-    } else if p.consumer != nil {
-        etag = p.consumer.Etag
-    } else if p.externalUser != nil {
-        etag = p.externalUser.Etag
+    if p.contact != nil && p.contact.Etag != "" {
+        return p.contact.Etag
     }
-    return etag
+    if p.originalContact != nil && p.originalContact.Etag != "" {
+        return p.originalContact.Etag
+    }
+    return ""
 }
 
-func (p *updateContactContext) RequestingUser() *dm.User {
-    return p.requestingUser
+func (p *updateContactContext) ContactId() string {
+    return p.contactId
 }
 
-func (p *updateContactContext) SetRequestingUser(user *dm.User) {
-    p.requestingUser = user
+func (p *updateContactContext) SetContactId(contactId string) {
+    p.contactId = contactId
 }
 
-func (p *updateContactContext) RequestingConsumer() *dm.Consumer {
-    return p.requestingConsumer
+func (p *updateContactContext) Contact() *dm.Contact {
+    return p.contact
 }
 
-func (p *updateContactContext) SetRequestingConsumer(consumer *dm.Consumer) {
-    p.requestingConsumer = consumer
+func (p *updateContactContext) SetContact(contact *dm.Contact) {
+    p.contact = contact
 }
 
-func (p *updateContactContext) OriginalValue() interface{} {
-    return p.originalValue
+func (p *updateContactContext) OriginalContact() *dm.Contact {
+    return p.originalContact
 }
 
-func (p *updateContactContext) SetOriginalValue(value interface{}) {
-    p.originalValue = value
+func (p *updateContactContext) SetOriginalContact(originalContact *dm.Contact) {
+    p.originalContact = originalContact
+}
+
+func (p *updateContactContext) Result() jsonhelper.JSONObject {
+    return p.result
+}
+
+func (p *updateContactContext) SetResult(result jsonhelper.JSONObject) {
+    p.result = result
 }
 
 func (p *updateContactContext) InputValidated() bool {
     return p.inputValidated
 }
 
-func NewUpdateContactRequestHandler(ds acct.DataStore, authDS auth.DataStore) *UpdateContactRequestHandler {
-    return &UpdateContactRequestHandler{ds: ds, authDS: authDS}
+func NewUpdateContactRequestHandler(ds acct.DataStore, authDS auth.DataStore, contactsDS bc.DataStoreService) *UpdateContactRequestHandler {
+    return &UpdateContactRequestHandler{ds: ds, authDS: authDS, contactsDS: contactsDS}
 }
 
 func (p *UpdateContactRequestHandler) GenerateContext(req wm.Request, cxt wm.Context) UpdateContactContext {
@@ -208,12 +167,13 @@ func (p *UpdateContactRequestHandler) HandlerFor(req wm.Request, writer wm.Respo
         // ignore trailing slash
         pathLen = pathLen - 1
     }
-    if pathLen >= 8 {
-        if path[0] == "" && path[1] == "api" && path[2] == "v1" && path[3] == "json" && path[4] == "account" && path[6] == "update" {
-            switch path[5] {
-            case "user", "consumer", "external_user":
-                return p
-            }
+    if pathLen == 9 {
+        if path[0] == "" && path[1] == "api" && path[2] == "v1" && path[3] == "json" && path[4] == "u" && path[5] != "" && path[6] == "contacts" && path[7] == "update" && path[8] != "" {
+            return p
+        }
+    } else if pathLen == 6 {
+        if path[0] == "" && path[1] == "u" && path[2] != "" && path[3] == "contacts" && path[4] == "update" && path[5] != "" {
+            return p
         }
     }
     return nil
@@ -223,41 +183,26 @@ func (p *UpdateContactRequestHandler) StartRequest(req wm.Request, cxt wm.Contex
     ucc := p.GenerateContext(req, cxt)
     path := req.URLParts()
     pathLen := len(path)
-    if pathLen >= 8 {
-        ucc.SetType(path[5])
-        var id string
-        if path[pathLen-1] == "" {
-            id = strings.Join(path[7:pathLen-1], "/")
-        } else {
-            id = strings.Join(path[7:], "/")
-        }
-        switch ucc.Type() {
-        case "user":
-            user, _ := p.ds.RetrieveUserAccountById(id)
-            ucc.SetUser(user)
-            if user == nil {
-                //log.Printf("[UARH]: Setting original value for user: %#v\n", nil)
-                ucc.SetOriginalValue(nil)
-            } else {
-                //log.Printf("[UARH]: Setting original value for user: %#v\n", user)
-                ucc.SetOriginalValue(user)
-            }
-        case "consumer":
-            consumer, _ := p.ds.RetrieveConsumerAccountById(id)
-            ucc.SetConsumer(consumer)
-            if consumer == nil {
-                ucc.SetOriginalValue(nil)
-            } else {
-                ucc.SetOriginalValue(consumer)
-            }
-        case "external_user":
-            externalUser, _ := p.ds.RetrieveExternalUserAccountById(id)
-            ucc.SetExternalUser(externalUser)
-            if externalUser == nil {
-                ucc.SetOriginalValue(nil)
-            } else {
-                ucc.SetOriginalValue(externalUser)
-            }
+    if path[pathLen-1] == "" {
+        // ignore trailing slash
+        pathLen = pathLen - 1
+    }
+    var userId string
+    var contactId string
+    switch pathLen {
+        case 9:
+            userId = path[5]
+            contactId = path[8]
+        case 6:
+            userId = path[2]
+            contactId = path[5]
+    }
+    if userId != "" {
+        user, _ := p.ds.RetrieveUserAccountById(userId)
+        ucc.SetUser(user)
+        if contactId != "" {
+            contact, _, _ := p.contactsDS.RetrieveDsocialContact(userId, contactId)
+            ucc.SetOriginalContact(contact)
         }
     }
     return req, ucc
@@ -271,9 +216,7 @@ func (p *UpdateContactRequestHandler) ServiceAvailable(req wm.Request, cxt wm.Co
 
 func (p *UpdateContactRequestHandler) ResourceExists(req wm.Request, cxt wm.Context) (bool, wm.Request, wm.Context, int, os.Error) {
     ucc := cxt.(UpdateContactContext)
-    //log.Printf("[UARH]: Checking original value: %#v vs. %v\n", ucc.OriginalValue(), ucc.OriginalValue() != nil)
-    
-    return ucc.OriginalValue() != nil, req, cxt, 0, nil
+    return ucc.OriginalContact() != nil, req, cxt, 0, nil
 }
 
 func (p *UpdateContactRequestHandler) AllowedMethods(req wm.Request, cxt wm.Context) ([]string, wm.Request, wm.Context, int, os.Error) {
@@ -282,24 +225,20 @@ func (p *UpdateContactRequestHandler) AllowedMethods(req wm.Request, cxt wm.Cont
 
 func (p *UpdateContactRequestHandler) IsAuthorized(req wm.Request, cxt wm.Context) (bool, string, wm.Request, wm.Context, int, os.Error) {
     ucc := cxt.(UpdateContactContext)
-    hasSignature, userId, consumerId, err := apiutil.CheckSignature(p.authDS, req.UnderlyingRequest())
+    hasSignature, userId, _, err := apiutil.CheckSignature(p.authDS, req.UnderlyingRequest())
     if !hasSignature || err != nil {
         return hasSignature, "dsocial", req, cxt, http.StatusUnauthorized, err
     }
     if userId != "" {
         user, _ := p.ds.RetrieveUserAccountById(userId)
-        ucc.SetRequestingUser(user)
+        ucc.SetAuthUser(user)
     }
-    if consumerId != "" {
-        consumer, _ := p.ds.RetrieveConsumerAccountById(consumerId)
-        ucc.SetRequestingConsumer(consumer)
-    }
-    return true, "", req, cxt, 0, nil
+    return userId != "", "", req, cxt, 0, nil
 }
 
 func (p *UpdateContactRequestHandler) Forbidden(req wm.Request, cxt wm.Context) (bool, wm.Request, wm.Context, int, os.Error) {
     ucc := cxt.(UpdateContactContext)
-    if ucc.RequestingUser() != nil && ucc.RequestingUser().Accessible() && (ucc.RequestingUser().Role == dm.ROLE_ADMIN || (ucc.User() != nil && ucc.RequestingUser().Id == ucc.User().Id)) {
+    if ucc.AuthUser() != nil && ucc.AuthUser().Accessible() && (ucc.AuthUser().Role == dm.ROLE_ADMIN || (ucc.User() != nil && ucc.AuthUser().Id == ucc.User().Id)) {
         return false, req, cxt, 0, nil
     }
     // Cannot find user or consumer with specified id
@@ -359,7 +298,7 @@ func (p *UpdateContactRequestHandler) ProcessPost(req wm.Request, cxt wm.Context
 
 func (p *UpdateContactRequestHandler) ContentTypesProvided(req wm.Request, cxt wm.Context) ([]wm.MediaTypeHandler, wm.Request, wm.Context, int, os.Error) {
     ucc := cxt.(UpdateContactContext)
-    obj := ucc.ToObject()
+    obj := ucc.Contact()
     lastModified := ucc.LastModified()
     etag := ucc.ETag()
     var jsonObj jsonhelper.JSONObject
@@ -436,17 +375,8 @@ func (p *UpdateContactRequestHandler) Expires(req wm.Request, cxt wm.Context) (*
 */
 
 func (p *UpdateContactRequestHandler) GenerateETag(req wm.Request, cxt wm.Context) (string, wm.Request, wm.Context, int, os.Error) {
-    var etag string
     ucc := cxt.(UpdateContactContext)
-    switch ucc.Type() {
-    case "user":
-        etag = ucc.User().Etag
-    case "consumer":
-        etag = ucc.Consumer().Etag
-    case "external_user":
-        etag = ucc.ExternalUser().Etag
-    }
-    return etag, req, cxt, 0, nil
+    return ucc.ETag(), req, cxt, 0, nil
 }
 
 
@@ -469,45 +399,41 @@ func (p *UpdateContactRequestHandler) HasRespBody(req wm.Request, cxt wm.Context
 func (p *UpdateContactRequestHandler) HandleJSONObjectInputHandler(req wm.Request, cxt wm.Context, inputObj jsonhelper.JSONObject) (int, http.Header, io.WriterTo) {
     ucc := cxt.(UpdateContactContext)
     ucc.SetFromJSON(inputObj)
-    ucc.CleanInput(ucc.RequestingUser(), ucc.OriginalValue())
+    ucc.CleanInput(ucc.AuthUser(), ucc.OriginalContact())
     //log.Print("[UARH]: HandleJSONObjectInputHandler()")
     errors := make(map[string][]os.Error)
     var obj interface{}
     var err os.Error
-    ds := p.ds
-    switch ucc.Type() {
-    case "user":
-        if user := ucc.User(); user != nil {
-            //log.Printf("[UARH]: user is not nil1: %v\n", user)
-            user.Validate(false, errors)
-            if len(errors) == 0 {
-                user, err = ds.UpdateUserAccount(user)
-                //log.Printf("[UARH]: user after errors is %v\n", user)
+    contactsDS := p.contactsDS
+    contact := ucc.Contact()
+    origContact := ucc.OriginalContact()
+    if contact != nil && origContact != nil && ucc.User() != nil {
+        dsocialUserId := ucc.User().Id
+        contact.Id = ucc.ContactId()
+        contact.UserId = dsocialUserId
+        contact.Validate(false, errors)
+        if len(errors) == 0 {
+            l := new(list.List)
+            origContact.GenerateChanges(origContact, contact, nil, l)
+            allowAdd, allowDelete, allowUpdate := true, true, true
+            pipeline := bc.NewPipeline()
+            l = pipeline.RemoveUnacceptedChanges(l, allowAdd, allowDelete, allowUpdate)
+            changes := make([]*dm.Change, l.Len())
+            for i, iter := 0, l.Front(); iter != nil; i, iter = i+1, iter.Next() {
+                changes[i] = iter.Value.(*dm.Change)
             }
-            obj = user
-            ucc.SetUser(user)
-            //log.Printf("[UARH]: setUser to %v\n", user)
-        }
-    case "consumer":
-        if user := ucc.Consumer(); user != nil {
-            user.Validate(false, errors)
-            if len(errors) == 0 {
-                user, err = ds.UpdateConsumerAccount(user)
+            changeset := &dm.ChangeSet{
+                CreatedAt:      time.UTC().Format(dm.UTC_DATETIME_FORMAT),
+                ChangedBy:      ucc.AuthUser().Id,
+                ChangeImportId: ucc.ContactId(),
+                RecordId:       ucc.ContactId(),
+                Changes:        changes,
             }
-            obj = user
-            ucc.SetConsumer(user)
-        }
-    case "external_user":
-        if user := ucc.ExternalUser(); user != nil {
-            user.Validate(false, errors)
-            if len(errors) == 0 {
-                user, err = ds.UpdateExternalUserAccount(user)
+            _, err = contactsDS.StoreContactChangeSet(dsocialUserId, changeset)
+            if err == nil {
+                contact, err = contactsDS.StoreDsocialContact(contact.UserId, contact.Id, contact)
             }
-            obj = user
-            ucc.SetExternalUser(user)
         }
-    default:
-        return apiutil.OutputErrorMessage("\"type\" must be \"user\", \"consumer\", or \"external_user\"", nil, 400, nil)
     }
     if len(errors) > 0 {
         return apiutil.OutputErrorMessage("Value errors. See result", errors, http.StatusBadRequest, nil)
@@ -517,7 +443,5 @@ func (p *UpdateContactRequestHandler) HandleJSONObjectInputHandler(req wm.Reques
     }
     theobj, _ := jsonhelper.MarshalWithOptions(obj, dm.UTC_DATETIME_FORMAT)
     jsonObj, _ := theobj.(jsonhelper.JSONObject)
-    //log.Printf("[UARH]: obj was: \n%v\n", obj)
-    //log.Printf("[UARH]: Going to output:\n%s\n", jsonObj)
     return apiutil.OutputJSONObject(jsonObj, ucc.LastModified(), ucc.ETag(), http.StatusOK, nil)
 }
