@@ -26,7 +26,7 @@ func (p *Pipeline) IncrementalSync(client oauth2_client.OAuth2Client, ds DataSto
     return p.Sync(client, ds, cs, csSettings, dsocialUserId, meContactId, true, true, true)
 }
 
-func (p *Pipeline) removeUnacceptedChanges(l *list.List, allowAdd, allowDelete, allowUpdate bool) *list.List {
+func (p *Pipeline) RemoveUnacceptedChanges(l *list.List, allowAdd, allowDelete, allowUpdate bool) *list.List {
     if allowAdd && allowDelete && allowUpdate {
         return l
     }
@@ -168,7 +168,7 @@ func (p *Pipeline) contactImport(cs ContactsService, ds DataStoreService, dsocia
     }
     l := new(list.List)
     emptyContact.GenerateChanges(extDsocialContact, contact.Value, nil, l)
-    l = p.removeUnacceptedChanges(l, allowAdd, allowDelete, allowUpdate)
+    l = p.RemoveUnacceptedChanges(l, allowAdd, allowDelete, allowUpdate)
     changes := make([]*dm.Change, l.Len())
     for i, iter := 0, l.Front(); iter != nil; i, iter = i+1, iter.Next() {
         changes[i] = iter.Value.(*dm.Change)
@@ -378,7 +378,7 @@ func (p *Pipeline) groupImport(cs ContactsService, ds DataStoreService, dsocialU
     }
     l := new(list.List)
     emptyGroup.GenerateChanges(extDsocialGroup, group.Value, nil, l)
-    l = p.removeUnacceptedChanges(l, allowAdd, allowDelete, allowUpdate)
+    l = p.RemoveUnacceptedChanges(l, allowAdd, allowDelete, allowUpdate)
     changes := make([]*dm.Change, l.Len())
     for i, iter := 0, l.Front(); iter != nil; i, iter = i+1, iter.Next() {
         changes[i] = iter.Value.(*dm.Change)
