@@ -1,11 +1,11 @@
 package dsocial
 
 import (
-    "github.com/pomack/contacts.go/google"
     "container/list"
     "fmt"
-    "strings"
+    "github.com/pomack/contacts.go/google"
     "strconv"
+    "strings"
     "time"
 )
 
@@ -665,7 +665,6 @@ func DsocialGroupToGoogle(g *Group, o *google.ContactGroup) *google.ContactGroup
 ///
 /// Begin conversions from dsocial Contact to Google
 ///
-
 
 func dsocialDateTimeToGoogleString(d *DateTime) (s string) {
     if d.Month != 0 && d.Day != 0 {

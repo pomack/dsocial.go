@@ -14,7 +14,7 @@ type jsonWriter struct {
 }
 
 func newJSONWriter(obj jsonhelper.JSONObject) *jsonWriter {
-    return &jsonWriter{obj:obj}
+    return &jsonWriter{obj: obj}
 }
 
 func (p *jsonWriter) WriteTo(writer io.Writer) (n int64, err os.Error) {

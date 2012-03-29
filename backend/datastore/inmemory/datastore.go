@@ -1,8 +1,8 @@
 package inmemory
 
 import (
-    "github.com/pomack/jsonhelper.go/jsonhelper"
     dm "github.com/pomack/dsocial.go/models/dsocial"
+    "github.com/pomack/jsonhelper.go/jsonhelper"
     "io"
     "json"
     "os"

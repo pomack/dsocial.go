@@ -1,8 +1,8 @@
 package inmemory
 
 import (
-    dm "github.com/pomack/dsocial.go/models/dsocial"
     ba "github.com/pomack/dsocial.go/backend/accounts"
+    dm "github.com/pomack/dsocial.go/models/dsocial"
     "os"
     "strconv"
 )

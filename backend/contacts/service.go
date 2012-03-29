@@ -1,10 +1,10 @@
 package contacts
 
 import (
+    "fmt"
+    dm "github.com/pomack/dsocial.go/models/dsocial"
     "github.com/pomack/jsonhelper.go/jsonhelper"
     "github.com/pomack/oauth2_client.go/oauth2_client"
-    dm "github.com/pomack/dsocial.go/models/dsocial"
-    "fmt"
     "os"
     "time"
 )

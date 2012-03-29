@@ -17,7 +17,7 @@ import (
 
 type UpdateAccountRequestHandler struct {
     wm.DefaultRequestHandler
-    ds  acct.DataStore
+    ds     acct.DataStore
     authDS auth.DataStore
 }
 
@@ -45,14 +45,14 @@ type UpdateAccountContext interface {
 }
 
 type updateAccountContext struct {
-    theType      string
-    user         *dm.User
-    consumer     *dm.Consumer
-    externalUser *dm.ExternalUser
+    theType            string
+    user               *dm.User
+    consumer           *dm.Consumer
+    externalUser       *dm.ExternalUser
     requestingUser     *dm.User
     requestingConsumer *dm.Consumer
-    originalValue interface{}
-    inputValidated bool
+    originalValue      interface{}
+    inputValidated     bool
 }
 
 func NewUpdateAccountContext() UpdateAccountContext {
@@ -273,7 +273,7 @@ func (p *UpdateAccountRequestHandler) ServiceAvailable(req wm.Request, cxt wm.Co
 func (p *UpdateAccountRequestHandler) ResourceExists(req wm.Request, cxt wm.Context) (bool, wm.Request, wm.Context, int, os.Error) {
     uac := cxt.(UpdateAccountContext)
     //log.Printf("[UARH]: Checking original value: %#v vs. %v\n", uac.OriginalValue(), uac.OriginalValue() != nil)
-    
+
     return uac.OriginalValue() != nil, req, cxt, 0, nil
 }
 
@@ -449,7 +449,6 @@ func (p *UpdateAccountRequestHandler) GenerateETag(req wm.Request, cxt wm.Contex
     }
     return etag, req, cxt, 0, nil
 }
-
 
 /*
 func (p *UpdateAccountRequestHandler) FinishRequest(req wm.Request, cxt wm.Context) (bool, wm.Request, wm.Context, int, os.Error) {

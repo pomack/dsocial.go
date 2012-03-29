@@ -1,12 +1,12 @@
 package contacts
 
 import (
-    "github.com/pomack/jsonhelper.go/jsonhelper"
     "github.com/pomack/dsocial.go/api/apiutil"
     acct "github.com/pomack/dsocial.go/backend/accounts"
-    bc "github.com/pomack/dsocial.go/backend/contacts"
     "github.com/pomack/dsocial.go/backend/authentication"
+    bc "github.com/pomack/dsocial.go/backend/contacts"
     dm "github.com/pomack/dsocial.go/models/dsocial"
+    "github.com/pomack/jsonhelper.go/jsonhelper"
     wm "github.com/pomack/webmachine.go/webmachine"
     "http"
     "io"
@@ -18,8 +18,8 @@ import (
 
 type ListContactsRequestHandler struct {
     wm.DefaultRequestHandler
-    ds  acct.DataStore
-    authDS authentication.DataStore
+    ds         acct.DataStore
+    authDS     authentication.DataStore
     contactsDS bc.DataStoreService
 }
 
@@ -41,12 +41,12 @@ type ListContactsContext interface {
 }
 
 type listContactsContext struct {
-    authUser        *dm.User
-    user            *dm.User
-    listFrom        string
-    listNext        string
-    result          jsonhelper.JSONObject
-    count           int
+    authUser *dm.User
+    user     *dm.User
+    listFrom string
+    listNext string
+    result   jsonhelper.JSONObject
+    count    int
 }
 
 func NewListContactsContext() ListContactsContext {
@@ -167,7 +167,6 @@ func (p *ListContactsRequestHandler) AllowedMethods(req wm.Request, cxt wm.Conte
     return []string{wm.GET, wm.HEAD}, req, cxt, 0, nil
 }
 
-
 func (p *ListContactsRequestHandler) IsAuthorized(req wm.Request, cxt wm.Context) (bool, string, wm.Request, wm.Context, int, os.Error) {
     lcc := cxt.(ListContactsContext)
     hasSignature, authUserId, _, err := apiutil.CheckSignature(p.authDS, req.UnderlyingRequest())
@@ -186,8 +185,6 @@ func (p *ListContactsRequestHandler) IsAuthorized(req wm.Request, cxt wm.Context
     return true, "", req, cxt, 0, nil
 }
 
-
-
 func (p *ListContactsRequestHandler) Forbidden(req wm.Request, cxt wm.Context) (bool, wm.Request, wm.Context, int, os.Error) {
     lcc := cxt.(ListContactsContext)
     if lcc.AuthUser() != nil && lcc.AuthUser().Accessible() && lcc.User() != nil && lcc.User().Accessible() && lcc.AuthUser().Id == lcc.User().Id {
@@ -196,7 +193,6 @@ func (p *ListContactsRequestHandler) Forbidden(req wm.Request, cxt wm.Context) (
     // Cannot find user with specified id
     return true, req, cxt, 0, nil
 }
-
 
 /*
 func (p *ListContactsRequestHandler) AllowMissingPost(req wm.Request, cxt wm.Context) (bool, wm.Request, wm.Context, int, os.Error) {
@@ -261,8 +257,6 @@ func (p *ListContactsRequestHandler) ContentTypesProvided(req wm.Request, cxt wm
     return []wm.MediaTypeHandler{apiutil.NewJSONMediaTypeHandlerWithGenerator(genFunc, nil, "")}, req, cxt, 0, nil
 }
 
-
-
 func (p *ListContactsRequestHandler) ContentTypesAccepted(req wm.Request, cxt wm.Context) ([]wm.MediaTypeInputHandler, wm.Request, wm.Context, int, os.Error) {
     arr := []wm.MediaTypeInputHandler{
         apiutil.NewJSONMediaTypeInputHandler("", "", p, req.Body()),
@@ -270,7 +264,6 @@ func (p *ListContactsRequestHandler) ContentTypesAccepted(req wm.Request, cxt wm
     }
     return arr, req, cxt, 0, nil
 }
-
 
 /*
 func (p *ListContactsRequestHandler) IsLanguageAvailable(languages []string, req wm.Request, cxt wm.Context) (bool, wm.Request, wm.Context, int, os.Error) {
@@ -350,7 +343,6 @@ func (p *ListContactsRequestHandler) ResponseIsRedirect(req wm.Request, cxt wm.C
 }
 */
 
-
 func (p *ListContactsRequestHandler) HasRespBody(req wm.Request, cxt wm.Context) bool {
     return true
 }
@@ -361,13 +353,11 @@ func (p *ListContactsRequestHandler) HandleJSONObjectInputHandler(req wm.Request
     return p.HandleInputHandlerAfterSetup(lcc)
 }
 
-
 func (p *ListContactsRequestHandler) HandleUrlEncodedInputHandler(req wm.Request, cxt wm.Context, inputObj url.Values) (int, http.Header, io.WriterTo) {
     lcc := cxt.(ListContactsContext)
     lcc.SetFromUrlEncoded(inputObj)
     return p.HandleInputHandlerAfterSetup(lcc)
 }
-
 
 func (p *ListContactsRequestHandler) HandleInputHandlerAfterSetup(cxt ListContactsContext) (int, http.Header, io.WriterTo) {
     contactsDS := p.contactsDS

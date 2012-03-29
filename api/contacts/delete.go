@@ -16,8 +16,8 @@ import (
 
 type DeleteContactRequestHandler struct {
     wm.DefaultRequestHandler
-    ds  acct.DataStore
-    authDS auth.DataStore
+    ds         acct.DataStore
+    authDS     auth.DataStore
     contactsDS bc.DataStoreService
 }
 
@@ -41,14 +41,14 @@ type DeleteContactContext interface {
 }
 
 type deleteContactContext struct {
-    authUser        *dm.User
-    user            *dm.User
-    contact         *dm.Contact
-    lastModified    *time.Time
-    etag            string
-    contactId       string
-    deleted         bool
-    result          jsonhelper.JSONObject
+    authUser     *dm.User
+    user         *dm.User
+    contact      *dm.Contact
+    lastModified *time.Time
+    etag         string
+    contactId    string
+    deleted      bool
+    result       jsonhelper.JSONObject
 }
 
 func NewDeleteContactContext() DeleteContactContext {
@@ -118,7 +118,6 @@ func (p *deleteContactContext) MarkAsDeleted() {
 func (p *deleteContactContext) Deleted() bool {
     return p.deleted
 }
-
 
 func NewDeleteContactRequestHandler(ds acct.DataStore, authDS auth.DataStore, contactsDS bc.DataStoreService) *DeleteContactRequestHandler {
     return &DeleteContactRequestHandler{ds: ds, authDS: authDS, contactsDS: contactsDS}
@@ -221,7 +220,6 @@ func (p *DeleteContactRequestHandler) IsAuthorized(req wm.Request, cxt wm.Contex
     return true, "", req, cxt, 0, nil
 }
 
-
 func (p *DeleteContactRequestHandler) Forbidden(req wm.Request, cxt wm.Context) (bool, wm.Request, wm.Context, int, os.Error) {
     dcc := cxt.(DeleteContactContext)
     if dcc.AuthUser() != nil && dcc.AuthUser().Accessible() && dcc.User() != nil && dcc.User().Accessible() && (dcc.AuthUser().Id == dcc.User().Id || dcc.AuthUser().Role == dm.ROLE_ADMIN) {
@@ -276,12 +274,10 @@ func (p *DeleteContactRequestHandler) CreatePath(req wm.Request, cxt wm.Context)
 }
 */
 
-
 func (p *DeleteContactRequestHandler) ProcessPost(req wm.Request, cxt wm.Context) (wm.Request, wm.Context, int, http.Header, io.WriterTo, os.Error) {
     _, req, cxt, httpCode, httpError := p.DeleteResource(req, cxt)
     return req, cxt, httpCode, nil, nil, httpError
 }
-
 
 func (p *DeleteContactRequestHandler) ContentTypesProvided(req wm.Request, cxt wm.Context) ([]wm.MediaTypeHandler, wm.Request, wm.Context, int, os.Error) {
     dcc := cxt.(DeleteContactContext)
@@ -385,11 +381,9 @@ func (p *DeleteContactRequestHandler) ResponseIsRedirect(req wm.Request, cxt wm.
 }
 */
 
-
 func (p *DeleteContactRequestHandler) HasRespBody(req wm.Request, cxt wm.Context) bool {
     return true
 }
-
 
 func (p *DeleteContactRequestHandler) HandleJSONObjectInputHandler(req wm.Request, cxt wm.Context, inputObj jsonhelper.JSONObject) (int, http.Header, io.WriterTo) {
     dcc := cxt.(DeleteContactContext)

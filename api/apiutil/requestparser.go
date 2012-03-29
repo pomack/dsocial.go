@@ -23,4 +23,3 @@ func UserIdFromRequestUrl(req wm.Request) string {
     }
     return ""
 }
-

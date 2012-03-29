@@ -1,12 +1,12 @@
 package account_test
 
 import (
+    "bytes"
     "github.com/pomack/dsocial.go/api/account"
-    dm "github.com/pomack/dsocial.go/models/dsocial"
     "github.com/pomack/dsocial.go/backend/datastore/inmemory"
+    dm "github.com/pomack/dsocial.go/models/dsocial"
     "github.com/pomack/jsonhelper.go/jsonhelper"
     "github.com/pomack/webmachine.go/webmachine"
-    "bytes"
     "http"
     "json"
     "testing"

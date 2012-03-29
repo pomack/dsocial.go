@@ -5,17 +5,17 @@ package apiutil
 // see https://github.com/abneptis/GoAWS/blob/master/LICENSE
 
 import (
-    dm "github.com/pomack/dsocial.go/models/dsocial"
-    auth "github.com/pomack/dsocial.go/backend/authentication"
     "bytes"
     "crypto"
     "crypto/hmac"
     "encoding/base64"
+    auth "github.com/pomack/dsocial.go/backend/authentication"
+    dm "github.com/pomack/dsocial.go/models/dsocial"
     "hash"
     "http"
     "os"
-    "strings"
     "strconv"
+    "strings"
     "time"
     "url"
 )

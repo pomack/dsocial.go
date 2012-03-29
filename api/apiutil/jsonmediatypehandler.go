@@ -1,9 +1,9 @@
 package apiutil
 
 import (
+    "bytes"
     "github.com/pomack/jsonhelper.go/jsonhelper"
     wm "github.com/pomack/webmachine.go/webmachine"
-    "bytes"
     "http"
     "io"
     "io/ioutil"
@@ -33,8 +33,8 @@ func NewJSONMediaTypeHandler(obj jsonhelper.JSONObject, lastModified *time.Time,
 func NewJSONMediaTypeHandlerWithGenerator(generator JSONResponseGenerator, lastModified *time.Time, etag string) *JSONMediaTypeHandler {
     return &JSONMediaTypeHandler{
         responseGenerator: generator,
-        lastModified: lastModified,
-        etag:         etag,
+        lastModified:      lastModified,
+        etag:              etag,
     }
 }
 
@@ -46,7 +46,7 @@ func (p *JSONMediaTypeHandler) MediaTypeHandleOutputTo(req wm.Request, cxt wm.Co
     var responseHeaders http.Header
     var responseStatusCode int
     if p.obj == nil && p.responseGenerator != nil {
-        p.obj, p.lastModified, p.etag, responseStatusCode, responseHeaders  = p.responseGenerator()
+        p.obj, p.lastModified, p.etag, responseStatusCode, responseHeaders = p.responseGenerator()
     }
     buf := bytes.NewBufferString("")
     obj := jsonhelper.NewJSONObject()
@@ -97,4 +97,3 @@ func (p *JSONMediaTypeHandler) MediaTypeHandleOutputTo(req wm.Request, cxt wm.Co
 func (p *JSONMediaTypeHandler) MediaTypeHandler() wm.MediaTypeHandler {
     return p
 }
-

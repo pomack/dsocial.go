@@ -16,14 +16,14 @@ import (
 
 var (
     ERR_INVALID_USERNAME_PASSWORD_COMBO = os.NewError("Invalid combination of username/password")
-    ERR_MUST_SPECIFY_USERNAME = os.NewError("Must specify username")
-    ERR_MUST_SPECIFY_PASSWORD = os.NewError("Must specify password")
-    ERR_VALUE_ERRORS = os.NewError("Value errors. See result")
+    ERR_MUST_SPECIFY_USERNAME           = os.NewError("Must specify username")
+    ERR_MUST_SPECIFY_PASSWORD           = os.NewError("Must specify password")
+    ERR_VALUE_ERRORS                    = os.NewError("Value errors. See result")
 )
 
 type LoginAccountRequestHandler struct {
     wm.DefaultRequestHandler
-    ds  acct.DataStore
+    ds     acct.DataStore
     authDS authentication.DataStore
 }
 
@@ -40,11 +40,11 @@ type LoginAccountContext interface {
 }
 
 type loginAccountContext struct {
-    username        string
-    password        string
-    inputValidated  bool
-    user            *dm.User
-    result          jsonhelper.JSONObject
+    username       string
+    password       string
+    inputValidated bool
+    user           *dm.User
+    result         jsonhelper.JSONObject
 }
 
 func NewLoginAccountContext() LoginAccountContext {
@@ -119,7 +119,6 @@ func (p *loginAccountContext) Result() jsonhelper.JSONObject {
 func (p *loginAccountContext) SetResult(result jsonhelper.JSONObject) {
     p.result = result
 }
-
 
 func NewLoginAccountRequestHandler(ds acct.DataStore, authDS authentication.DataStore) *LoginAccountRequestHandler {
     return &LoginAccountRequestHandler{ds: ds, authDS: authDS}
@@ -238,7 +237,6 @@ func (p *LoginAccountRequestHandler) ProcessPost(req wm.Request, cxt wm.Context)
     return req, cxt, code, nil, nil, err
 }
 
-
 func (p *LoginAccountRequestHandler) ContentTypesProvided(req wm.Request, cxt wm.Context) ([]wm.MediaTypeHandler, wm.Request, wm.Context, int, os.Error) {
     genFunc := func() (jsonhelper.JSONObject, *time.Time, string, int, http.Header) {
         lac := cxt.(LoginAccountContext)
@@ -248,7 +246,6 @@ func (p *LoginAccountRequestHandler) ContentTypesProvided(req wm.Request, cxt wm
     }
     return []wm.MediaTypeHandler{apiutil.NewJSONMediaTypeHandlerWithGenerator(genFunc, nil, "")}, req, cxt, 0, nil
 }
-
 
 func (p *LoginAccountRequestHandler) ContentTypesAccepted(req wm.Request, cxt wm.Context) ([]wm.MediaTypeInputHandler, wm.Request, wm.Context, int, os.Error) {
     arr := []wm.MediaTypeInputHandler{
@@ -346,7 +343,6 @@ func (p *LoginAccountRequestHandler) HandleJSONObjectInputHandler(req wm.Request
     return p.HandleInputHandlerAfterSetup(lac)
 }
 
-
 func (p *LoginAccountRequestHandler) HandleUrlEncodedInputHandler(req wm.Request, cxt wm.Context, inputObj url.Values) (int, http.Header, io.WriterTo) {
     lac := cxt.(LoginAccountContext)
     lac.SetFromUrlEncoded(inputObj)
@@ -373,7 +369,7 @@ func (p *LoginAccountRequestHandler) HandleInputHandlerAfterSetup(lac LoginAccou
     }
     accessKey, err := p.authDS.StoreAccessKey(dm.NewAccessKey(user.Id, ""))
     if err != nil {
-        return apiutil.OutputErrorMessage("Unable to process login request: " + err.String(), nil, http.StatusInternalServerError, nil)
+        return apiutil.OutputErrorMessage("Unable to process login request: "+err.String(), nil, http.StatusInternalServerError, nil)
     }
     obj := jsonhelper.NewJSONObject()
     obj.Set("user_id", user.Id)

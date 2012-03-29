@@ -16,7 +16,7 @@ import (
 
 type DeleteAccountRequestHandler struct {
     wm.DefaultRequestHandler
-    ds  acct.DataStore
+    ds     acct.DataStore
     authDS auth.DataStore
 }
 
@@ -41,13 +41,13 @@ type DeleteAccountContext interface {
 }
 
 type deleteAccountContext struct {
-    theType      string
-    user         *dm.User
-    consumer     *dm.Consumer
-    externalUser *dm.ExternalUser
+    theType            string
+    user               *dm.User
+    consumer           *dm.Consumer
+    externalUser       *dm.ExternalUser
     requestingUser     *dm.User
     requestingConsumer *dm.Consumer
-    wasDeleted  bool
+    wasDeleted         bool
 }
 
 func NewDeleteAccountContext() DeleteAccountContext {
@@ -145,7 +145,6 @@ func (p *deleteAccountContext) Deleted() bool {
     return p.wasDeleted
 }
 
-
 func NewDeleteAccountRequestHandler(ds acct.DataStore, authDS auth.DataStore) *DeleteAccountRequestHandler {
     return &DeleteAccountRequestHandler{ds: ds, authDS: authDS}
 }
@@ -235,7 +234,6 @@ func (p *DeleteAccountRequestHandler) IsAuthorized(req wm.Request, cxt wm.Contex
     return true, "", req, cxt, 0, nil
 }
 
-
 func (p *DeleteAccountRequestHandler) Forbidden(req wm.Request, cxt wm.Context) (bool, wm.Request, wm.Context, int, os.Error) {
     dac := cxt.(DeleteAccountContext)
     if dac.RequestingUser() != nil && dac.RequestingUser().Accessible() && (dac.RequestingUser().Role == dm.ROLE_ADMIN || (dac.User() != nil && dac.RequestingUser().Id == dac.User().Id)) {
@@ -298,12 +296,10 @@ func (p *DeleteAccountRequestHandler) CreatePath(req wm.Request, cxt wm.Context)
 }
 */
 
-
 func (p *DeleteAccountRequestHandler) ProcessPost(req wm.Request, cxt wm.Context) (wm.Request, wm.Context, int, http.Header, io.WriterTo, os.Error) {
     _, req, cxt, httpCode, httpError := p.DeleteResource(req, cxt)
     return req, cxt, httpCode, nil, nil, httpError
 }
-
 
 func (p *DeleteAccountRequestHandler) ContentTypesProvided(req wm.Request, cxt wm.Context) ([]wm.MediaTypeHandler, wm.Request, wm.Context, int, os.Error) {
     cac := cxt.(DeleteAccountContext)
@@ -407,15 +403,13 @@ func (p *DeleteAccountRequestHandler) ResponseIsRedirect(req wm.Request, cxt wm.
 }
 */
 
-
 func (p *DeleteAccountRequestHandler) HasRespBody(req wm.Request, cxt wm.Context) bool {
     return true
 }
 
-
 func (p *DeleteAccountRequestHandler) HandleJSONObjectInputHandler(req wm.Request, cxt wm.Context, inputObj jsonhelper.JSONObject) (int, http.Header, io.WriterTo) {
     dac := cxt.(DeleteAccountContext)
-    
+
     obj := dac.ToObject()
     var err os.Error
     if !dac.Deleted() {

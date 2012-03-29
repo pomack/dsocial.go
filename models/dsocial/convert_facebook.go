@@ -1,11 +1,11 @@
 package dsocial
 
 import (
-    "github.com/pomack/contacts.go/facebook"
     "container/list"
     "fmt"
-    "strings"
+    "github.com/pomack/contacts.go/facebook"
     "strconv"
+    "strings"
 )
 
 func fbDateToDsocialDate(fbDate string) *Date {

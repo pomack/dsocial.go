@@ -1,11 +1,11 @@
 package auth
 
 import (
-    "github.com/pomack/jsonhelper.go/jsonhelper"
     "github.com/pomack/dsocial.go/api/apiutil"
     acct "github.com/pomack/dsocial.go/backend/accounts"
     "github.com/pomack/dsocial.go/backend/authentication"
     dm "github.com/pomack/dsocial.go/models/dsocial"
+    "github.com/pomack/jsonhelper.go/jsonhelper"
     wm "github.com/pomack/webmachine.go/webmachine"
     "http"
     "io"
@@ -16,7 +16,7 @@ import (
 
 type SetPasswordRequestHandler struct {
     wm.DefaultRequestHandler
-    ds  acct.DataStore
+    ds     acct.DataStore
     authDS authentication.DataStore
 }
 
@@ -32,9 +32,9 @@ type SetPasswordContext interface {
 }
 
 type setPasswordContext struct {
-    user            *dm.User
-    password        string
-    result          jsonhelper.JSONObject
+    user     *dm.User
+    password string
+    result   jsonhelper.JSONObject
 }
 
 func NewSetPasswordContext() SetPasswordContext {
@@ -129,7 +129,6 @@ func (p *SetPasswordRequestHandler) AllowedMethods(req wm.Request, cxt wm.Contex
     return []string{wm.POST}, req, cxt, 0, nil
 }
 
-
 func (p *SetPasswordRequestHandler) IsAuthorized(req wm.Request, cxt wm.Context) (bool, string, wm.Request, wm.Context, int, os.Error) {
     spac := cxt.(SetPasswordContext)
     hasSignature, userId, _, err := apiutil.CheckSignature(p.authDS, req.UnderlyingRequest())
@@ -143,8 +142,6 @@ func (p *SetPasswordRequestHandler) IsAuthorized(req wm.Request, cxt wm.Context)
     return true, "", req, cxt, 0, nil
 }
 
-
-
 func (p *SetPasswordRequestHandler) Forbidden(req wm.Request, cxt wm.Context) (bool, wm.Request, wm.Context, int, os.Error) {
     spac := cxt.(SetPasswordContext)
     if spac.User() != nil && spac.User().Accessible() {
@@ -153,7 +150,6 @@ func (p *SetPasswordRequestHandler) Forbidden(req wm.Request, cxt wm.Context) (b
     // Cannot find user with specified id
     return true, req, cxt, 0, nil
 }
-
 
 /*
 func (p *SetPasswordRequestHandler) AllowMissingPost(req wm.Request, cxt wm.Context) (bool, wm.Request, wm.Context, int, os.Error) {
@@ -206,7 +202,6 @@ func (p *SetPasswordRequestHandler) ProcessPost(req wm.Request, cxt wm.Context) 
     return req, cxt, code, nil, nil, err
 }
 
-
 func (p *SetPasswordRequestHandler) ContentTypesProvided(req wm.Request, cxt wm.Context) ([]wm.MediaTypeHandler, wm.Request, wm.Context, int, os.Error) {
     genFunc := func() (jsonhelper.JSONObject, *time.Time, string, int, http.Header) {
         spac := cxt.(SetPasswordContext)
@@ -217,8 +212,6 @@ func (p *SetPasswordRequestHandler) ContentTypesProvided(req wm.Request, cxt wm.
     return []wm.MediaTypeHandler{apiutil.NewJSONMediaTypeHandlerWithGenerator(genFunc, nil, "")}, req, cxt, 0, nil
 }
 
-
-
 func (p *SetPasswordRequestHandler) ContentTypesAccepted(req wm.Request, cxt wm.Context) ([]wm.MediaTypeInputHandler, wm.Request, wm.Context, int, os.Error) {
     arr := []wm.MediaTypeInputHandler{
         apiutil.NewJSONMediaTypeInputHandler("", "", p, req.Body()),
@@ -226,7 +219,6 @@ func (p *SetPasswordRequestHandler) ContentTypesAccepted(req wm.Request, cxt wm.
     }
     return arr, req, cxt, 0, nil
 }
-
 
 /*
 func (p *SetPasswordRequestHandler) IsLanguageAvailable(languages []string, req wm.Request, cxt wm.Context) (bool, wm.Request, wm.Context, int, os.Error) {
@@ -306,7 +298,6 @@ func (p *SetPasswordRequestHandler) ResponseIsRedirect(req wm.Request, cxt wm.Co
 }
 */
 
-
 func (p *SetPasswordRequestHandler) HasRespBody(req wm.Request, cxt wm.Context) bool {
     return true
 }
@@ -317,13 +308,11 @@ func (p *SetPasswordRequestHandler) HandleJSONObjectInputHandler(req wm.Request,
     return p.HandleInputHandlerAfterSetup(lac)
 }
 
-
 func (p *SetPasswordRequestHandler) HandleUrlEncodedInputHandler(req wm.Request, cxt wm.Context, inputObj url.Values) (int, http.Header, io.WriterTo) {
     lac := cxt.(SetPasswordContext)
     lac.SetFromUrlEncoded(inputObj)
     return p.HandleInputHandlerAfterSetup(lac)
 }
-
 
 func (p *SetPasswordRequestHandler) HandleInputHandlerAfterSetup(cxt SetPasswordContext) (int, http.Header, io.WriterTo) {
     errors := make(map[string][]os.Error)

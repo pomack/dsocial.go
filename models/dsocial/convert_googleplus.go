@@ -1,8 +1,8 @@
 package dsocial
 
 import (
-    "github.com/pomack/contacts.go/googleplus"
     "container/list"
+    "github.com/pomack/contacts.go/googleplus"
 )
 
 func GooglePlusPersonToDsocial(g *googleplus.Person, o *Contact, dsocialUserId string) *Contact {

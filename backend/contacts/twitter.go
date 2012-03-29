@@ -1,11 +1,11 @@
 package contacts
 
 import (
-    "github.com/pomack/jsonhelper.go/jsonhelper"
-    "github.com/pomack/oauth2_client.go/oauth2_client"
+    "container/list"
     "github.com/pomack/contacts.go/twitter"
     dm "github.com/pomack/dsocial.go/models/dsocial"
-    "container/list"
+    "github.com/pomack/jsonhelper.go/jsonhelper"
+    "github.com/pomack/oauth2_client.go/oauth2_client"
     "os"
 )
 
@@ -25,7 +25,6 @@ func (p *TwitterContactServiceSettings) ContactsServiceId() string {
 }
 
 type TwitterContactService struct {
-
 }
 
 func NewTwitterContactService() *TwitterContactService {

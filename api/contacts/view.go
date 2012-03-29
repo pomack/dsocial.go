@@ -1,12 +1,12 @@
 package contacts
 
 import (
-    "github.com/pomack/jsonhelper.go/jsonhelper"
     "github.com/pomack/dsocial.go/api/apiutil"
     acct "github.com/pomack/dsocial.go/backend/accounts"
-    bc "github.com/pomack/dsocial.go/backend/contacts"
     "github.com/pomack/dsocial.go/backend/authentication"
+    bc "github.com/pomack/dsocial.go/backend/contacts"
     dm "github.com/pomack/dsocial.go/models/dsocial"
+    "github.com/pomack/jsonhelper.go/jsonhelper"
     wm "github.com/pomack/webmachine.go/webmachine"
     "http"
     "io"
@@ -17,8 +17,8 @@ import (
 
 type ViewContactRequestHandler struct {
     wm.DefaultRequestHandler
-    ds  acct.DataStore
-    authDS authentication.DataStore
+    ds         acct.DataStore
+    authDS     authentication.DataStore
     contactsDS bc.DataStoreService
 }
 
@@ -40,13 +40,13 @@ type ViewContactContext interface {
 }
 
 type viewContactContext struct {
-    authUser        *dm.User
-    user            *dm.User
-    contact         *dm.Contact
-    contactId       string
-    result          jsonhelper.JSONObject
-    lastModified    *time.Time
-    etag            string
+    authUser     *dm.User
+    user         *dm.User
+    contact      *dm.Contact
+    contactId    string
+    result       jsonhelper.JSONObject
+    lastModified *time.Time
+    etag         string
 }
 
 func NewViewContactContext() ViewContactContext {
@@ -153,7 +153,6 @@ func (p *UpdateAccountRequestHandler) ServiceAvailable(req wm.Request, cxt wm.Co
 }
 */
 
-
 func (p *ViewContactRequestHandler) ResourceExists(req wm.Request, cxt wm.Context) (bool, wm.Request, wm.Context, int, os.Error) {
     vcc := cxt.(ViewContactContext)
     path := req.URLParts()
@@ -190,11 +189,9 @@ func (p *ViewContactRequestHandler) ResourceExists(req wm.Request, cxt wm.Contex
     return contact != nil, req, cxt, httpStatus, err
 }
 
-
 func (p *ViewContactRequestHandler) AllowedMethods(req wm.Request, cxt wm.Context) ([]string, wm.Request, wm.Context, int, os.Error) {
     return []string{wm.GET, wm.HEAD}, req, cxt, 0, nil
 }
-
 
 func (p *ViewContactRequestHandler) IsAuthorized(req wm.Request, cxt wm.Context) (bool, string, wm.Request, wm.Context, int, os.Error) {
     vcc := cxt.(ViewContactContext)
@@ -214,8 +211,6 @@ func (p *ViewContactRequestHandler) IsAuthorized(req wm.Request, cxt wm.Context)
     return true, "", req, cxt, 0, nil
 }
 
-
-
 func (p *ViewContactRequestHandler) Forbidden(req wm.Request, cxt wm.Context) (bool, wm.Request, wm.Context, int, os.Error) {
     vcc := cxt.(ViewContactContext)
     if vcc.AuthUser() != nil && vcc.AuthUser().Accessible() && vcc.User() != nil && vcc.User().Accessible() && vcc.AuthUser().Id == vcc.User().Id {
@@ -224,7 +219,6 @@ func (p *ViewContactRequestHandler) Forbidden(req wm.Request, cxt wm.Context) (b
     // Cannot find user with specified id
     return true, req, cxt, 0, nil
 }
-
 
 /*
 func (p *ViewContactRequestHandler) AllowMissingPost(req wm.Request, cxt wm.Context) (bool, wm.Request, wm.Context, int, os.Error) {
@@ -289,8 +283,6 @@ func (p *ViewContactRequestHandler) ContentTypesProvided(req wm.Request, cxt wm.
     return []wm.MediaTypeHandler{apiutil.NewJSONMediaTypeHandlerWithGenerator(genFunc, nil, "")}, req, cxt, 0, nil
 }
 
-
-
 func (p *ViewContactRequestHandler) ContentTypesAccepted(req wm.Request, cxt wm.Context) ([]wm.MediaTypeInputHandler, wm.Request, wm.Context, int, os.Error) {
     arr := []wm.MediaTypeInputHandler{
         apiutil.NewJSONMediaTypeInputHandler("", "", p, req.Body()),
@@ -298,7 +290,6 @@ func (p *ViewContactRequestHandler) ContentTypesAccepted(req wm.Request, cxt wm.
     }
     return arr, req, cxt, 0, nil
 }
-
 
 /*
 func (p *ViewContactRequestHandler) IsLanguageAvailable(languages []string, req wm.Request, cxt wm.Context) (bool, wm.Request, wm.Context, int, os.Error) {
@@ -349,12 +340,10 @@ func (p *ViewContactRequestHandler) MovedTemporarily(req wm.Request, cxt wm.Cont
 }
 */
 
-
 func (p *ViewContactRequestHandler) LastModified(req wm.Request, cxt wm.Context) (*time.Time, wm.Request, wm.Context, int, os.Error) {
     vcc := cxt.(ViewContactContext)
     return vcc.LastModified(), req, cxt, 0, nil
 }
-
 
 /*
 func (p *ViewContactRequestHandler) Expires(req wm.Request, cxt wm.Context) (*time.Time, wm.Request, wm.Context, int, os.Error) {
@@ -366,7 +355,6 @@ func (p *ViewContactRequestHandler) GenerateETag(req wm.Request, cxt wm.Context)
     vcc := cxt.(ViewContactContext)
     return vcc.ETag(), req, cxt, 0, nil
 }
-
 
 /*
 func (p *ViewContactRequestHandler) FinishRequest(req wm.Request, cxt wm.Context) (bool, wm.Request, wm.Context, int, os.Error) {
@@ -380,7 +368,6 @@ func (p *ViewContactRequestHandler) ResponseIsRedirect(req wm.Request, cxt wm.Co
 }
 */
 
-
 func (p *ViewContactRequestHandler) HasRespBody(req wm.Request, cxt wm.Context) bool {
     return true
 }
@@ -390,12 +377,10 @@ func (p *ViewContactRequestHandler) HandleJSONObjectInputHandler(req wm.Request,
     return p.HandleInputHandlerAfterSetup(vcc)
 }
 
-
 func (p *ViewContactRequestHandler) HandleUrlEncodedInputHandler(req wm.Request, cxt wm.Context, inputObj url.Values) (int, http.Header, io.WriterTo) {
     vcc := cxt.(ViewContactContext)
     return p.HandleInputHandlerAfterSetup(vcc)
 }
-
 
 func (p *ViewContactRequestHandler) HandleInputHandlerAfterSetup(cxt ViewContactContext) (int, http.Header, io.WriterTo) {
     obj := jsonhelper.NewJSONObject()

@@ -1,12 +1,12 @@
 package dsocial
 
 import (
-    "hash"
     "crypto/md5"
     "crypto/sha1"
     "crypto/sha256"
     "crypto/sha512"
     "fmt"
+    "hash"
     "rand"
     "strings"
 )
@@ -40,9 +40,9 @@ type UserPassword struct {
 
 type AccessKey struct {
     PersistableModel `json:"model,omitempty,collapse"`
-    UserId           string        `json:"user_id,omitempty"`
-    ConsumerId       string        `json:"consumer_id,omitempty"`
-    PrivateKey       string        `json:"private_key,omitempty"`
+    UserId           string `json:"user_id,omitempty"`
+    ConsumerId       string `json:"consumer_id,omitempty"`
+    PrivateKey       string `json:"private_key,omitempty"`
 }
 
 func (p HashAlgorithm) Hasher() (hasher hash.Hash) {
@@ -74,7 +74,7 @@ func (p HashAlgorithm) IsValid() (valid bool) {
 }
 
 func NewUserPassword(userId, password string) *UserPassword {
-    p := &UserPassword{UserId:userId}
+    p := &UserPassword{UserId: userId}
     p.SetPassword(password)
     return p
 }

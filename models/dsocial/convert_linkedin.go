@@ -1,8 +1,8 @@
 package dsocial
 
 import (
-    "github.com/pomack/contacts.go/linkedin"
     "container/list"
+    "github.com/pomack/contacts.go/linkedin"
     "strconv"
     "strings"
 )

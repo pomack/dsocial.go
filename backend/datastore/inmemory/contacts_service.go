@@ -1,10 +1,10 @@
 package inmemory
 
 import (
-    dm "github.com/pomack/dsocial.go/models/dsocial"
-    bc "github.com/pomack/dsocial.go/backend/contacts"
     "container/list"
     "fmt"
+    bc "github.com/pomack/dsocial.go/backend/contacts"
+    dm "github.com/pomack/dsocial.go/models/dsocial"
     "os"
     "strings"
     "time"
@@ -226,6 +226,7 @@ func (p *InMemoryDataStore) DsocialIdForExternalContactId(externalServiceId, ext
     dsocialContactId, _ = p.retrieveString(_INMEMORY_EXTERNAL_TO_INTERNAL_CONTACT_MAPPING_COLLECTION_NAME, id)
     return
 }
+
 // Retrieve the dsocial group id for the specified external service/user id/group id combo
 // Returns:
 //   dsocialGroupId : the dsocial group id if it exists or empty if not found
@@ -236,6 +237,7 @@ func (p *InMemoryDataStore) DsocialIdForExternalGroupId(externalServiceId, exter
     dsocialGroupId, _ = p.retrieveString(_INMEMORY_EXTERNAL_TO_INTERNAL_GROUP_MAPPING_COLLECTION_NAME, id)
     return
 }
+
 // Retrieve the external contact id for the specified external service/external user id/dsocial user id/dsocial contact id combo
 // Returns:
 //   externalContactId : the dsocial contact id if it exists or empty if not found
@@ -245,6 +247,7 @@ func (p *InMemoryDataStore) ExternalContactIdForDsocialId(externalServiceId, ext
     externalContactId, _ = p.retrieveFromStringMapCollection(dsocialUserId, _INMEMORY_INTERNAL_TO_EXTERNAL_CONTACT_MAPPING_COLLECTION_NAME, dsocialContactId, id)
     return
 }
+
 // Retrieve the external group id for the specified external service/external user id/dsocial user id/dsocial group id combo
 // Returns:
 //   externalGroupId : the dsocial group id if it exists or empty if not found
@@ -254,6 +257,7 @@ func (p *InMemoryDataStore) ExternalGroupIdForDsocialId(externalServiceId, exter
     externalGroupId, _ = p.retrieveFromStringMapCollection(dsocialUserId, _INMEMORY_INTERNAL_TO_EXTERNAL_GROUP_MAPPING_COLLECTION_NAME, dsocialGroupId, id)
     return
 }
+
 // Stores the dsocial contact id <-> external contact id mapping
 // Returns:
 //   externalExisted : whether the external contact id mapping already existed and was overwritten
@@ -289,6 +293,7 @@ func (p *InMemoryDataStore) StoreDsocialExternalContactMapping(externalServiceId
     }
     return
 }
+
 // Stores the dsocial contact id <-> external group id mapping
 // Returns:
 //   externalExisted : whether the external group id mapping already existed and was overwritten
@@ -333,6 +338,7 @@ func (p *InMemoryDataStore) RetrieveExternalContact(externalServiceId, externalU
     externalContact, _ = p.retrieve(_INMEMORY_EXTERNAL_CONTACT_COLLECTION_NAME, id)
     return
 }
+
 // Retrieve external group
 // Returns:
 //   externalGroup : the group as stored into the service using StoreExternalGroup or nil if not found
@@ -344,6 +350,7 @@ func (p *InMemoryDataStore) RetrieveExternalGroup(externalServiceId, externalUse
     externalGroup, _ = p.retrieve(_INMEMORY_EXTERNAL_GROUP_COLLECTION_NAME, id)
     return
 }
+
 // Stores external contact
 // Returns:
 //   id : the internal id used to store the external contact
@@ -364,6 +371,7 @@ func (p *InMemoryDataStore) StoreExternalContact(externalServiceId, externalUser
     id = externalContactId
     return
 }
+
 // Stores external group
 // Returns:
 //   id : the internal id used to store the external group
@@ -384,6 +392,7 @@ func (p *InMemoryDataStore) StoreExternalGroup(externalServiceId, externalUserId
     id = externalGroupId
     return
 }
+
 // Deletes external contact
 // Returns:
 //   existed : whether the contact existed upon deletion
@@ -395,6 +404,7 @@ func (p *InMemoryDataStore) DeleteExternalContact(externalServiceId, externalUse
     _, existed = p.delete(_INMEMORY_EXTERNAL_CONTACT_COLLECTION_NAME, id)
     return
 }
+
 // Deletes external group
 // Returns:
 //   existed : whether the group existed upon deletion
@@ -425,6 +435,7 @@ func (p *InMemoryDataStore) RetrieveDsocialContactForExternalContact(externalSer
     }
     return
 }
+
 // Retrieve dsocial group
 // Returns:
 //   dsocialGroup : the group as stored into the service using StoreDsocialGroup or nil if not found
@@ -443,6 +454,7 @@ func (p *InMemoryDataStore) RetrieveDsocialGroupForExternalGroup(externalService
     }
     return
 }
+
 // Stores dsocial contact
 // Returns:
 //   dsocialContact : the contact, modified to include items like Id and LastModified/Created
@@ -464,6 +476,7 @@ func (p *InMemoryDataStore) StoreDsocialContactForExternalContact(externalServic
     dsocialContact = contact
     return
 }
+
 // Stores dsocial group
 // Returns:
 //   dsocialGroup : the group, modified to include items like Id and LastModified/Created
@@ -486,6 +499,7 @@ func (p *InMemoryDataStore) StoreDsocialGroupForExternalGroup(externalServiceId,
     dsocialGroup = group
     return
 }
+
 // Deletes dsocial contact
 // Returns:
 //   existed : whether the contact existed upon deletion
@@ -497,6 +511,7 @@ func (p *InMemoryDataStore) DeleteDsocialContactForExternalContact(externalServi
     _, existed = p.delete(_INMEMORY_CONTACT_FOR_EXTERNAL_CONTACT_COLLECTION_NAME, extid)
     return
 }
+
 // Deletes dsocial group
 // Returns:
 //   existed : whether the group existed upon deletion
@@ -509,12 +524,11 @@ func (p *InMemoryDataStore) DeleteDsocialGroupForExternalGroup(externalServiceId
     return
 }
 
- 
- // List dsocial contacts
- // Returns:
- //   dsocialContacts : list of contacts stored in the service
- //   next : token for the next list of contacts
- //   err : error or nil
+// List dsocial contacts
+// Returns:
+//   dsocialContacts : list of contacts stored in the service
+//   next : token for the next list of contacts
+//   err : error or nil
 func (p *InMemoryDataStore) ListDsocialContacts(dsocialUserId string, from bc.NextToken, maxCount int) (dsocialContacts []*dm.Contact, next bc.NextToken, err os.Error) {
     if maxCount <= 0 || maxCount > 100 {
         maxCount = 100
@@ -547,7 +561,6 @@ func (p *InMemoryDataStore) ListDsocialContacts(dsocialUserId string, from bc.Ne
     return
 }
 
-
 // Retrieve dsocial contact
 // Returns:
 //   dsocialContact : the contact as stored into the service using StoreDsocialContact or nil if not found
@@ -565,6 +578,7 @@ func (p *InMemoryDataStore) RetrieveDsocialContact(dsocialUserId, dsocialContact
     }
     return
 }
+
 // Retrieve dsocial group
 // Returns:
 //   dsocialGroup : the group as stored into the service using StoreDsocialGroup or nil if not found
@@ -582,6 +596,7 @@ func (p *InMemoryDataStore) RetrieveDsocialGroup(dsocialUserId, dsocialGroupId s
     }
     return
 }
+
 // Stores dsocial contact
 // Returns:
 //   dsocialContact : the contact, modified to include items like Id and LastModified/Created
@@ -602,6 +617,7 @@ func (p *InMemoryDataStore) StoreDsocialContact(dsocialUserId, dsocialContactId 
     dsocialContact = contact
     return
 }
+
 // Stores dsocial group
 // Returns:
 //   dsocialGroup : the group, modified to include items like Id and LastModified/Created
@@ -621,6 +637,7 @@ func (p *InMemoryDataStore) StoreDsocialGroup(dsocialUserId, dsocialGroupId stri
     dsocialGroup = group
     return
 }
+
 // Deletes dsocial contact
 // Returns:
 //   existed : whether the contact existed upon deletion
@@ -630,6 +647,7 @@ func (p *InMemoryDataStore) DeleteDsocialContact(dsocialUserId, dsocialContactId
     _, existed = p.delete(_INMEMORY_CONTACT_COLLECTION_NAME, dsocialContactId)
     return
 }
+
 // Deletes dsocial group
 // Returns:
 //   existed : whether the group existed upon deletion

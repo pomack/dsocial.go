@@ -1,14 +1,14 @@
 package contacts
 
 import (
-    "github.com/pomack/jsonhelper.go/jsonhelper"
+    "container/list"
     "github.com/pomack/dsocial.go/api/apiutil"
     acct "github.com/pomack/dsocial.go/backend/accounts"
     auth "github.com/pomack/dsocial.go/backend/authentication"
     bc "github.com/pomack/dsocial.go/backend/contacts"
     dm "github.com/pomack/dsocial.go/models/dsocial"
+    "github.com/pomack/jsonhelper.go/jsonhelper"
     wm "github.com/pomack/webmachine.go/webmachine"
-    "container/list"
     "http"
     "io"
     "json"
@@ -19,8 +19,8 @@ import (
 
 type UpdateContactRequestHandler struct {
     wm.DefaultRequestHandler
-    ds  acct.DataStore
-    authDS auth.DataStore
+    ds         acct.DataStore
+    authDS     auth.DataStore
     contactsDS bc.DataStoreService
 }
 
@@ -190,12 +190,12 @@ func (p *UpdateContactRequestHandler) StartRequest(req wm.Request, cxt wm.Contex
     var userId string
     var contactId string
     switch pathLen {
-        case 9:
-            userId = path[5]
-            contactId = path[8]
-        case 6:
-            userId = path[2]
-            contactId = path[5]
+    case 9:
+        userId = path[5]
+        contactId = path[8]
+    case 6:
+        userId = path[2]
+        contactId = path[5]
     }
     if userId != "" {
         user, _ := p.ds.RetrieveUserAccountById(userId)
@@ -378,7 +378,6 @@ func (p *UpdateContactRequestHandler) GenerateETag(req wm.Request, cxt wm.Contex
     ucc := cxt.(UpdateContactContext)
     return ucc.ETag(), req, cxt, 0, nil
 }
-
 
 /*
 func (p *UpdateContactRequestHandler) FinishRequest(req wm.Request, cxt wm.Context) (bool, wm.Request, wm.Context, int, os.Error) {

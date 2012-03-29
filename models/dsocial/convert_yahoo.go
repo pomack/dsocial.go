@@ -1,9 +1,9 @@
 package dsocial
 
 import (
-    "github.com/pomack/contacts.go/yahoo"
     "container/list"
     "container/vector"
+    "github.com/pomack/contacts.go/yahoo"
 )
 
 func YahooContactToDsocial(l *yahoo.Contact, o *Contact, dsocialUserId string) *Contact {

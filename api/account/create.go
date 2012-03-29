@@ -15,7 +15,7 @@ import (
 
 type CreateAccountRequestHandler struct {
     wm.DefaultRequestHandler
-    ds  acct.DataStore
+    ds     acct.DataStore
     authDS auth.DataStore
 }
 
@@ -38,13 +38,13 @@ type CreateAccountContext interface {
 }
 
 type createAccountContext struct {
-    theType      string
-    user         *dm.User
-    consumer     *dm.Consumer
-    externalUser *dm.ExternalUser
+    theType            string
+    user               *dm.User
+    consumer           *dm.Consumer
+    externalUser       *dm.ExternalUser
     requestingUser     *dm.User
     requestingConsumer *dm.Consumer
-    password     string
+    password           string
 }
 
 func NewCreateAccountContext() CreateAccountContext {
@@ -222,7 +222,6 @@ func (p *CreateAccountRequestHandler) IsAuthorized(req wm.Request, cxt wm.Contex
 }
 */
 
-
 func (p *CreateAccountRequestHandler) Forbidden(req wm.Request, cxt wm.Context) (bool, wm.Request, wm.Context, int, os.Error) {
     cac := cxt.(CreateAccountContext)
     hasSignature, userId, consumerId, err := apiutil.CheckSignature(p.authDS, req.UnderlyingRequest())
@@ -245,7 +244,6 @@ func (p *CreateAccountRequestHandler) Forbidden(req wm.Request, cxt wm.Context) 
     }
     return false, req, cxt, 0, nil
 }
-
 
 func (p *CreateAccountRequestHandler) AllowMissingPost(req wm.Request, cxt wm.Context) (bool, wm.Request, wm.Context, int, os.Error) {
     return true, req, cxt, 0, nil
@@ -395,7 +393,7 @@ func (p *CreateAccountRequestHandler) HandleJSONObjectInputHandler(req wm.Reques
     cac := cxt.(CreateAccountContext)
     cac.SetFromJSON(inputObj)
     cac.CleanInput(cac.RequestingUser())
-    
+
     errors := make(map[string][]os.Error)
     var obj map[string]interface{}
     var accessKey *dm.AccessKey
@@ -421,7 +419,7 @@ func (p *CreateAccountRequestHandler) HandleJSONObjectInputHandler(req wm.Reques
         obj = make(map[string]interface{})
         obj["user"] = user
         obj["type"] = "user"
-        obj["key"]  = accessKey
+        obj["key"] = accessKey
     } else if user := cac.Consumer(); user != nil {
         user.Validate(true, errors)
         if len(errors) == 0 {
@@ -433,7 +431,7 @@ func (p *CreateAccountRequestHandler) HandleJSONObjectInputHandler(req wm.Reques
         obj = make(map[string]interface{})
         obj["consumer"] = user
         obj["type"] = "consumer"
-        obj["key"]  = accessKey
+        obj["key"] = accessKey
     } else if user := cac.ExternalUser(); user != nil {
         user.Validate(true, errors)
         if len(errors) == 0 {
@@ -445,7 +443,7 @@ func (p *CreateAccountRequestHandler) HandleJSONObjectInputHandler(req wm.Reques
         obj = make(map[string]interface{})
         obj["external_user"] = user
         obj["type"] = "external_user"
-        obj["key"]  = accessKey
+        obj["key"] = accessKey
     } else {
         return apiutil.OutputErrorMessage("\"type\" must be \"user\", \"consumer\", or \"external_user\"", nil, 400, nil)
     }

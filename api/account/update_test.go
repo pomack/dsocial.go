@@ -1,14 +1,14 @@
 package account_test
 
 import (
+    "bytes"
     "github.com/pomack/dsocial.go/api/account"
     "github.com/pomack/dsocial.go/api/apiutil"
-    dm "github.com/pomack/dsocial.go/models/dsocial"
     "github.com/pomack/dsocial.go/backend/authentication"
     "github.com/pomack/dsocial.go/backend/datastore/inmemory"
+    dm "github.com/pomack/dsocial.go/models/dsocial"
     "github.com/pomack/jsonhelper.go/jsonhelper"
     "github.com/pomack/webmachine.go/webmachine"
-    "bytes"
     "http"
     "json"
     "testing"
@@ -17,31 +17,31 @@ import (
 func initializeUpdateUserAccountDS() (ds *inmemory.InMemoryDataStore, wm webmachine.WebMachine) {
     ds = inmemory.NewInMemoryDataStore()
     gw, _ := ds.CreateUserAccount(&dm.User{
-        Role: dm.ROLE_ADMIN,
-        Name: "George Washington",
-        Username: "firstpresident",
-        Email: "george@washington.com",
+        Role:        dm.ROLE_ADMIN,
+        Name:        "George Washington",
+        Username:    "firstpresident",
+        Email:       "george@washington.com",
         PhoneNumber: "+1-405-555-5555",
-        Address: "Valley Forge",
-        AllowLogin: true,
+        Address:     "Valley Forge",
+        AllowLogin:  true,
     })
     ds.CreateUserAccount(&dm.User{
-        Role: dm.ROLE_STANDARD,
-        Name: "Thomas Jefferson",
-        Username: "secondpresident",
-        Email: "thomas@jefferson.com",
+        Role:        dm.ROLE_STANDARD,
+        Name:        "Thomas Jefferson",
+        Username:    "secondpresident",
+        Email:       "thomas@jefferson.com",
         PhoneNumber: "+1-401-555-5555",
-        Address: "Virginia",
-        AllowLogin: true,
+        Address:     "Virginia",
+        AllowLogin:  true,
     })
     ja, _ := ds.CreateUserAccount(&dm.User{
-        Role: dm.ROLE_TECHNICAL_SUPPORT,
-        Name: "John Adams",
-        Username: "thirdpresident",
-        Email: "john@adams.com",
+        Role:        dm.ROLE_TECHNICAL_SUPPORT,
+        Name:        "John Adams",
+        Username:    "thirdpresident",
+        Email:       "john@adams.com",
         PhoneNumber: "+1-402-555-5555",
-        Address: "Boston, MA",
-        AllowLogin: true,
+        Address:     "Boston, MA",
+        AllowLogin:  true,
     })
     authentication.GenerateNewAccessKey(ds, gw.Id, "")
     authentication.GenerateNewAccessKey(ds, ja.Id, "")
@@ -67,7 +67,7 @@ func TestUpdateUserAccount1(t *testing.T) {
     otherUser = new(dm.User)
     otherUser.InitFromJSONObject(jsonobj)
     jsonbuf, _ := json.Marshal(jsonobj)
-    req, _ := http.NewRequest(webmachine.POST, "http://localhost/api/v1/json/account/user/update/" + otherUser.Id, bytes.NewBuffer(jsonbuf))
+    req, _ := http.NewRequest(webmachine.POST, "http://localhost/api/v1/json/account/user/update/"+otherUser.Id, bytes.NewBuffer(jsonbuf))
     req.Header.Set("Content-Type", webmachine.MIME_TYPE_JSON+"; charset=utf-8")
     req.Header.Set("Accept", webmachine.MIME_TYPE_JSON+"; charset=utf-8")
     req.Header.Set("Accept-Charset", "utf-8")
@@ -143,7 +143,6 @@ func TestUpdateUserAccount1(t *testing.T) {
     }
 }
 
-
 func TestUpdateUserAccountAsAdmin(t *testing.T) {
     ds, wm := initializeUpdateUserAccountDS()
     gw, _ := ds.FindUserAccountByUsername("firstpresident")
@@ -161,7 +160,7 @@ func TestUpdateUserAccountAsAdmin(t *testing.T) {
     otherUser = new(dm.User)
     otherUser.InitFromJSONObject(jsonobj)
     jsonbuf, _ := json.Marshal(jsonobj)
-    req, _ := http.NewRequest(webmachine.POST, "http://localhost/api/v1/json/account/user/update/" + otherUser.Id, bytes.NewBuffer(jsonbuf))
+    req, _ := http.NewRequest(webmachine.POST, "http://localhost/api/v1/json/account/user/update/"+otherUser.Id, bytes.NewBuffer(jsonbuf))
     req.Header.Set("Content-Type", webmachine.MIME_TYPE_JSON+"; charset=utf-8")
     req.Header.Set("Accept", webmachine.MIME_TYPE_JSON+"; charset=utf-8")
     req.Header.Set("Accept-Charset", "utf-8")
@@ -251,7 +250,7 @@ func TestUpdateUserAccountAsNonAdminSelf(t *testing.T) {
     otherUser = new(dm.User)
     otherUser.InitFromJSONObject(jsonobj)
     jsonbuf, _ := json.Marshal(jsonobj)
-    req, _ := http.NewRequest(webmachine.POST, "http://localhost/api/v1/json/account/user/update/" + otherUser.Id, bytes.NewBuffer(jsonbuf))
+    req, _ := http.NewRequest(webmachine.POST, "http://localhost/api/v1/json/account/user/update/"+otherUser.Id, bytes.NewBuffer(jsonbuf))
     req.Header.Set("Content-Type", webmachine.MIME_TYPE_JSON+"; charset=utf-8")
     req.Header.Set("Accept", webmachine.MIME_TYPE_JSON+"; charset=utf-8")
     req.Header.Set("Accept-Charset", "utf-8")
@@ -341,7 +340,7 @@ func TestUpdateUserAccountAsNonAdminForOtherUser(t *testing.T) {
     otherUser = new(dm.User)
     otherUser.InitFromJSONObject(jsonobj)
     jsonbuf, _ := json.Marshal(jsonobj)
-    req, _ := http.NewRequest(webmachine.POST, "http://localhost/api/v1/json/account/user/update/" + otherUser.Id, bytes.NewBuffer(jsonbuf))
+    req, _ := http.NewRequest(webmachine.POST, "http://localhost/api/v1/json/account/user/update/"+otherUser.Id, bytes.NewBuffer(jsonbuf))
     req.Header.Set("Content-Type", webmachine.MIME_TYPE_JSON+"; charset=utf-8")
     req.Header.Set("Accept", webmachine.MIME_TYPE_JSON+"; charset=utf-8")
     req.Header.Set("Accept-Charset", "utf-8")
@@ -426,7 +425,7 @@ func TestUpdateUserAccountMissingSignature(t *testing.T) {
     otherUser = new(dm.User)
     otherUser.InitFromJSONObject(jsonobj)
     jsonbuf, _ := json.Marshal(jsonobj)
-    req, _ := http.NewRequest(webmachine.POST, "http://localhost/api/v1/json/account/user/update/" + gw.Id, bytes.NewBuffer(jsonbuf))
+    req, _ := http.NewRequest(webmachine.POST, "http://localhost/api/v1/json/account/user/update/"+gw.Id, bytes.NewBuffer(jsonbuf))
     req.Header.Set("Content-Type", webmachine.MIME_TYPE_JSON+"; charset=utf-8")
     req.Header.Set("Accept", webmachine.MIME_TYPE_JSON+"; charset=utf-8")
     req.Header.Set("Accept-Charset", "utf-8")

@@ -13,7 +13,7 @@ import (
 
 type GeneratePrivateKeyRequestHandler struct {
     wm.DefaultRequestHandler
-    ds  acct.DataStore
+    ds     acct.DataStore
     authDS authentication.DataStore
 }
 
@@ -27,9 +27,9 @@ type GeneratePrivateKeyContext interface {
 }
 
 type generatePrivateKeyContext struct {
-    accessKey       *dm.AccessKey
-    user            *dm.User
-    consumer        *dm.Consumer
+    accessKey *dm.AccessKey
+    user      *dm.User
+    consumer  *dm.Consumer
 }
 
 func NewGeneratePrivateKeyContext() GeneratePrivateKeyContext {
@@ -114,7 +114,6 @@ func (p *GeneratePrivateKeyRequestHandler) AllowedMethods(req wm.Request, cxt wm
     return []string{wm.POST}, req, cxt, 0, nil
 }
 
-
 func (p *GeneratePrivateKeyRequestHandler) IsAuthorized(req wm.Request, cxt wm.Context) (bool, string, wm.Request, wm.Context, int, os.Error) {
     gpkc := cxt.(GeneratePrivateKeyContext)
     hasSignature, userId, consumerId, err := apiutil.CheckSignature(p.authDS, req.UnderlyingRequest())
@@ -136,8 +135,6 @@ func (p *GeneratePrivateKeyRequestHandler) IsAuthorized(req wm.Request, cxt wm.C
     return true, "", req, cxt, 0, nil
 }
 
-
-
 func (p *GeneratePrivateKeyRequestHandler) Forbidden(req wm.Request, cxt wm.Context) (bool, wm.Request, wm.Context, int, os.Error) {
     gpkc := cxt.(GeneratePrivateKeyContext)
     if gpkc.User() == nil && gpkc.Consumer() == nil {
@@ -154,7 +151,6 @@ func (p *GeneratePrivateKeyRequestHandler) Forbidden(req wm.Request, cxt wm.Cont
     }
     return false, req, cxt, 0, nil
 }
-
 
 /*
 func (p *GeneratePrivateKeyRequestHandler) AllowMissingPost(req wm.Request, cxt wm.Context) (bool, wm.Request, wm.Context, int, os.Error) {

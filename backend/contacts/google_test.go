@@ -1,13 +1,13 @@
 package contacts_test
 
 import (
-    "github.com/pomack/jsonhelper.go/jsonhelper"
-    "github.com/pomack/oauth2_client.go/oauth2_client"
+    "bytes"
     "github.com/pomack/contacts.go/google"
     "github.com/pomack/dsocial.go/backend/contacts"
     "github.com/pomack/dsocial.go/backend/datastore/inmemory"
     dm "github.com/pomack/dsocial.go/models/dsocial"
-    "bytes"
+    "github.com/pomack/jsonhelper.go/jsonhelper"
+    "github.com/pomack/oauth2_client.go/oauth2_client"
     "json"
     "testing"
     "time"

@@ -3,9 +3,9 @@ package account_test
 import (
     "github.com/pomack/dsocial.go/api/account"
     "github.com/pomack/dsocial.go/api/apiutil"
-    dm "github.com/pomack/dsocial.go/models/dsocial"
     "github.com/pomack/dsocial.go/backend/authentication"
     "github.com/pomack/dsocial.go/backend/datastore/inmemory"
+    dm "github.com/pomack/dsocial.go/models/dsocial"
     "github.com/pomack/jsonhelper.go/jsonhelper"
     "github.com/pomack/webmachine.go/webmachine"
     "http"
@@ -16,31 +16,31 @@ import (
 func initializeViewUserAccountDS() (ds *inmemory.InMemoryDataStore, wm webmachine.WebMachine) {
     ds = inmemory.NewInMemoryDataStore()
     gw, _ := ds.CreateUserAccount(&dm.User{
-        Role: dm.ROLE_ADMIN,
-        Name: "George Washington",
-        Username: "firstpresident",
-        Email: "george@washington.com",
+        Role:        dm.ROLE_ADMIN,
+        Name:        "George Washington",
+        Username:    "firstpresident",
+        Email:       "george@washington.com",
         PhoneNumber: "+1-405-555-5555",
-        Address: "Valley Forge",
-        AllowLogin: true,
+        Address:     "Valley Forge",
+        AllowLogin:  true,
     })
     ds.CreateUserAccount(&dm.User{
-        Role: dm.ROLE_STANDARD,
-        Name: "Thomas Jefferson",
-        Username: "secondpresident",
-        Email: "thomas@jefferson.com",
+        Role:        dm.ROLE_STANDARD,
+        Name:        "Thomas Jefferson",
+        Username:    "secondpresident",
+        Email:       "thomas@jefferson.com",
         PhoneNumber: "+1-401-555-5555",
-        Address: "Virginia",
-        AllowLogin: true,
+        Address:     "Virginia",
+        AllowLogin:  true,
     })
     ja, _ := ds.CreateUserAccount(&dm.User{
-        Role: dm.ROLE_TECHNICAL_SUPPORT,
-        Name: "John Adams",
-        Username: "thirdpresident",
-        Email: "john@adams.com",
+        Role:        dm.ROLE_TECHNICAL_SUPPORT,
+        Name:        "John Adams",
+        Username:    "thirdpresident",
+        Email:       "john@adams.com",
         PhoneNumber: "+1-402-555-5555",
-        Address: "Boston, MA",
-        AllowLogin: true,
+        Address:     "Boston, MA",
+        AllowLogin:  true,
     })
     authentication.GenerateNewAccessKey(ds, gw.Id, "")
     authentication.GenerateNewAccessKey(ds, ja.Id, "")
@@ -58,7 +58,7 @@ func TestViewUserAccount(t *testing.T) {
     }
     accessKey := accessKeys[0]
     otherUser := gw
-    req, _ := http.NewRequest(webmachine.GET, "http://localhost/api/v1/json/account/user/view/" + otherUser.Id, nil)
+    req, _ := http.NewRequest(webmachine.GET, "http://localhost/api/v1/json/account/user/view/"+otherUser.Id, nil)
     req.Header.Set("Accept", webmachine.MIME_TYPE_JSON+"; charset=utf-8")
     req.Header.Set("Accept-Charset", "utf-8")
     req.Header.Set("Accept-Encoding", "identity")
@@ -130,7 +130,6 @@ func TestViewUserAccount(t *testing.T) {
     }
 }
 
-
 func TestViewUserAccountAsAdmin(t *testing.T) {
     ds, wm := initializeViewUserAccountDS()
     gw, _ := ds.FindUserAccountByUsername("firstpresident")
@@ -140,7 +139,7 @@ func TestViewUserAccountAsAdmin(t *testing.T) {
     }
     accessKey := accessKeys[0]
     otherUser, _ := ds.FindUserAccountByUsername("thirdpresident")
-    req, _ := http.NewRequest(webmachine.GET, "http://localhost/api/v1/json/account/user/view/" + otherUser.Id, nil)
+    req, _ := http.NewRequest(webmachine.GET, "http://localhost/api/v1/json/account/user/view/"+otherUser.Id, nil)
     req.Header.Set("Accept", webmachine.MIME_TYPE_JSON+"; charset=utf-8")
     req.Header.Set("Accept-Charset", "utf-8")
     req.Header.Set("Accept-Encoding", "identity")
@@ -221,7 +220,7 @@ func TestViewUserAccountAsNonAdminSelf(t *testing.T) {
     }
     accessKey := accessKeys[0]
     otherUser, _ := ds.FindUserAccountByUsername("thirdpresident")
-    req, _ := http.NewRequest(webmachine.GET, "http://localhost/api/v1/json/account/user/view/" + otherUser.Id, nil)
+    req, _ := http.NewRequest(webmachine.GET, "http://localhost/api/v1/json/account/user/view/"+otherUser.Id, nil)
     req.Header.Set("Accept", webmachine.MIME_TYPE_JSON+"; charset=utf-8")
     req.Header.Set("Accept-Charset", "utf-8")
     req.Header.Set("Accept-Encoding", "identity")
@@ -302,7 +301,7 @@ func TestViewUserAccountAsNonAdminForOtherUser(t *testing.T) {
     }
     accessKey := accessKeys[0]
     otherUser, _ := ds.FindUserAccountByUsername("secondpresident")
-    req, _ := http.NewRequest(webmachine.GET, "http://localhost/api/v1/json/account/user/view/" + otherUser.Id, nil)
+    req, _ := http.NewRequest(webmachine.GET, "http://localhost/api/v1/json/account/user/view/"+otherUser.Id, nil)
     req.Header.Set("Accept", webmachine.MIME_TYPE_JSON+"; charset=utf-8")
     req.Header.Set("Accept-Charset", "utf-8")
     req.Header.Set("Accept-Encoding", "identity")
@@ -357,7 +356,7 @@ func TestViewUserAccountInvalidUserId(t *testing.T) {
 func TestViewUserAccountMissingSignature(t *testing.T) {
     ds, wm := initializeViewUserAccountDS()
     gw, _ := ds.FindUserAccountByUsername("firstpresident")
-    req, _ := http.NewRequest(webmachine.GET, "http://localhost/api/v1/json/account/user/view/" + gw.Id, nil)
+    req, _ := http.NewRequest(webmachine.GET, "http://localhost/api/v1/json/account/user/view/"+gw.Id, nil)
     req.Header.Set("Accept", webmachine.MIME_TYPE_JSON+"; charset=utf-8")
     req.Header.Set("Accept-Charset", "utf-8")
     req.Header.Set("Accept-Encoding", "identity")

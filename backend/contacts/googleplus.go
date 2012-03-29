@@ -1,15 +1,14 @@
 package contacts
 
 import (
-    "github.com/pomack/jsonhelper.go/jsonhelper"
-    "github.com/pomack/oauth2_client.go/oauth2_client"
     "github.com/pomack/contacts.go/googleplus"
     dm "github.com/pomack/dsocial.go/models/dsocial"
+    "github.com/pomack/jsonhelper.go/jsonhelper"
+    "github.com/pomack/oauth2_client.go/oauth2_client"
     "os"
 )
 
 type GooglePlusContactService struct {
-
 }
 
 type GooglePlusContactServiceSettings struct {

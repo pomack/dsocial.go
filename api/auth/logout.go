@@ -13,7 +13,7 @@ import (
 
 type LogoutAccountRequestHandler struct {
     wm.DefaultRequestHandler
-    ds  acct.DataStore
+    ds     acct.DataStore
     authDS authentication.DataStore
 }
 
@@ -25,8 +25,8 @@ type LogoutAccountContext interface {
 }
 
 type logoutAccountContext struct {
-    accessKey       *dm.AccessKey
-    user            *dm.User
+    accessKey *dm.AccessKey
+    user      *dm.User
 }
 
 func NewLogoutAccountContext() LogoutAccountContext {
@@ -103,7 +103,6 @@ func (p *LogoutAccountRequestHandler) AllowedMethods(req wm.Request, cxt wm.Cont
     return []string{wm.POST}, req, cxt, 0, nil
 }
 
-
 func (p *LogoutAccountRequestHandler) IsAuthorized(req wm.Request, cxt wm.Context) (bool, string, wm.Request, wm.Context, int, os.Error) {
     lac := cxt.(LogoutAccountContext)
     hasSignature, userId, _, err := apiutil.CheckSignature(p.authDS, req.UnderlyingRequest())
@@ -119,8 +118,6 @@ func (p *LogoutAccountRequestHandler) IsAuthorized(req wm.Request, cxt wm.Contex
     return true, "", req, cxt, 0, nil
 }
 
-
-
 func (p *LogoutAccountRequestHandler) Forbidden(req wm.Request, cxt wm.Context) (bool, wm.Request, wm.Context, int, os.Error) {
     lac := cxt.(LogoutAccountContext)
     if lac.User() != nil && lac.User().Accessible() {
@@ -129,7 +126,6 @@ func (p *LogoutAccountRequestHandler) Forbidden(req wm.Request, cxt wm.Context) 
     // Cannot find user with specified id
     return true, req, cxt, 0, nil
 }
-
 
 /*
 func (p *LogoutAccountRequestHandler) AllowMissingPost(req wm.Request, cxt wm.Context) (bool, wm.Request, wm.Context, int, os.Error) {
@@ -191,7 +187,6 @@ func (p *LogoutAccountRequestHandler) ProcessPost(req wm.Request, cxt wm.Context
     return req, cxt, code, headers, writerTo, nil
 }
 
-
 func (p *LogoutAccountRequestHandler) ContentTypesProvided(req wm.Request, cxt wm.Context) ([]wm.MediaTypeHandler, wm.Request, wm.Context, int, os.Error) {
     lac := cxt.(LogoutAccountContext)
     var err os.Error
@@ -203,7 +198,6 @@ func (p *LogoutAccountRequestHandler) ContentTypesProvided(req wm.Request, cxt w
     }
     return []wm.MediaTypeHandler{apiutil.NewJSONMediaTypeHandler(nil, nil, "")}, req, lac, 0, nil
 }
-
 
 /*
 func (p *LogoutAccountRequestHandler) ContentTypesAccepted(req wm.Request, cxt wm.Context) ([]wm.MediaTypeInputHandler, wm.Request, wm.Context, int, os.Error) {
@@ -289,8 +283,6 @@ func (p *LogoutAccountRequestHandler) ResponseIsRedirect(req wm.Request, cxt wm.
 }
 */
 
-
 func (p *LogoutAccountRequestHandler) HasRespBody(req wm.Request, cxt wm.Context) bool {
     return true
 }
-

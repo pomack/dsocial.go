@@ -3,12 +3,12 @@ package auth_test
 import (
     "github.com/pomack/dsocial.go/api/auth"
     //"github.com/pomack/dsocial.go/api/apiutil"
-    dm "github.com/pomack/dsocial.go/models/dsocial"
+    "bytes"
     "github.com/pomack/dsocial.go/backend/authentication"
     "github.com/pomack/dsocial.go/backend/datastore/inmemory"
+    dm "github.com/pomack/dsocial.go/models/dsocial"
     "github.com/pomack/jsonhelper.go/jsonhelper"
     "github.com/pomack/webmachine.go/webmachine"
-    "bytes"
     "http"
     "json"
     "testing"
@@ -17,31 +17,31 @@ import (
 func initializeAuthUserAccountDS() (ds *inmemory.InMemoryDataStore, wm webmachine.WebMachine) {
     ds = inmemory.NewInMemoryDataStore()
     gw, _ := ds.CreateUserAccount(&dm.User{
-        Role: dm.ROLE_ADMIN,
-        Name: "George Washington",
-        Username: "firstpresident",
-        Email: "george@washington.com",
+        Role:        dm.ROLE_ADMIN,
+        Name:        "George Washington",
+        Username:    "firstpresident",
+        Email:       "george@washington.com",
         PhoneNumber: "+1-405-555-5555",
-        Address: "Valley Forge",
-        AllowLogin: true,
+        Address:     "Valley Forge",
+        AllowLogin:  true,
     })
     tj, _ := ds.CreateUserAccount(&dm.User{
-        Role: dm.ROLE_STANDARD,
-        Name: "Thomas Jefferson",
-        Username: "secondpresident",
-        Email: "thomas@jefferson.com",
+        Role:        dm.ROLE_STANDARD,
+        Name:        "Thomas Jefferson",
+        Username:    "secondpresident",
+        Email:       "thomas@jefferson.com",
         PhoneNumber: "+1-401-555-5555",
-        Address: "Virginia",
-        AllowLogin: false,
+        Address:     "Virginia",
+        AllowLogin:  false,
     })
     ja, _ := ds.CreateUserAccount(&dm.User{
-        Role: dm.ROLE_TECHNICAL_SUPPORT,
-        Name: "John Adams",
-        Username: "thirdpresident",
-        Email: "john@adams.com",
+        Role:        dm.ROLE_TECHNICAL_SUPPORT,
+        Name:        "John Adams",
+        Username:    "thirdpresident",
+        Email:       "john@adams.com",
         PhoneNumber: "+1-402-555-5555",
-        Address: "Boston, MA",
-        AllowLogin: true,
+        Address:     "Boston, MA",
+        AllowLogin:  true,
     })
     authentication.GenerateNewAccessKey(ds, gw.Id, "")
     authentication.SetUserPassword(ds, gw.Id, "number one")
@@ -127,7 +127,6 @@ func TestAuthLoginAdmin(t *testing.T) {
     }
 }
 
-
 func TestAuthLoginUser(t *testing.T) {
     ds, wm := initializeAuthUserAccountDS()
     user, _ := ds.FindUserAccountByUsername("thirdpresident")
@@ -199,7 +198,6 @@ func TestAuthLoginUser(t *testing.T) {
     }
 }
 
-
 func TestAuthLoginDisabledUser(t *testing.T) {
     ds, wm := initializeAuthUserAccountDS()
     user, _ := ds.FindUserAccountByUsername("secondpresident")
@@ -248,7 +246,6 @@ func TestAuthLoginDisabledUser(t *testing.T) {
     }
 }
 
-
 func TestAuthLoginNoUsername(t *testing.T) {
     _, wm := initializeAuthUserAccountDS()
     jsonobj := jsonhelper.NewJSONObject()
@@ -291,7 +288,6 @@ func TestAuthLoginNoUsername(t *testing.T) {
         t.Error("Expected ERR_VALUE_ERRORS for message, but was", message)
     }
 }
-
 
 func TestAuthLoginNoPassword(t *testing.T) {
     ds, wm := initializeAuthUserAccountDS()
@@ -389,7 +385,6 @@ func TestAuthLoginNoUsernameNorPassword(t *testing.T) {
     }
 }
 
-
 func TestAuthLoginBadPassword(t *testing.T) {
     ds, wm := initializeAuthUserAccountDS()
     user, _ := ds.FindUserAccountByUsername("firstpresident")
@@ -438,8 +433,6 @@ func TestAuthLoginBadPassword(t *testing.T) {
     }
 }
 
-
-
 func TestAuthLoginAccountDoesNotExist(t *testing.T) {
     _, wm := initializeAuthUserAccountDS()
     jsonobj := jsonhelper.NewJSONObject()
@@ -479,5 +472,3 @@ func TestAuthLoginAccountDoesNotExist(t *testing.T) {
         t.Error("Expected ERR_INVALID_USERNAME_PASSWORD_COMBO for message, but was", message)
     }
 }
-
-

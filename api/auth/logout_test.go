@@ -6,9 +6,9 @@ import (
     //dm "github.com/pomack/dsocial.go/models/dsocial"
     "github.com/pomack/dsocial.go/backend/authentication"
     //"github.com/pomack/dsocial.go/backend/datastore/inmemory"
+    "bytes"
     "github.com/pomack/jsonhelper.go/jsonhelper"
     "github.com/pomack/webmachine.go/webmachine"
-    "bytes"
     "http"
     "json"
     "testing"
@@ -59,7 +59,6 @@ func TestAuthLogoutAdmin(t *testing.T) {
     }
 }
 
-
 func TestAuthLogoutUser(t *testing.T) {
     ds, wm := initializeAuthUserAccountDS()
     user, _ := ds.FindUserAccountByUsername("thirdpresident")
@@ -105,7 +104,6 @@ func TestAuthLogoutUser(t *testing.T) {
     }
 }
 
-
 func TestAuthLogoutDisabledUser(t *testing.T) {
     ds, wm := initializeAuthUserAccountDS()
     user, _ := ds.FindUserAccountByUsername("secondpresident")
@@ -135,7 +133,6 @@ func TestAuthLogoutDisabledUser(t *testing.T) {
     }
 }
 
-
 func TestAuthLogoutNoCredentials(t *testing.T) {
     _, wm := initializeAuthUserAccountDS()
     jsonobj := jsonhelper.NewJSONObject()
@@ -163,7 +160,6 @@ func TestAuthLogoutNoCredentials(t *testing.T) {
         t.Error("Expected a zero byte response but received:", string(respbytes))
     }
 }
-
 
 func TestAuthLogoutBadAuthorizationKey(t *testing.T) {
     ds, wm := initializeAuthUserAccountDS()
@@ -219,5 +215,3 @@ func TestAuthLogoutAccountDoesNotExist(t *testing.T) {
         t.Error("Expected a zero byte response but received:", string(respbytes))
     }
 }
-
-

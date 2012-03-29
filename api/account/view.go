@@ -16,7 +16,7 @@ import (
 
 type ViewAccountRequestHandler struct {
     wm.DefaultRequestHandler
-    ds  acct.DataStore
+    ds     acct.DataStore
     authDS auth.DataStore
 }
 
@@ -39,10 +39,10 @@ type ViewAccountContext interface {
 }
 
 type viewAccountContext struct {
-    theType      string
-    user         *dm.User
-    consumer     *dm.Consumer
-    externalUser *dm.ExternalUser
+    theType            string
+    user               *dm.User
+    consumer           *dm.Consumer
+    externalUser       *dm.ExternalUser
     requestingUser     *dm.User
     requestingConsumer *dm.Consumer
 }
@@ -135,7 +135,6 @@ func (p *viewAccountContext) SetRequestingConsumer(consumer *dm.Consumer) {
     p.requestingConsumer = consumer
 }
 
-
 func NewViewAccountRequestHandler(ds acct.DataStore, authDS auth.DataStore) *ViewAccountRequestHandler {
     return &ViewAccountRequestHandler{ds: ds, authDS: authDS}
 }
@@ -224,7 +223,6 @@ func (p *ViewAccountRequestHandler) IsAuthorized(req wm.Request, cxt wm.Context)
     }
     return true, "", req, cxt, 0, nil
 }
-
 
 func (p *ViewAccountRequestHandler) Forbidden(req wm.Request, cxt wm.Context) (bool, wm.Request, wm.Context, int, os.Error) {
     vac := cxt.(ViewAccountContext)
@@ -356,12 +354,10 @@ func (p *ViewAccountRequestHandler) MovedTemporarily(req wm.Request, cxt wm.Cont
 }
 */
 
-
 func (p *ViewAccountRequestHandler) LastModified(req wm.Request, cxt wm.Context) (*time.Time, wm.Request, wm.Context, int, os.Error) {
     vac := cxt.(ViewAccountContext)
     return vac.LastModified(), req, cxt, 0, nil
 }
-
 
 /*
 func (p *ViewAccountRequestHandler) Expires(req wm.Request, cxt wm.Context) (*time.Time, wm.Request, wm.Context, int, os.Error) {
@@ -369,12 +365,10 @@ func (p *ViewAccountRequestHandler) Expires(req wm.Request, cxt wm.Context) (*ti
 }
 */
 
-
 func (p *ViewAccountRequestHandler) GenerateETag(req wm.Request, cxt wm.Context) (string, wm.Request, wm.Context, int, os.Error) {
     vac := cxt.(ViewAccountContext)
     return vac.ETag(), req, cxt, 0, nil
 }
-
 
 /*
 func (p *ViewAccountRequestHandler) FinishRequest(req wm.Request, cxt wm.Context) (bool, wm.Request, wm.Context, int, os.Error) {
@@ -388,15 +382,13 @@ func (p *ViewAccountRequestHandler) ResponseIsRedirect(req wm.Request, cxt wm.Co
 }
 */
 
-
 func (p *ViewAccountRequestHandler) HasRespBody(req wm.Request, cxt wm.Context) bool {
     return true
 }
 
-
 func (p *ViewAccountRequestHandler) HandleJSONObjectInputHandler(req wm.Request, cxt wm.Context, inputObj jsonhelper.JSONObject) (int, http.Header, io.WriterTo) {
     vac := cxt.(ViewAccountContext)
-    
+
     obj := vac.ToObject()
     var err os.Error
     if err != nil {

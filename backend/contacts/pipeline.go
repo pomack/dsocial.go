@@ -1,17 +1,16 @@
 package contacts
 
 import (
-    "github.com/pomack/oauth2_client.go/oauth2_client"
-    dm "github.com/pomack/dsocial.go/models/dsocial"
     "container/list"
     "container/vector"
     "fmt"
+    dm "github.com/pomack/dsocial.go/models/dsocial"
+    "github.com/pomack/oauth2_client.go/oauth2_client"
     "os"
     "time"
 )
 
 type Pipeline struct {
-
 }
 
 func NewPipeline() *Pipeline {

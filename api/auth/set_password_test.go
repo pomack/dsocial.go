@@ -6,9 +6,9 @@ import (
     //dm "github.com/pomack/dsocial.go/models/dsocial"
     //"github.com/pomack/dsocial.go/backend/authentication"
     //"github.com/pomack/dsocial.go/backend/datastore/inmemory"
+    "bytes"
     "github.com/pomack/jsonhelper.go/jsonhelper"
     "github.com/pomack/webmachine.go/webmachine"
-    "bytes"
     "http"
     "json"
     "testing"
@@ -227,4 +227,3 @@ func TestAuthSetPasswordAccountDoesNotExist(t *testing.T) {
     }
 }
 */
-

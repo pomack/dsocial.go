@@ -1,9 +1,9 @@
 package inmemory
 
 import (
-    dm "github.com/pomack/dsocial.go/models/dsocial"
-    bc "github.com/pomack/dsocial.go/backend/contacts"
     "container/list"
+    bc "github.com/pomack/dsocial.go/backend/contacts"
+    dm "github.com/pomack/dsocial.go/models/dsocial"
     "os"
     "time"
 )
