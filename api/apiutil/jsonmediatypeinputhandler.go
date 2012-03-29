@@ -1,11 +1,11 @@
 package apiutil
 
 import (
+    "encoding/json"
     "github.com/pomack/jsonhelper.go/jsonhelper"
     wm "github.com/pomack/webmachine.go/webmachine"
-    "http"
     "io"
-    "json"
+    "net/http"
     //"log"
 )
 
@@ -51,7 +51,7 @@ func (p *JSONMediaTypeInputHandler) MediaTypeHandleInputFrom(req wm.Request, cxt
     err := dec.Decode(&obj)
     if err != nil {
         headers := make(http.Header)
-        return OutputErrorMessage(err.String(), nil, 500, headers)
+        return OutputErrorMessage(err.Error(), nil, 500, headers)
     }
     return p.handler.HandleJSONObjectInputHandler(req, cxt, obj)
 }

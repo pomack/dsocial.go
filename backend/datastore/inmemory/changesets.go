@@ -4,7 +4,6 @@ import (
     "container/list"
     bc "github.com/pomack/dsocial.go/backend/contacts"
     dm "github.com/pomack/dsocial.go/models/dsocial"
-    "os"
     "time"
 )
 
@@ -12,7 +11,7 @@ func (p *InMemoryDataStore) retrieveChangesetCollection() (m *inMemoryCollection
     return p.retrieveCollection(_INMEMORY_CHANGESET_COLLECTION_NAME)
 }
 
-func (p *InMemoryDataStore) storeChangeSet(dsocialUserId string, changeset *dm.ChangeSet) (*dm.ChangeSet, os.Error) {
+func (p *InMemoryDataStore) storeChangeSet(dsocialUserId string, changeset *dm.ChangeSet) (*dm.ChangeSet, error) {
     if changeset == nil {
         return nil, nil
     }
@@ -20,7 +19,7 @@ func (p *InMemoryDataStore) storeChangeSet(dsocialUserId string, changeset *dm.C
         changeset.Id = p.GenerateId(dsocialUserId, _INMEMORY_CHANGESET_COLLECTION_NAME)
     }
     if changeset.CreatedAt == "" {
-        changeset.CreatedAt = time.UTC().Format(dm.UTC_DATETIME_FORMAT)
+        changeset.CreatedAt = time.Now().UTC().Format(dm.UTC_DATETIME_FORMAT)
     }
     obj := new(dm.ChangeSet)
     *obj = *changeset
@@ -28,16 +27,16 @@ func (p *InMemoryDataStore) storeChangeSet(dsocialUserId string, changeset *dm.C
     return changeset, nil
 }
 
-func (p *InMemoryDataStore) retrieveChangeSets(dsocialId string, after *time.Time) ([]*dm.ChangeSet, bc.NextToken, os.Error) {
+func (p *InMemoryDataStore) retrieveChangeSets(dsocialId string, after time.Time) ([]*dm.ChangeSet, bc.NextToken, error) {
     l := list.New()
     var afterString string
-    if after != nil {
+    if !after.IsZero() {
         afterString = after.Format(dm.UTC_DATETIME_FORMAT)
     }
     for _, v := range p.retrieveChangesetCollection().Data {
         if cs, ok := v.(*dm.ChangeSet); ok {
             if cs.RecordId == dsocialId {
-                if after == nil || cs.CreatedAt > afterString {
+                if after.IsZero() || cs.CreatedAt > afterString {
                     cs2 := new(dm.ChangeSet)
                     *cs2 = *cs
                     l.PushBack(cs2)
@@ -75,7 +74,7 @@ func (p *InMemoryDataStore) retrieveChangeSetsById(ids []string, m map[string]*d
     return m
 }
 
-func (p *InMemoryDataStore) addChangeSetsToApply(dsocialUserId, collectionName, recordType, serviceId, serviceName string, changesetIds []string) (id string, err os.Error) {
+func (p *InMemoryDataStore) addChangeSetsToApply(dsocialUserId, collectionName, recordType, serviceId, serviceName string, changesetIds []string) (id string, err error) {
     if len(dsocialUserId) == 0 || len(recordType) == 0 || len(serviceId) == 0 || len(serviceName) == 0 || changesetIds == nil || len(changesetIds) == 0 {
         return
     }
@@ -99,7 +98,7 @@ func (p *InMemoryDataStore) addChangeSetsToApply(dsocialUserId, collectionName, 
     return
 }
 
-func (p *InMemoryDataStore) retrieveChangeSetsToApply(dsocialUserId, collectionName, recordType, serviceId, serviceName string) (arr []*dm.ChangeSetsToApply, m map[string]*dm.ChangeSet, err os.Error) {
+func (p *InMemoryDataStore) retrieveChangeSetsToApply(dsocialUserId, collectionName, recordType, serviceId, serviceName string) (arr []*dm.ChangeSetsToApply, m map[string]*dm.ChangeSet, err error) {
     m = make(map[string]*dm.ChangeSet)
     if dsocialUserId == "" || recordType == "" || serviceId == "" || serviceName == "" {
         arr = make([]*dm.ChangeSetsToApply, 0)
@@ -125,7 +124,7 @@ func (p *InMemoryDataStore) retrieveChangeSetsToApply(dsocialUserId, collectionN
     return
 }
 
-func (p *InMemoryDataStore) removeChangeSetsToApply(dsocialUserId, collectionName, recordType string, serviceId, serviceName string, ids []string) (err os.Error) {
+func (p *InMemoryDataStore) removeChangeSetsToApply(dsocialUserId, collectionName, recordType string, serviceId, serviceName string, ids []string) (err error) {
     if dsocialUserId == "" || collectionName == "" || recordType == "" || ids == nil || len(ids) == 0 {
         return
     }

@@ -7,8 +7,8 @@ import (
     dm "github.com/pomack/dsocial.go/models/dsocial"
     "github.com/pomack/jsonhelper.go/jsonhelper"
     wm "github.com/pomack/webmachine.go/webmachine"
-    "http"
-    "os"
+    "net/http"
+    "time"
 )
 
 type GeneratePrivateKeyRequestHandler struct {
@@ -110,11 +110,11 @@ func (p *GeneratePrivateKeyRequestHandler) ResourceExists(req wm.Request, cxt wm
 }
 */
 
-func (p *GeneratePrivateKeyRequestHandler) AllowedMethods(req wm.Request, cxt wm.Context) ([]string, wm.Request, wm.Context, int, os.Error) {
+func (p *GeneratePrivateKeyRequestHandler) AllowedMethods(req wm.Request, cxt wm.Context) ([]string, wm.Request, wm.Context, int, error) {
     return []string{wm.POST}, req, cxt, 0, nil
 }
 
-func (p *GeneratePrivateKeyRequestHandler) IsAuthorized(req wm.Request, cxt wm.Context) (bool, string, wm.Request, wm.Context, int, os.Error) {
+func (p *GeneratePrivateKeyRequestHandler) IsAuthorized(req wm.Request, cxt wm.Context) (bool, string, wm.Request, wm.Context, int, error) {
     gpkc := cxt.(GeneratePrivateKeyContext)
     hasSignature, userId, consumerId, err := apiutil.CheckSignature(p.authDS, req.UnderlyingRequest())
     if !hasSignature || err != nil {
@@ -135,7 +135,7 @@ func (p *GeneratePrivateKeyRequestHandler) IsAuthorized(req wm.Request, cxt wm.C
     return true, "", req, cxt, 0, nil
 }
 
-func (p *GeneratePrivateKeyRequestHandler) Forbidden(req wm.Request, cxt wm.Context) (bool, wm.Request, wm.Context, int, os.Error) {
+func (p *GeneratePrivateKeyRequestHandler) Forbidden(req wm.Request, cxt wm.Context) (bool, wm.Request, wm.Context, int, error) {
     gpkc := cxt.(GeneratePrivateKeyContext)
     if gpkc.User() == nil && gpkc.Consumer() == nil {
         // cannot find user or consumer with specified ids
@@ -200,7 +200,7 @@ func (p *GeneratePrivateKeyRequestHandler) ProcessPost(req wm.Request, cxt wm.Co
 }
 */
 
-func (p *GeneratePrivateKeyRequestHandler) ContentTypesProvided(req wm.Request, cxt wm.Context) ([]wm.MediaTypeHandler, wm.Request, wm.Context, int, os.Error) {
+func (p *GeneratePrivateKeyRequestHandler) ContentTypesProvided(req wm.Request, cxt wm.Context) ([]wm.MediaTypeHandler, wm.Request, wm.Context, int, error) {
     gpkc := cxt.(GeneratePrivateKeyContext)
     user := gpkc.User()
     consumer := gpkc.Consumer()
@@ -230,9 +230,9 @@ func (p *GeneratePrivateKeyRequestHandler) ContentTypesProvided(req wm.Request, 
     theobj, _ := jsonhelper.MarshalWithOptions(obj, dm.UTC_DATETIME_FORMAT)
     jsonObj, _ := theobj.(jsonhelper.JSONObject)
     if err != nil {
-        return []wm.MediaTypeHandler{apiutil.NewJSONMediaTypeHandler(jsonObj, nil, "")}, req, gpkc, http.StatusInternalServerError, err
+        return []wm.MediaTypeHandler{apiutil.NewJSONMediaTypeHandler(jsonObj, time.Time{}, "")}, req, gpkc, http.StatusInternalServerError, err
     }
-    return []wm.MediaTypeHandler{apiutil.NewJSONMediaTypeHandler(jsonObj, nil, "")}, req, gpkc, 0, nil
+    return []wm.MediaTypeHandler{apiutil.NewJSONMediaTypeHandler(jsonObj, time.Time{}, "")}, req, gpkc, 0, nil
 }
 
 /*

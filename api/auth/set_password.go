@@ -7,11 +7,10 @@ import (
     dm "github.com/pomack/dsocial.go/models/dsocial"
     "github.com/pomack/jsonhelper.go/jsonhelper"
     wm "github.com/pomack/webmachine.go/webmachine"
-    "http"
     "io"
-    "os"
+    "net/http"
+    "net/url"
     "time"
-    "url"
 )
 
 type SetPasswordRequestHandler struct {
@@ -125,11 +124,11 @@ func (p *SetPasswordRequestHandler) ResourceExists(req wm.Request, cxt wm.Contex
 }
 */
 
-func (p *SetPasswordRequestHandler) AllowedMethods(req wm.Request, cxt wm.Context) ([]string, wm.Request, wm.Context, int, os.Error) {
+func (p *SetPasswordRequestHandler) AllowedMethods(req wm.Request, cxt wm.Context) ([]string, wm.Request, wm.Context, int, error) {
     return []string{wm.POST}, req, cxt, 0, nil
 }
 
-func (p *SetPasswordRequestHandler) IsAuthorized(req wm.Request, cxt wm.Context) (bool, string, wm.Request, wm.Context, int, os.Error) {
+func (p *SetPasswordRequestHandler) IsAuthorized(req wm.Request, cxt wm.Context) (bool, string, wm.Request, wm.Context, int, error) {
     spac := cxt.(SetPasswordContext)
     hasSignature, userId, _, err := apiutil.CheckSignature(p.authDS, req.UnderlyingRequest())
     if !hasSignature || err != nil {
@@ -142,7 +141,7 @@ func (p *SetPasswordRequestHandler) IsAuthorized(req wm.Request, cxt wm.Context)
     return true, "", req, cxt, 0, nil
 }
 
-func (p *SetPasswordRequestHandler) Forbidden(req wm.Request, cxt wm.Context) (bool, wm.Request, wm.Context, int, os.Error) {
+func (p *SetPasswordRequestHandler) Forbidden(req wm.Request, cxt wm.Context) (bool, wm.Request, wm.Context, int, error) {
     spac := cxt.(SetPasswordContext)
     if spac.User() != nil && spac.User().Accessible() {
         return false, req, cxt, 0, nil
@@ -193,7 +192,7 @@ func (p *SetPasswordRequestHandler) CreatePath(req wm.Request, cxt wm.Context) (
 }
 */
 
-func (p *SetPasswordRequestHandler) ProcessPost(req wm.Request, cxt wm.Context) (wm.Request, wm.Context, int, http.Header, io.WriterTo, os.Error) {
+func (p *SetPasswordRequestHandler) ProcessPost(req wm.Request, cxt wm.Context) (wm.Request, wm.Context, int, http.Header, io.WriterTo, error) {
     mths, req, cxt, code, err := p.ContentTypesAccepted(req, cxt)
     if len(mths) > 0 {
         httpCode, httpHeaders, writerTo := mths[0].MediaTypeHandleInputFrom(req, cxt)
@@ -202,17 +201,17 @@ func (p *SetPasswordRequestHandler) ProcessPost(req wm.Request, cxt wm.Context) 
     return req, cxt, code, nil, nil, err
 }
 
-func (p *SetPasswordRequestHandler) ContentTypesProvided(req wm.Request, cxt wm.Context) ([]wm.MediaTypeHandler, wm.Request, wm.Context, int, os.Error) {
-    genFunc := func() (jsonhelper.JSONObject, *time.Time, string, int, http.Header) {
+func (p *SetPasswordRequestHandler) ContentTypesProvided(req wm.Request, cxt wm.Context) ([]wm.MediaTypeHandler, wm.Request, wm.Context, int, error) {
+    genFunc := func() (jsonhelper.JSONObject, time.Time, string, int, http.Header) {
         spac := cxt.(SetPasswordContext)
         jsonObj := spac.Result()
         headers := apiutil.AddNoCacheHeaders(nil)
-        return jsonObj, nil, "", http.StatusOK, headers
+        return jsonObj, time.Time{}, "", http.StatusOK, headers
     }
-    return []wm.MediaTypeHandler{apiutil.NewJSONMediaTypeHandlerWithGenerator(genFunc, nil, "")}, req, cxt, 0, nil
+    return []wm.MediaTypeHandler{apiutil.NewJSONMediaTypeHandlerWithGenerator(genFunc, time.Time{}, "")}, req, cxt, 0, nil
 }
 
-func (p *SetPasswordRequestHandler) ContentTypesAccepted(req wm.Request, cxt wm.Context) ([]wm.MediaTypeInputHandler, wm.Request, wm.Context, int, os.Error) {
+func (p *SetPasswordRequestHandler) ContentTypesAccepted(req wm.Request, cxt wm.Context) ([]wm.MediaTypeInputHandler, wm.Request, wm.Context, int, error) {
     arr := []wm.MediaTypeInputHandler{
         apiutil.NewJSONMediaTypeInputHandler("", "", p, req.Body()),
         apiutil.NewUrlEncodedMediaTypeInputHandler("", "", p),
@@ -315,9 +314,9 @@ func (p *SetPasswordRequestHandler) HandleUrlEncodedInputHandler(req wm.Request,
 }
 
 func (p *SetPasswordRequestHandler) HandleInputHandlerAfterSetup(cxt SetPasswordContext) (int, http.Header, io.WriterTo) {
-    errors := make(map[string][]os.Error)
+    errors := make(map[string][]error)
     var obj jsonhelper.JSONObject
-    var err os.Error
+    var err error
     authDS := p.authDS
     if user := cxt.User(); user != nil {
         var userPassword *dm.UserPassword
@@ -336,13 +335,13 @@ func (p *SetPasswordRequestHandler) HandleInputHandlerAfterSetup(cxt SetPassword
         obj.Set("type", "user")
         obj.Set("message", "password changed")
     } else {
-        return apiutil.OutputErrorMessage(ERR_MUST_SPECIFY_USERNAME.String(), nil, http.StatusBadRequest, nil)
+        return apiutil.OutputErrorMessage(ERR_MUST_SPECIFY_USERNAME.Error(), time.Time{}, http.StatusBadRequest, nil)
     }
     if len(errors) > 0 {
         return apiutil.OutputErrorMessage("Value errors. See result", errors, http.StatusBadRequest, nil)
     }
     if err != nil {
-        return apiutil.OutputErrorMessage(err.String(), nil, http.StatusInternalServerError, nil)
+        return apiutil.OutputErrorMessage(err.Error(), time.Time{}, http.StatusInternalServerError, nil)
     }
     cxt.SetResult(obj)
     return 0, nil, nil

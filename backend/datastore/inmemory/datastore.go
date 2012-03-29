@@ -1,11 +1,10 @@
 package inmemory
 
 import (
+    "encoding/json"
     dm "github.com/pomack/dsocial.go/models/dsocial"
     "github.com/pomack/jsonhelper.go/jsonhelper"
     "io"
-    "json"
-    "os"
     "strconv"
 )
 
@@ -29,12 +28,12 @@ func NewInMemoryDataStore() *InMemoryDataStore {
 }
 
 func (p *InMemoryDataStore) GenerateId(dsocialUserId string, collectionName string) string {
-    nextId := dsocialUserId + "/" + collectionName + "/" + strconv.Itoa64(p.NextId)
+    nextId := dsocialUserId + "/" + collectionName + "/" + strconv.FormatInt(p.NextId, 10)
     p.NextId++
     return nextId
 }
 
-func (p *InMemoryDataStore) Encode(w io.Writer) os.Error {
+func (p *InMemoryDataStore) Encode(w io.Writer) error {
     v, err := jsonhelper.MarshalWithOptions(p, dm.UTC_DATETIME_FORMAT)
     if err != nil {
         return err
@@ -42,7 +41,7 @@ func (p *InMemoryDataStore) Encode(w io.Writer) os.Error {
     return json.NewEncoder(w).Encode(v)
 }
 
-func (p *InMemoryDataStore) Decode(r io.Reader) os.Error {
+func (p *InMemoryDataStore) Decode(r io.Reader) error {
     err := json.NewDecoder(r).Decode(p)
     if err != nil {
         return err
@@ -108,7 +107,7 @@ func (p *InMemoryDataStore) delete(collectionName, id string) (oldValue interfac
     if id != "" {
         m := p.retrieveCollection(collectionName).Data
         oldValue, existed = m[id]
-        m[id] = nil, false
+        delete(m, id)
     }
     return
 }
@@ -182,7 +181,7 @@ func (p *InMemoryDataStore) removeFromStringMapCollection(userId, collectionName
     var m map[string]string
     if names, ok := p.retrieve(collectionName, colKey); ok {
         m = names.(map[string]string)
-        m[key] = "", false
+        delete(m, key)
         if len(m) == 0 {
             p.delete(collectionName, colKey)
         } else {

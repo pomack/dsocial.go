@@ -1,8 +1,6 @@
 package apiutil
 
-import (
-    "os"
-)
+import "errors"
 
 const (
     SIGNATURE_METHOD_HMAC_SHA256   = "HmacSHA256"
@@ -13,11 +11,11 @@ const (
     DEFAULT_SIGNATURE_METHOD  = SIGNATURE_METHOD_HMAC_SHA256
 )
 
-var ErrorInvalidURI os.Error = os.NewError("Could not parse the URI")
-var ErrorInvalidAccessKeyId os.Error = os.NewError("Could not find the specified DSOCAccessKeyId")
-var ErrorSignatureDoesNotMatch os.Error = os.NewError("Signature does not match")
-var ErrorTimestampTooOld os.Error = os.NewError("Timestamp too old")
-var ErrorRequestExpired os.Error = os.NewError("Request Expired")
-var ErrorExpiresOrTimestampRequired os.Error = os.NewError("Expires or Timestamp Required")
-var ErrorInvalidSignatureVersion os.Error = os.NewError("Invalid SignatureVersion")
-var ErrorInvalidSignatureMethod os.Error = os.NewError("Invalid SignatureMethod")
+var ErrorInvalidURI = errors.New("Could not parse the URI")
+var ErrorInvalidAccessKeyId = errors.New("Could not find the specified DSOCAccessKeyId")
+var ErrorSignatureDoesNotMatch = errors.New("Signature does not match")
+var ErrorTimestampTooOld = errors.New("Timestamp too old")
+var ErrorRequestExpired = errors.New("Request Expired")
+var ErrorExpiresOrTimestampRequired = errors.New("Expires or Timestamp Required")
+var ErrorInvalidSignatureVersion = errors.New("Invalid SignatureVersion")
+var ErrorInvalidSignatureMethod = errors.New("Invalid SignatureMethod")

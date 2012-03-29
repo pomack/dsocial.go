@@ -1,32 +1,24 @@
-include $(GOROOT)/src/Make.inc
+# Copyright 2012 Aalok Shah. All rights reserved.
+# Use of this source code is governed by a BSD-style
+# license that can be found in the LICENSE file.
 
-TARG=github.com/pomack/dsocial.go/models/dsocial
-GOFILES=\
-	accounts.go\
-	albums.go\
-	audio.go\
-	authentication.go\
-	authorization.go\
-	changes.go\
-	compare.go\
-	const.go\
-	contacts.go\
-	convert_facebook.go\
-	convert_google.go\
-	convert_googleplus.go\
-	convert_linkedin.go\
-	convert_smugmug.go\
-	convert_twitter.go\
-	convert_yahoo.go\
-	errors.go\
-	images.go\
-	util.go\
-	validation.go\
+all: install
 
+GOPATH:=$(GOPATH):`pwd`
+PACKAGE_NAME=github.com/pomack/dsocial.go/models/dsocial
 
-include $(GOROOT)/src/Make.pkg
+clean:
+	GOPATH=$(GOPATH) go clean $(PACKAGE_NAME)
+
+install:
+	GOPATH=$(GOPATH) go install $(PACKAGE_NAME)
+
+nuke:
+	GOPATH=$(GOPATH) go clean -i $(PACKAGE_NAME)
+
+test:
+	GOPATH=$(GOPATH) go test $(PACKAGE_NAME)
 
 check:
-	gomake test
-
+	GOPATH=$(GOPATH) go build $(PACKAGE_NAME)
 

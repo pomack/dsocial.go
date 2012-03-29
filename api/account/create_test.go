@@ -2,13 +2,14 @@ package account_test
 
 import (
     "bytes"
+    "encoding/json"
     "github.com/pomack/dsocial.go/api/account"
     "github.com/pomack/dsocial.go/backend/datastore/inmemory"
     dm "github.com/pomack/dsocial.go/models/dsocial"
     "github.com/pomack/jsonhelper.go/jsonhelper"
     "github.com/pomack/webmachine.go/webmachine"
-    "http"
-    "json"
+    "net/http"
+    "net/http/httputil"
     "testing"
 )
 
@@ -31,7 +32,7 @@ func TestCreateUserAccount(t *testing.T) {
     req.Header.Set("Accept-Language", "en-us")
     req.Header.Set("Connection", "close")
     resp := webmachine.NewMockResponseWriter(req)
-    reqb, _ := http.DumpRequest(req, true)
+    reqb, _ := httputil.DumpRequest(req, true)
     wm.ServeHTTP(resp, req)
     if resp.StatusCode != 200 {
         t.Error("Expected 200 status code but received ", resp.StatusCode)
@@ -44,7 +45,7 @@ func TestCreateUserAccount(t *testing.T) {
     err := json.Unmarshal(resp.Buffer.Bytes(), &obj)
     user.InitFromJSONObject(obj.GetAsObject("result").GetAsObject("user"))
     if err != nil {
-        t.Error("Error while unmarshaling JSON: ", err.String())
+        t.Error("Error while unmarshaling JSON: ", err.Error())
     }
     if obj.GetAsString("status") != "success" {
         t.Error("Expected status = \"success\", but was \"", obj.GetAsString("status"), "\"")
@@ -99,7 +100,7 @@ func TestCreateUserAccountMissingName(t *testing.T) {
     obj := jsonhelper.NewJSONObject()
     err := json.Unmarshal(resp.Buffer.Bytes(), &obj)
     if err != nil {
-        t.Error("Error while unmarshaling JSON: ", err.String())
+        t.Error("Error while unmarshaling JSON: ", err.Error())
     }
     if obj.GetAsString("status") != "error" {
         t.Error("Expected status = \"error\", but was \"", obj.GetAsString("status"), "\"")
@@ -139,7 +140,7 @@ func TestCreateUserAccountMissingSeveralFields(t *testing.T) {
     obj := jsonhelper.NewJSONObject()
     err := json.Unmarshal(resp.Buffer.Bytes(), &obj)
     if err != nil {
-        t.Error("Error while unmarshaling JSON: ", err.String())
+        t.Error("Error while unmarshaling JSON: ", err.Error())
     }
     if obj.GetAsString("status") != "error" {
         t.Error("Expected status = \"error\", but was \"", obj.GetAsString("status"), "\"")

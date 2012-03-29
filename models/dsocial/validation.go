@@ -1,13 +1,12 @@
 package dsocial
 
 import (
-    "os"
+    "net/url"
     "strings"
     "unicode"
-    "url"
 )
 
-func validateId(id string, allowEmpty bool, idName string, errors map[string][]os.Error) (newId string, err os.Error) {
+func validateId(id string, allowEmpty bool, idName string, errors map[string][]error) (newId string, err error) {
     if idName == "" {
         idName = "id"
     }
@@ -34,12 +33,12 @@ func validateId(id string, allowEmpty bool, idName string, errors map[string][]o
         }
     }
     if err != nil && errors != nil {
-        errors[idName] = []os.Error{err}
+        errors[idName] = []error{err}
     }
     return
 }
 
-func validateEmail(email string, allowEmpty bool, idName string, errors map[string][]os.Error) (newEmail string, err os.Error) {
+func validateEmail(email string, allowEmpty bool, idName string, errors map[string][]error) (newEmail string, err error) {
     if idName == "" {
         idName = "email"
     }
@@ -98,12 +97,12 @@ func validateEmail(email string, allowEmpty bool, idName string, errors map[stri
         }
     }
     if err != nil && errors != nil {
-        errors[idName] = []os.Error{err}
+        errors[idName] = []error{err}
     }
     return
 }
 
-func validateNonEmpty(s string, trimSpace bool, idName string, errors map[string][]os.Error) (newS string, err os.Error) {
+func validateNonEmpty(s string, trimSpace bool, idName string, errors map[string][]error) (newS string, err error) {
     if trimSpace {
         newS = strings.TrimSpace(s)
     } else {
@@ -112,13 +111,13 @@ func validateNonEmpty(s string, trimSpace bool, idName string, errors map[string
     if newS == "" {
         err = ERR_MUST_SPECIFY_ID
         if errors != nil {
-            errors[idName] = []os.Error{err}
+            errors[idName] = []error{err}
         }
     }
     return
 }
 
-func validateAlphaNumeric(s string, trimSpace, allowEmpty, mustStartAlpha, allowSpace, allowNewline bool, idName string, errors map[string][]os.Error) (newS string, err os.Error) {
+func validateAlphaNumeric(s string, trimSpace, allowEmpty, mustStartAlpha, allowSpace, allowNewline bool, idName string, errors map[string][]error) (newS string, err error) {
     if trimSpace {
         newS = strings.TrimSpace(s)
     } else {
@@ -159,12 +158,12 @@ func validateAlphaNumeric(s string, trimSpace, allowEmpty, mustStartAlpha, allow
         }
     }
     if err != nil && errors != nil {
-        errors[idName] = []os.Error{err}
+        errors[idName] = []error{err}
     }
     return
 }
 
-func validateDomainName(name string, allowEmpty bool, idName string, errors map[string][]os.Error) (newName string, err os.Error) {
+func validateDomainName(name string, allowEmpty bool, idName string, errors map[string][]error) (newName string, err error) {
     newName = strings.TrimSpace(name)
     if newName == "" {
         if !allowEmpty {
@@ -209,24 +208,24 @@ func validateDomainName(name string, allowEmpty bool, idName string, errors map[
         }
     }
     if err != nil && errors != nil {
-        errors[idName] = []os.Error{err}
+        errors[idName] = []error{err}
     }
     return
 }
 
-func validateUrl(uri string, allowEmpty bool, idName string, errors map[string][]os.Error) (newUri string, err os.Error) {
+func validateUrl(uri string, allowEmpty bool, idName string, errors map[string][]error) (newUri string, err error) {
     newUri = strings.TrimSpace(uri)
     if newUri == "" {
         if !allowEmpty {
             err = ERR_REQUIRED_FIELD
         }
     } else {
-        if _, err = url.ParseWithReference(newUri); err != nil {
+        if _, err = url.Parse(newUri); err != nil {
             err = ERR_INVALID_FORMAT
         }
     }
     if err != nil && errors != nil {
-        errors[idName] = []os.Error{err}
+        errors[idName] = []error{err}
     }
     return
 }

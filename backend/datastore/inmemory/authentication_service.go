@@ -3,10 +3,9 @@ package inmemory
 import (
     ba "github.com/pomack/dsocial.go/backend/authentication"
     dm "github.com/pomack/dsocial.go/models/dsocial"
-    "os"
 )
 
-func (p *InMemoryDataStore) RetrieveUserPassword(userId string) (*dm.UserPassword, os.Error) {
+func (p *InMemoryDataStore) RetrieveUserPassword(userId string) (*dm.UserPassword, error) {
     pwd, _ := p.retrieve(_INMEMORY_USER_PASSWORD_COLLECTION_NAME, userId)
     if pwd == nil {
         return nil, nil
@@ -14,7 +13,7 @@ func (p *InMemoryDataStore) RetrieveUserPassword(userId string) (*dm.UserPasswor
     return pwd.(*dm.UserPassword), nil
 }
 
-func (p *InMemoryDataStore) RetrieveAccessKey(accessKeyId string) (*dm.AccessKey, os.Error) {
+func (p *InMemoryDataStore) RetrieveAccessKey(accessKeyId string) (*dm.AccessKey, error) {
     pwd, _ := p.retrieve(_INMEMORY_ACCESS_KEYS_COLLECTION_NAME, accessKeyId)
     if pwd == nil {
         return nil, nil
@@ -22,11 +21,11 @@ func (p *InMemoryDataStore) RetrieveAccessKey(accessKeyId string) (*dm.AccessKey
     return pwd.(*dm.AccessKey), nil
 }
 
-func (p *InMemoryDataStore) RetrieveConsumerKeys(consumerId string, next ba.NextToken, maxResults int) ([]*dm.AccessKey, ba.NextToken, os.Error) {
+func (p *InMemoryDataStore) RetrieveConsumerKeys(consumerId string, next ba.NextToken, maxResults int) ([]*dm.AccessKey, ba.NextToken, error) {
     m := p.retrieveStringMapCollection(consumerId, _INMEMORY_ACCESS_KEYS_FOR_CONSUMER_ID_COLLECTION_NAME, consumerId)
     arr := make([]*dm.AccessKey, len(m))
     i := 0
-    var err os.Error
+    var err error
     for k := range m {
         arr[i], err = p.RetrieveAccessKey(k)
         i++
@@ -37,11 +36,11 @@ func (p *InMemoryDataStore) RetrieveConsumerKeys(consumerId string, next ba.Next
     return arr, nil, err
 }
 
-func (p *InMemoryDataStore) RetrieveUserKeys(userId string, next ba.NextToken, maxResults int) ([]*dm.AccessKey, ba.NextToken, os.Error) {
+func (p *InMemoryDataStore) RetrieveUserKeys(userId string, next ba.NextToken, maxResults int) ([]*dm.AccessKey, ba.NextToken, error) {
     m := p.retrieveStringMapCollection(userId, _INMEMORY_ACCESS_KEYS_FOR_USER_ID_COLLECTION_NAME, userId)
     arr := make([]*dm.AccessKey, len(m))
     i := 0
-    var err os.Error
+    var err error
     for k := range m {
         arr[i], err = p.RetrieveAccessKey(k)
         i++
@@ -52,12 +51,12 @@ func (p *InMemoryDataStore) RetrieveUserKeys(userId string, next ba.NextToken, m
     return arr, nil, err
 }
 
-func (p *InMemoryDataStore) StoreUserPassword(password *dm.UserPassword) (*dm.UserPassword, os.Error) {
+func (p *InMemoryDataStore) StoreUserPassword(password *dm.UserPassword) (*dm.UserPassword, error) {
     p.store(password.UserId, _INMEMORY_USER_PASSWORD_COLLECTION_NAME, password.UserId, password)
     return password, nil
 }
 
-func (p *InMemoryDataStore) StoreAccessKey(key *dm.AccessKey) (*dm.AccessKey, os.Error) {
+func (p *InMemoryDataStore) StoreAccessKey(key *dm.AccessKey) (*dm.AccessKey, error) {
     if key.UserId == "" && key.ConsumerId == "" {
         return key, nil
     }
@@ -89,7 +88,7 @@ func (p *InMemoryDataStore) StoreAccessKey(key *dm.AccessKey) (*dm.AccessKey, os
     return key, nil
 }
 
-func (p *InMemoryDataStore) DeleteUserPassword(userId string) (*dm.UserPassword, os.Error) {
+func (p *InMemoryDataStore) DeleteUserPassword(userId string) (*dm.UserPassword, error) {
     oldValue, _ := p.delete(_INMEMORY_USER_PASSWORD_COLLECTION_NAME, userId)
     if oldValue != nil {
         pwd, _ := oldValue.(*dm.UserPassword)
@@ -98,7 +97,7 @@ func (p *InMemoryDataStore) DeleteUserPassword(userId string) (*dm.UserPassword,
     return nil, nil
 }
 
-func (p *InMemoryDataStore) DeleteAccessKey(accessKeyId string) (oldKey *dm.AccessKey, err os.Error) {
+func (p *InMemoryDataStore) DeleteAccessKey(accessKeyId string) (oldKey *dm.AccessKey, err error) {
     oldValue, _ := p.delete(_INMEMORY_ACCESS_KEYS_COLLECTION_NAME, accessKeyId)
     if oldValue != nil {
         if key, ok := oldValue.(*dm.AccessKey); ok {

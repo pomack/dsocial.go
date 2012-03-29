@@ -6,9 +6,9 @@ import (
     "github.com/pomack/dsocial.go/backend/authentication"
     dm "github.com/pomack/dsocial.go/models/dsocial"
     wm "github.com/pomack/webmachine.go/webmachine"
-    "http"
     "io"
-    "os"
+    "net/http"
+    "time"
 )
 
 type LogoutAccountRequestHandler struct {
@@ -99,11 +99,11 @@ func (p *LogoutAccountRequestHandler) ResourceExists(req wm.Request, cxt wm.Cont
 }
 */
 
-func (p *LogoutAccountRequestHandler) AllowedMethods(req wm.Request, cxt wm.Context) ([]string, wm.Request, wm.Context, int, os.Error) {
+func (p *LogoutAccountRequestHandler) AllowedMethods(req wm.Request, cxt wm.Context) ([]string, wm.Request, wm.Context, int, error) {
     return []string{wm.POST}, req, cxt, 0, nil
 }
 
-func (p *LogoutAccountRequestHandler) IsAuthorized(req wm.Request, cxt wm.Context) (bool, string, wm.Request, wm.Context, int, os.Error) {
+func (p *LogoutAccountRequestHandler) IsAuthorized(req wm.Request, cxt wm.Context) (bool, string, wm.Request, wm.Context, int, error) {
     lac := cxt.(LogoutAccountContext)
     hasSignature, userId, _, err := apiutil.CheckSignature(p.authDS, req.UnderlyingRequest())
     if !hasSignature || err != nil {
@@ -118,7 +118,7 @@ func (p *LogoutAccountRequestHandler) IsAuthorized(req wm.Request, cxt wm.Contex
     return true, "", req, cxt, 0, nil
 }
 
-func (p *LogoutAccountRequestHandler) Forbidden(req wm.Request, cxt wm.Context) (bool, wm.Request, wm.Context, int, os.Error) {
+func (p *LogoutAccountRequestHandler) Forbidden(req wm.Request, cxt wm.Context) (bool, wm.Request, wm.Context, int, error) {
     lac := cxt.(LogoutAccountContext)
     if lac.User() != nil && lac.User().Accessible() {
         return false, req, cxt, 0, nil
@@ -169,8 +169,8 @@ func (p *LogoutAccountRequestHandler) CreatePath(req wm.Request, cxt wm.Context)
 }
 */
 
-func (p *LogoutAccountRequestHandler) ProcessPost(req wm.Request, cxt wm.Context) (wm.Request, wm.Context, int, http.Header, io.WriterTo, os.Error) {
-    var err os.Error
+func (p *LogoutAccountRequestHandler) ProcessPost(req wm.Request, cxt wm.Context) (wm.Request, wm.Context, int, http.Header, io.WriterTo, error) {
+    var err error
     var code int
     var headers http.Header
     var writerTo io.WriterTo
@@ -182,21 +182,21 @@ func (p *LogoutAccountRequestHandler) ProcessPost(req wm.Request, cxt wm.Context
     if err != nil {
         code, headers, writerTo = apiutil.OutputErrorMessage("Unable to process logout request", nil, http.StatusInternalServerError, httpHeaders)
     } else {
-        code, headers, writerTo = apiutil.OutputJSONObject(nil, nil, "", http.StatusOK, httpHeaders)
+        code, headers, writerTo = apiutil.OutputJSONObject(nil, time.Time{}, "", http.StatusOK, httpHeaders)
     }
     return req, cxt, code, headers, writerTo, nil
 }
 
-func (p *LogoutAccountRequestHandler) ContentTypesProvided(req wm.Request, cxt wm.Context) ([]wm.MediaTypeHandler, wm.Request, wm.Context, int, os.Error) {
+func (p *LogoutAccountRequestHandler) ContentTypesProvided(req wm.Request, cxt wm.Context) ([]wm.MediaTypeHandler, wm.Request, wm.Context, int, error) {
     lac := cxt.(LogoutAccountContext)
-    var err os.Error
+    var err error
     if lac.AccessKey() != nil {
         _, err = p.authDS.DeleteAccessKey(lac.AccessKey().Id)
     }
     if err != nil {
-        return []wm.MediaTypeHandler{apiutil.NewJSONMediaTypeHandler(nil, nil, "")}, req, lac, http.StatusInternalServerError, err
+        return []wm.MediaTypeHandler{apiutil.NewJSONMediaTypeHandler(nil, time.Time{}, "")}, req, lac, http.StatusInternalServerError, err
     }
-    return []wm.MediaTypeHandler{apiutil.NewJSONMediaTypeHandler(nil, nil, "")}, req, lac, 0, nil
+    return []wm.MediaTypeHandler{apiutil.NewJSONMediaTypeHandler(nil, time.Time{}, "")}, req, lac, 0, nil
 }
 
 /*

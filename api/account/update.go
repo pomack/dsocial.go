@@ -7,10 +7,10 @@ import (
     dm "github.com/pomack/dsocial.go/models/dsocial"
     "github.com/pomack/jsonhelper.go/jsonhelper"
     wm "github.com/pomack/webmachine.go/webmachine"
-    "http"
     "io"
+    "net/http"
     //"log"
-    "os"
+
     "strings"
     "time"
 )
@@ -32,7 +32,7 @@ type UpdateAccountContext interface {
     SetConsumer(consumer *dm.Consumer)
     ExternalUser() *dm.ExternalUser
     SetExternalUser(externalUser *dm.ExternalUser)
-    LastModified() *time.Time
+    LastModified() time.Time
     ETag() string
     ToObject() interface{}
     RequestingUser() *dm.User
@@ -126,14 +126,14 @@ func (p *updateAccountContext) SetExternalUser(externalUser *dm.ExternalUser) {
     p.externalUser = externalUser
 }
 
-func (p *updateAccountContext) LastModified() *time.Time {
-    var lastModified *time.Time
+func (p *updateAccountContext) LastModified() time.Time {
+    var lastModified time.Time
     if p.user != nil && p.user.ModifiedAt != 0 {
-        lastModified = time.SecondsToUTC(p.user.ModifiedAt)
+        lastModified = time.Unix(p.user.ModifiedAt, 0).UTC()
     } else if p.consumer != nil && p.consumer.ModifiedAt != 0 {
-        lastModified = time.SecondsToUTC(p.consumer.ModifiedAt)
+        lastModified = time.Unix(p.consumer.ModifiedAt, 0).UTC()
     } else if p.externalUser != nil && p.externalUser.ModifiedAt != 0 {
-        lastModified = time.SecondsToUTC(p.externalUser.ModifiedAt)
+        lastModified = time.Unix(p.externalUser.ModifiedAt, 0).UTC()
     }
     return lastModified
 }
@@ -270,18 +270,18 @@ func (p *UpdateAccountRequestHandler) ServiceAvailable(req wm.Request, cxt wm.Co
 }
 */
 
-func (p *UpdateAccountRequestHandler) ResourceExists(req wm.Request, cxt wm.Context) (bool, wm.Request, wm.Context, int, os.Error) {
+func (p *UpdateAccountRequestHandler) ResourceExists(req wm.Request, cxt wm.Context) (bool, wm.Request, wm.Context, int, error) {
     uac := cxt.(UpdateAccountContext)
     //log.Printf("[UARH]: Checking original value: %#v vs. %v\n", uac.OriginalValue(), uac.OriginalValue() != nil)
 
     return uac.OriginalValue() != nil, req, cxt, 0, nil
 }
 
-func (p *UpdateAccountRequestHandler) AllowedMethods(req wm.Request, cxt wm.Context) ([]string, wm.Request, wm.Context, int, os.Error) {
+func (p *UpdateAccountRequestHandler) AllowedMethods(req wm.Request, cxt wm.Context) ([]string, wm.Request, wm.Context, int, error) {
     return []string{wm.POST, wm.PUT}, req, cxt, 0, nil
 }
 
-func (p *UpdateAccountRequestHandler) IsAuthorized(req wm.Request, cxt wm.Context) (bool, string, wm.Request, wm.Context, int, os.Error) {
+func (p *UpdateAccountRequestHandler) IsAuthorized(req wm.Request, cxt wm.Context) (bool, string, wm.Request, wm.Context, int, error) {
     uac := cxt.(UpdateAccountContext)
     hasSignature, userId, consumerId, err := apiutil.CheckSignature(p.authDS, req.UnderlyingRequest())
     if !hasSignature || err != nil {
@@ -298,7 +298,7 @@ func (p *UpdateAccountRequestHandler) IsAuthorized(req wm.Request, cxt wm.Contex
     return true, "", req, cxt, 0, nil
 }
 
-func (p *UpdateAccountRequestHandler) Forbidden(req wm.Request, cxt wm.Context) (bool, wm.Request, wm.Context, int, os.Error) {
+func (p *UpdateAccountRequestHandler) Forbidden(req wm.Request, cxt wm.Context) (bool, wm.Request, wm.Context, int, error) {
     uac := cxt.(UpdateAccountContext)
     if uac.RequestingUser() != nil && uac.RequestingUser().Accessible() && (uac.RequestingUser().Role == dm.ROLE_ADMIN || (uac.User() != nil && uac.RequestingUser().Id == uac.User().Id)) {
         return false, req, cxt, 0, nil
@@ -349,7 +349,7 @@ func (p *UpdateAccountRequestHandler) CreatePath(req wm.Request, cxt wm.Context)
 }
 */
 
-func (p *UpdateAccountRequestHandler) ProcessPost(req wm.Request, cxt wm.Context) (wm.Request, wm.Context, int, http.Header, io.WriterTo, os.Error) {
+func (p *UpdateAccountRequestHandler) ProcessPost(req wm.Request, cxt wm.Context) (wm.Request, wm.Context, int, http.Header, io.WriterTo, error) {
     mths, req, cxt, code, err := p.ContentTypesAccepted(req, cxt)
     if len(mths) > 0 {
         httpCode, httpHeaders, writerTo := mths[0].MediaTypeHandleInputFrom(req, cxt)
@@ -358,7 +358,7 @@ func (p *UpdateAccountRequestHandler) ProcessPost(req wm.Request, cxt wm.Context
     return req, cxt, code, nil, nil, err
 }
 
-func (p *UpdateAccountRequestHandler) ContentTypesProvided(req wm.Request, cxt wm.Context) ([]wm.MediaTypeHandler, wm.Request, wm.Context, int, os.Error) {
+func (p *UpdateAccountRequestHandler) ContentTypesProvided(req wm.Request, cxt wm.Context) ([]wm.MediaTypeHandler, wm.Request, wm.Context, int, error) {
     uac := cxt.(UpdateAccountContext)
     obj := uac.ToObject()
     lastModified := uac.LastModified()
@@ -371,7 +371,7 @@ func (p *UpdateAccountRequestHandler) ContentTypesProvided(req wm.Request, cxt w
     return []wm.MediaTypeHandler{apiutil.NewJSONMediaTypeHandler(jsonObj, lastModified, etag)}, req, uac, 0, nil
 }
 
-func (p *UpdateAccountRequestHandler) ContentTypesAccepted(req wm.Request, cxt wm.Context) ([]wm.MediaTypeInputHandler, wm.Request, wm.Context, int, os.Error) {
+func (p *UpdateAccountRequestHandler) ContentTypesAccepted(req wm.Request, cxt wm.Context) ([]wm.MediaTypeInputHandler, wm.Request, wm.Context, int, error) {
     arr := []wm.MediaTypeInputHandler{apiutil.NewJSONMediaTypeInputHandler("", "", p, req.Body())}
     return arr, req, cxt, 0, nil
 }
@@ -425,7 +425,7 @@ func (p *UpdateAccountRequestHandler) MovedTemporarily(req wm.Request, cxt wm.Co
 }
 */
 
-func (p *UpdateAccountRequestHandler) LastModified(req wm.Request, cxt wm.Context) (*time.Time, wm.Request, wm.Context, int, os.Error) {
+func (p *UpdateAccountRequestHandler) LastModified(req wm.Request, cxt wm.Context) (time.Time, wm.Request, wm.Context, int, error) {
     uac := cxt.(UpdateAccountContext)
     return uac.LastModified(), req, cxt, 0, nil
 }
@@ -436,7 +436,7 @@ func (p *UpdateAccountRequestHandler) Expires(req wm.Request, cxt wm.Context) (*
 }
 */
 
-func (p *UpdateAccountRequestHandler) GenerateETag(req wm.Request, cxt wm.Context) (string, wm.Request, wm.Context, int, os.Error) {
+func (p *UpdateAccountRequestHandler) GenerateETag(req wm.Request, cxt wm.Context) (string, wm.Request, wm.Context, int, error) {
     var etag string
     uac := cxt.(UpdateAccountContext)
     switch uac.Type() {
@@ -471,9 +471,9 @@ func (p *UpdateAccountRequestHandler) HandleJSONObjectInputHandler(req wm.Reques
     uac.SetFromJSON(inputObj)
     uac.CleanInput(uac.RequestingUser(), uac.OriginalValue())
     //log.Print("[UARH]: HandleJSONObjectInputHandler()")
-    errors := make(map[string][]os.Error)
+    errors := make(map[string][]error)
     var obj interface{}
-    var err os.Error
+    var err error
     ds := p.ds
     switch uac.Type() {
     case "user":
@@ -513,7 +513,7 @@ func (p *UpdateAccountRequestHandler) HandleJSONObjectInputHandler(req wm.Reques
         return apiutil.OutputErrorMessage("Value errors. See result", errors, http.StatusBadRequest, nil)
     }
     if err != nil {
-        return apiutil.OutputErrorMessage(err.String(), nil, http.StatusInternalServerError, nil)
+        return apiutil.OutputErrorMessage(err.Error(), nil, http.StatusInternalServerError, nil)
     }
     theobj, _ := jsonhelper.MarshalWithOptions(obj, dm.UTC_DATETIME_FORMAT)
     jsonObj, _ := theobj.(jsonhelper.JSONObject)

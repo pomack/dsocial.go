@@ -2,6 +2,7 @@ package contacts
 
 import (
     "container/list"
+    "encoding/json"
     "github.com/pomack/dsocial.go/api/apiutil"
     acct "github.com/pomack/dsocial.go/backend/accounts"
     auth "github.com/pomack/dsocial.go/backend/authentication"
@@ -9,11 +10,10 @@ import (
     dm "github.com/pomack/dsocial.go/models/dsocial"
     "github.com/pomack/jsonhelper.go/jsonhelper"
     wm "github.com/pomack/webmachine.go/webmachine"
-    "http"
     "io"
-    "json"
+    "net/http"
     //"log"
-    "os"
+
     "time"
 )
 
@@ -31,7 +31,7 @@ type UpdateContactContext interface {
     SetAuthUser(user *dm.User)
     User() *dm.User
     SetUser(user *dm.User)
-    LastModified() *time.Time
+    LastModified() time.Time
     ETag() string
     ContactId() string
     SetContactId(contactId string)
@@ -92,12 +92,12 @@ func (p *updateContactContext) SetUser(user *dm.User) {
     p.user = user
 }
 
-func (p *updateContactContext) LastModified() *time.Time {
-    var lastModified *time.Time
+func (p *updateContactContext) LastModified() time.Time {
+    var lastModified time.Time
     if p.contact != nil && p.contact.ModifiedAt > 0 {
-        lastModified = time.SecondsToUTC(p.contact.ModifiedAt)
+        lastModified = time.Unix(p.contact.ModifiedAt, 0).UTC()
     } else if p.originalContact != nil && p.originalContact.ModifiedAt > 0 {
-        lastModified = time.SecondsToUTC(p.originalContact.ModifiedAt)
+        lastModified = time.Unix(p.originalContact.ModifiedAt, 0).UTC()
     }
     return lastModified
 }
@@ -214,16 +214,16 @@ func (p *UpdateContactRequestHandler) ServiceAvailable(req wm.Request, cxt wm.Co
 }
 */
 
-func (p *UpdateContactRequestHandler) ResourceExists(req wm.Request, cxt wm.Context) (bool, wm.Request, wm.Context, int, os.Error) {
+func (p *UpdateContactRequestHandler) ResourceExists(req wm.Request, cxt wm.Context) (bool, wm.Request, wm.Context, int, error) {
     ucc := cxt.(UpdateContactContext)
     return ucc.OriginalContact() != nil, req, cxt, 0, nil
 }
 
-func (p *UpdateContactRequestHandler) AllowedMethods(req wm.Request, cxt wm.Context) ([]string, wm.Request, wm.Context, int, os.Error) {
+func (p *UpdateContactRequestHandler) AllowedMethods(req wm.Request, cxt wm.Context) ([]string, wm.Request, wm.Context, int, error) {
     return []string{wm.POST, wm.PUT}, req, cxt, 0, nil
 }
 
-func (p *UpdateContactRequestHandler) IsAuthorized(req wm.Request, cxt wm.Context) (bool, string, wm.Request, wm.Context, int, os.Error) {
+func (p *UpdateContactRequestHandler) IsAuthorized(req wm.Request, cxt wm.Context) (bool, string, wm.Request, wm.Context, int, error) {
     ucc := cxt.(UpdateContactContext)
     hasSignature, userId, _, err := apiutil.CheckSignature(p.authDS, req.UnderlyingRequest())
     if !hasSignature || err != nil {
@@ -236,7 +236,7 @@ func (p *UpdateContactRequestHandler) IsAuthorized(req wm.Request, cxt wm.Contex
     return userId != "", "", req, cxt, 0, nil
 }
 
-func (p *UpdateContactRequestHandler) Forbidden(req wm.Request, cxt wm.Context) (bool, wm.Request, wm.Context, int, os.Error) {
+func (p *UpdateContactRequestHandler) Forbidden(req wm.Request, cxt wm.Context) (bool, wm.Request, wm.Context, int, error) {
     ucc := cxt.(UpdateContactContext)
     if ucc.AuthUser() != nil && ucc.AuthUser().Accessible() && (ucc.AuthUser().Role == dm.ROLE_ADMIN || (ucc.User() != nil && ucc.AuthUser().Id == ucc.User().Id)) {
         return false, req, cxt, 0, nil
@@ -287,7 +287,7 @@ func (p *UpdateContactRequestHandler) CreatePath(req wm.Request, cxt wm.Context)
 }
 */
 
-func (p *UpdateContactRequestHandler) ProcessPost(req wm.Request, cxt wm.Context) (wm.Request, wm.Context, int, http.Header, io.WriterTo, os.Error) {
+func (p *UpdateContactRequestHandler) ProcessPost(req wm.Request, cxt wm.Context) (wm.Request, wm.Context, int, http.Header, io.WriterTo, error) {
     mths, req, cxt, code, err := p.ContentTypesAccepted(req, cxt)
     if len(mths) > 0 {
         httpCode, httpHeaders, writerTo := mths[0].MediaTypeHandleInputFrom(req, cxt)
@@ -296,7 +296,7 @@ func (p *UpdateContactRequestHandler) ProcessPost(req wm.Request, cxt wm.Context
     return req, cxt, code, nil, nil, err
 }
 
-func (p *UpdateContactRequestHandler) ContentTypesProvided(req wm.Request, cxt wm.Context) ([]wm.MediaTypeHandler, wm.Request, wm.Context, int, os.Error) {
+func (p *UpdateContactRequestHandler) ContentTypesProvided(req wm.Request, cxt wm.Context) ([]wm.MediaTypeHandler, wm.Request, wm.Context, int, error) {
     ucc := cxt.(UpdateContactContext)
     obj := ucc.Contact()
     lastModified := ucc.LastModified()
@@ -309,7 +309,7 @@ func (p *UpdateContactRequestHandler) ContentTypesProvided(req wm.Request, cxt w
     return []wm.MediaTypeHandler{apiutil.NewJSONMediaTypeHandler(jsonObj, lastModified, etag)}, req, ucc, 0, nil
 }
 
-func (p *UpdateContactRequestHandler) ContentTypesAccepted(req wm.Request, cxt wm.Context) ([]wm.MediaTypeInputHandler, wm.Request, wm.Context, int, os.Error) {
+func (p *UpdateContactRequestHandler) ContentTypesAccepted(req wm.Request, cxt wm.Context) ([]wm.MediaTypeInputHandler, wm.Request, wm.Context, int, error) {
     arr := []wm.MediaTypeInputHandler{apiutil.NewJSONMediaTypeInputHandler("", "", p, req.Body())}
     return arr, req, cxt, 0, nil
 }
@@ -363,7 +363,7 @@ func (p *UpdateContactRequestHandler) MovedTemporarily(req wm.Request, cxt wm.Co
 }
 */
 
-func (p *UpdateContactRequestHandler) LastModified(req wm.Request, cxt wm.Context) (*time.Time, wm.Request, wm.Context, int, os.Error) {
+func (p *UpdateContactRequestHandler) LastModified(req wm.Request, cxt wm.Context) (time.Time, wm.Request, wm.Context, int, error) {
     ucc := cxt.(UpdateContactContext)
     return ucc.LastModified(), req, cxt, 0, nil
 }
@@ -374,7 +374,7 @@ func (p *UpdateContactRequestHandler) Expires(req wm.Request, cxt wm.Context) (*
 }
 */
 
-func (p *UpdateContactRequestHandler) GenerateETag(req wm.Request, cxt wm.Context) (string, wm.Request, wm.Context, int, os.Error) {
+func (p *UpdateContactRequestHandler) GenerateETag(req wm.Request, cxt wm.Context) (string, wm.Request, wm.Context, int, error) {
     ucc := cxt.(UpdateContactContext)
     return ucc.ETag(), req, cxt, 0, nil
 }
@@ -400,9 +400,9 @@ func (p *UpdateContactRequestHandler) HandleJSONObjectInputHandler(req wm.Reques
     ucc.SetFromJSON(inputObj)
     ucc.CleanInput(ucc.AuthUser(), ucc.OriginalContact())
     //log.Print("[UARH]: HandleJSONObjectInputHandler()")
-    errors := make(map[string][]os.Error)
+    errors := make(map[string][]error)
     var obj interface{}
-    var err os.Error
+    var err error
     contactsDS := p.contactsDS
     contact := ucc.Contact()
     origContact := ucc.OriginalContact()
@@ -422,7 +422,7 @@ func (p *UpdateContactRequestHandler) HandleJSONObjectInputHandler(req wm.Reques
                 changes[i] = iter.Value.(*dm.Change)
             }
             changeset := &dm.ChangeSet{
-                CreatedAt:      time.UTC().Format(dm.UTC_DATETIME_FORMAT),
+                CreatedAt:      time.Now().UTC().Format(dm.UTC_DATETIME_FORMAT),
                 ChangedBy:      ucc.AuthUser().Id,
                 ChangeImportId: ucc.ContactId(),
                 RecordId:       ucc.ContactId(),
@@ -438,7 +438,7 @@ func (p *UpdateContactRequestHandler) HandleJSONObjectInputHandler(req wm.Reques
         return apiutil.OutputErrorMessage("Value errors. See result", errors, http.StatusBadRequest, nil)
     }
     if err != nil {
-        return apiutil.OutputErrorMessage(err.String(), nil, http.StatusInternalServerError, nil)
+        return apiutil.OutputErrorMessage(err.Error(), nil, http.StatusInternalServerError, nil)
     }
     theobj, _ := jsonhelper.MarshalWithOptions(obj, dm.UTC_DATETIME_FORMAT)
     jsonObj, _ := theobj.(jsonhelper.JSONObject)

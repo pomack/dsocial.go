@@ -2,7 +2,6 @@ package dsocial
 
 import (
     "github.com/pomack/jsonhelper.go/jsonhelper"
-    "os"
     "strings"
     "time"
 )
@@ -64,7 +63,7 @@ func (p *Consumer) Accessible() bool {
     if p.AllowLogin == false {
         return false
     }
-    if p.DisableLoginAt > 0 && p.DisableLoginAt < time.UTC().Seconds() {
+    if p.DisableLoginAt > 0 && p.DisableLoginAt < time.Now().Unix() {
         return false
     }
     return true
@@ -105,9 +104,9 @@ func (p *Consumer) CleanFromUser(user *User, original *Consumer) {
     }
 }
 
-func (p *Consumer) Validate(createNew bool, errors map[string][]os.Error) (isValid bool) {
+func (p *Consumer) Validate(createNew bool, errors map[string][]error) (isValid bool) {
     if errors == nil {
-        errors = make(map[string][]os.Error)
+        errors = make(map[string][]error)
     }
     p.PersistableModel.Validate(createNew, errors)
     p.DomainName, _ = validateDomainName(p.DomainName, false, "domain_name", errors)
@@ -128,7 +127,7 @@ func (p *User) Accessible() bool {
     if p.AllowLogin == false {
         return false
     }
-    if p.DisableLoginAt > 0 && p.DisableLoginAt < time.UTC().Seconds() {
+    if p.DisableLoginAt > 0 && p.DisableLoginAt < time.Now().Unix() {
         return false
     }
     return true
@@ -178,9 +177,9 @@ func (p *User) CleanFromUser(user *User, original *User) {
     }
 }
 
-func (p *User) Validate(createNew bool, errors map[string][]os.Error) (isValid bool) {
+func (p *User) Validate(createNew bool, errors map[string][]error) (isValid bool) {
     if errors == nil {
-        errors = make(map[string][]os.Error)
+        errors = make(map[string][]error)
     }
     p.PersistableModel.Validate(createNew, errors)
     p.Role = p.Role & (ROLE_STANDARD | ROLE_BUSINESS_SUPPORT | ROLE_TECHNICAL_SUPPORT | ROLE_BACKUP_OPERATOR | ROLE_SECURITY_OFFICER | ROLE_OWNER | ROLE_ADMIN)
@@ -223,9 +222,9 @@ func (p *ExternalUser) CleanFromUser(user *User, original *ExternalUser) {
     }
 }
 
-func (p *ExternalUser) Validate(createNew bool, errors map[string][]os.Error) (isValid bool) {
+func (p *ExternalUser) Validate(createNew bool, errors map[string][]error) (isValid bool) {
     if errors == nil {
-        errors = make(map[string][]os.Error)
+        errors = make(map[string][]error)
     }
     p.PersistableModel.Validate(createNew, errors)
     p.ConsumerId, _ = validateId(p.ConsumerId, false, "consumer_id", errors)

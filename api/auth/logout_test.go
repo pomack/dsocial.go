@@ -7,10 +7,11 @@ import (
     "github.com/pomack/dsocial.go/backend/authentication"
     //"github.com/pomack/dsocial.go/backend/datastore/inmemory"
     "bytes"
+    "encoding/json"
     "github.com/pomack/jsonhelper.go/jsonhelper"
     "github.com/pomack/webmachine.go/webmachine"
-    "http"
-    "json"
+    "net/http"
+    "net/http/httputil"
     "testing"
 )
 
@@ -29,7 +30,7 @@ func TestAuthLogoutAdmin(t *testing.T) {
     req.Header.Set("Accept-Language", "en-us")
     req.Header.Set("Connection", "close")
     apiutil.NewSigner(accessKey.Id, accessKey.PrivateKey).SignRequest(req, 0)
-    reqbytes, _ := http.DumpRequest(req, true)
+    reqbytes, _ := httputil.DumpRequest(req, true)
     t.Log("Request is:\n", string(reqbytes), "\n\n")
     resp := webmachine.NewMockResponseWriter(req)
     wm.ServeHTTP(resp, req)
@@ -43,7 +44,7 @@ func TestAuthLogoutAdmin(t *testing.T) {
     obj := jsonhelper.NewJSONObject()
     err := json.Unmarshal(resp.Buffer.Bytes(), &obj)
     if err != nil {
-        t.Error("Unable to unmarshal logout response due to error:", err.String())
+        t.Error("Unable to unmarshal logout response due to error:", err.Error())
     }
     if status := obj.GetAsString("status"); status != "success" {
         t.Error("Expected successful operation, but had status:", status)
@@ -74,7 +75,7 @@ func TestAuthLogoutUser(t *testing.T) {
     req.Header.Set("Accept-Language", "en-us")
     req.Header.Set("Connection", "close")
     apiutil.NewSigner(accessKey.Id, accessKey.PrivateKey).SignRequest(req, 0)
-    reqbytes, _ := http.DumpRequest(req, true)
+    reqbytes, _ := httputil.DumpRequest(req, true)
     t.Log("Request is:\n", string(reqbytes), "\n\n")
     resp := webmachine.NewMockResponseWriter(req)
     wm.ServeHTTP(resp, req)
@@ -88,7 +89,7 @@ func TestAuthLogoutUser(t *testing.T) {
     obj := jsonhelper.NewJSONObject()
     err := json.Unmarshal(resp.Buffer.Bytes(), &obj)
     if err != nil {
-        t.Error("Unable to unmarshal logout response due to error:", err.String())
+        t.Error("Unable to unmarshal logout response due to error:", err.Error())
     }
     if status := obj.GetAsString("status"); status != "success" {
         t.Error("Expected successful operation, but had status:", status)
@@ -119,7 +120,7 @@ func TestAuthLogoutDisabledUser(t *testing.T) {
     req.Header.Set("Accept-Language", "en-us")
     req.Header.Set("Connection", "close")
     apiutil.NewSigner(accessKey.Id, accessKey.PrivateKey).SignRequest(req, 0)
-    reqbytes, _ := http.DumpRequest(req, true)
+    reqbytes, _ := httputil.DumpRequest(req, true)
     t.Log("Request is:\n", string(reqbytes), "\n\n")
     resp := webmachine.NewMockResponseWriter(req)
     wm.ServeHTTP(resp, req)
@@ -144,7 +145,7 @@ func TestAuthLogoutNoCredentials(t *testing.T) {
     req.Header.Set("Accept-Encoding", "identity")
     req.Header.Set("Accept-Language", "en-us")
     req.Header.Set("Connection", "close")
-    reqbytes, _ := http.DumpRequest(req, true)
+    reqbytes, _ := httputil.DumpRequest(req, true)
     t.Log("Request is:\n", string(reqbytes), "\n\n")
     resp := webmachine.NewMockResponseWriter(req)
     wm.ServeHTTP(resp, req)
@@ -179,7 +180,7 @@ func TestAuthLogoutBadAuthorizationKey(t *testing.T) {
     req.Header.Set("Accept-Language", "en-us")
     req.Header.Set("Connection", "close")
     apiutil.NewSigner(accessKey.Id, accessKey2.PrivateKey).SignRequest(req, 0)
-    reqbytes, _ := http.DumpRequest(req, true)
+    reqbytes, _ := httputil.DumpRequest(req, true)
     t.Log("Request is:\n", string(reqbytes), "\n\n")
     resp := webmachine.NewMockResponseWriter(req)
     wm.ServeHTTP(resp, req)
@@ -202,7 +203,7 @@ func TestAuthLogoutAccountDoesNotExist(t *testing.T) {
     req.Header.Set("Accept-Language", "en-us")
     req.Header.Set("Connection", "close")
     apiutil.NewSigner("sdfsfsflsfdfsffdsdfsf", "sfsfsfssrgsgsdgdsgdgegergdggdsgdsg").SignRequest(req, 0)
-    reqbytes, _ := http.DumpRequest(req, true)
+    reqbytes, _ := httputil.DumpRequest(req, true)
     t.Log("Request is:\n", string(reqbytes), "\n\n")
     resp := webmachine.NewMockResponseWriter(req)
     wm.ServeHTTP(resp, req)

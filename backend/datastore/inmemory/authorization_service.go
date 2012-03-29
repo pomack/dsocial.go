@@ -3,10 +3,9 @@ package inmemory
 import (
     ba "github.com/pomack/dsocial.go/backend/authorization"
     dm "github.com/pomack/dsocial.go/models/dsocial"
-    "os"
 )
 
-func (p *InMemoryDataStore) RetrieveSession(sessionId string) (session *dm.Session, err os.Error) {
+func (p *InMemoryDataStore) RetrieveSession(sessionId string) (session *dm.Session, err error) {
     v, _ := p.retrieve(_INMEMORY_SESSIONS_COLLECTION_NAME, sessionId)
     if v != nil {
         session, _ = v.(*dm.Session)
@@ -14,7 +13,7 @@ func (p *InMemoryDataStore) RetrieveSession(sessionId string) (session *dm.Sessi
     return
 }
 
-func (p *InMemoryDataStore) StoreSession(session *dm.Session) (*dm.Session, os.Error) {
+func (p *InMemoryDataStore) StoreSession(session *dm.Session) (*dm.Session, error) {
     if session == nil {
         return nil, nil
     }
@@ -29,7 +28,7 @@ func (p *InMemoryDataStore) StoreSession(session *dm.Session) (*dm.Session, os.E
     return session, nil
 }
 
-func (p *InMemoryDataStore) DeleteSession(sessionId string) os.Error {
+func (p *InMemoryDataStore) DeleteSession(sessionId string) error {
     oldValue, _ := p.delete(_INMEMORY_SESSIONS_COLLECTION_NAME, sessionId)
     if oldValue != nil {
         session, _ := oldValue.(*dm.Session)
@@ -43,11 +42,11 @@ func (p *InMemoryDataStore) DeleteSession(sessionId string) os.Error {
     return nil
 }
 
-func (p *InMemoryDataStore) RetrieveSessionsForUserId(userId string, next ba.NextToken, maxResults int) ([]*dm.Session, ba.NextToken, os.Error) {
+func (p *InMemoryDataStore) RetrieveSessionsForUserId(userId string, next ba.NextToken, maxResults int) ([]*dm.Session, ba.NextToken, error) {
     m := p.retrieveStringMapCollection(userId, _INMEMORY_SESSION_IDS_FOR_USER_ID_COLLECTION_NAME, userId)
     sessions := make([]*dm.Session, len(m))
     i := 0
-    var err os.Error
+    var err error
     for k := range m {
         sessions[i], err = p.RetrieveSession(k)
         i++
@@ -58,11 +57,11 @@ func (p *InMemoryDataStore) RetrieveSessionsForUserId(userId string, next ba.Nex
     return sessions, nil, err
 }
 
-func (p *InMemoryDataStore) RetrieveSessionsForConsumerId(consumerId string, next ba.NextToken, maxResults int) ([]*dm.Session, ba.NextToken, os.Error) {
+func (p *InMemoryDataStore) RetrieveSessionsForConsumerId(consumerId string, next ba.NextToken, maxResults int) ([]*dm.Session, ba.NextToken, error) {
     m := p.retrieveStringMapCollection(consumerId, _INMEMORY_SESSION_IDS_FOR_CONSUMER_ID_COLLECTION_NAME, consumerId)
     sessions := make([]*dm.Session, len(m))
     i := 0
-    var err os.Error
+    var err error
     for k := range m {
         sessions[i], err = p.RetrieveSession(k)
         i++
@@ -73,11 +72,11 @@ func (p *InMemoryDataStore) RetrieveSessionsForConsumerId(consumerId string, nex
     return sessions, nil, err
 }
 
-func (p *InMemoryDataStore) RetrieveSessionsForExternalUserId(externalUserId string, next ba.NextToken, maxResults int) ([]*dm.Session, ba.NextToken, os.Error) {
+func (p *InMemoryDataStore) RetrieveSessionsForExternalUserId(externalUserId string, next ba.NextToken, maxResults int) ([]*dm.Session, ba.NextToken, error) {
     m := p.retrieveStringMapCollection(externalUserId, _INMEMORY_SESSION_IDS_FOR_EXTERNAL_USER_ID_COLLECTION_NAME, externalUserId)
     sessions := make([]*dm.Session, len(m))
     i := 0
-    var err os.Error
+    var err error
     for k := range m {
         sessions[i], err = p.RetrieveSession(k)
         i++
@@ -88,7 +87,7 @@ func (p *InMemoryDataStore) RetrieveSessionsForExternalUserId(externalUserId str
     return sessions, nil, err
 }
 
-func (p *InMemoryDataStore) RetrieveAuthorizationToken(authTokenId string) (authToken *dm.AuthorizationToken, err os.Error) {
+func (p *InMemoryDataStore) RetrieveAuthorizationToken(authTokenId string) (authToken *dm.AuthorizationToken, err error) {
     v, _ := p.retrieve(_INMEMORY_AUTH_TOKENS_COLLECTION_NAME, authTokenId)
     if v != nil {
         authToken, _ = v.(*dm.AuthorizationToken)
@@ -96,7 +95,7 @@ func (p *InMemoryDataStore) RetrieveAuthorizationToken(authTokenId string) (auth
     return
 }
 
-func (p *InMemoryDataStore) StoreAuthorizationToken(authToken *dm.AuthorizationToken) (*dm.AuthorizationToken, os.Error) {
+func (p *InMemoryDataStore) StoreAuthorizationToken(authToken *dm.AuthorizationToken) (*dm.AuthorizationToken, error) {
     if authToken == nil {
         return nil, nil
     }
@@ -111,7 +110,7 @@ func (p *InMemoryDataStore) StoreAuthorizationToken(authToken *dm.AuthorizationT
     return authToken, nil
 }
 
-func (p *InMemoryDataStore) DeleteAuthorizationToken(authTokenId string) os.Error {
+func (p *InMemoryDataStore) DeleteAuthorizationToken(authTokenId string) error {
     oldValue, _ := p.delete(_INMEMORY_AUTH_TOKENS_COLLECTION_NAME, authTokenId)
     if oldValue != nil {
         authToken, _ := oldValue.(*dm.AuthorizationToken)
@@ -125,11 +124,11 @@ func (p *InMemoryDataStore) DeleteAuthorizationToken(authTokenId string) os.Erro
     return nil
 }
 
-func (p *InMemoryDataStore) RetrieveAuthorizationTokensForUserId(userId string, next ba.NextToken, maxResults int) ([]*dm.AuthorizationToken, ba.NextToken, os.Error) {
+func (p *InMemoryDataStore) RetrieveAuthorizationTokensForUserId(userId string, next ba.NextToken, maxResults int) ([]*dm.AuthorizationToken, ba.NextToken, error) {
     m := p.retrieveStringMapCollection(userId, _INMEMORY_AUTH_TOKEN_IDS_FOR_USER_ID_COLLECTION_NAME, userId)
     authTokens := make([]*dm.AuthorizationToken, len(m))
     i := 0
-    var err os.Error
+    var err error
     for k := range m {
         authTokens[i], err = p.RetrieveAuthorizationToken(k)
         i++
@@ -140,11 +139,11 @@ func (p *InMemoryDataStore) RetrieveAuthorizationTokensForUserId(userId string, 
     return authTokens, nil, err
 }
 
-func (p *InMemoryDataStore) RetrieveAuthorizationTokensForConsumerId(consumerId string, next ba.NextToken, maxResults int) ([]*dm.AuthorizationToken, ba.NextToken, os.Error) {
+func (p *InMemoryDataStore) RetrieveAuthorizationTokensForConsumerId(consumerId string, next ba.NextToken, maxResults int) ([]*dm.AuthorizationToken, ba.NextToken, error) {
     m := p.retrieveStringMapCollection(consumerId, _INMEMORY_AUTH_TOKEN_IDS_FOR_CONSUMER_ID_COLLECTION_NAME, consumerId)
     authTokens := make([]*dm.AuthorizationToken, len(m))
     i := 0
-    var err os.Error
+    var err error
     for k := range m {
         authTokens[i], err = p.RetrieveAuthorizationToken(k)
         i++
@@ -155,11 +154,11 @@ func (p *InMemoryDataStore) RetrieveAuthorizationTokensForConsumerId(consumerId 
     return authTokens, nil, err
 }
 
-func (p *InMemoryDataStore) RetrieveAuthorizationTokensForExternalUserId(externalUserId string, next ba.NextToken, maxResults int) ([]*dm.AuthorizationToken, ba.NextToken, os.Error) {
+func (p *InMemoryDataStore) RetrieveAuthorizationTokensForExternalUserId(externalUserId string, next ba.NextToken, maxResults int) ([]*dm.AuthorizationToken, ba.NextToken, error) {
     m := p.retrieveStringMapCollection(externalUserId, _INMEMORY_AUTH_TOKEN_IDS_FOR_EXTERNAL_USER_ID_COLLECTION_NAME, externalUserId)
     authTokens := make([]*dm.AuthorizationToken, len(m))
     i := 0
-    var err os.Error
+    var err error
     for k := range m {
         authTokens[i], err = p.RetrieveAuthorizationToken(k)
         i++

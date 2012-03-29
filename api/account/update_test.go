@@ -2,6 +2,7 @@ package account_test
 
 import (
     "bytes"
+    "encoding/json"
     "github.com/pomack/dsocial.go/api/account"
     "github.com/pomack/dsocial.go/api/apiutil"
     "github.com/pomack/dsocial.go/backend/authentication"
@@ -9,8 +10,8 @@ import (
     dm "github.com/pomack/dsocial.go/models/dsocial"
     "github.com/pomack/jsonhelper.go/jsonhelper"
     "github.com/pomack/webmachine.go/webmachine"
-    "http"
-    "json"
+    "net/http"
+    "net/http/httputil"
     "testing"
 )
 
@@ -75,7 +76,7 @@ func TestUpdateUserAccount1(t *testing.T) {
     req.Header.Set("Accept-Language", "en-us")
     req.Header.Set("Connection", "close")
     apiutil.NewSigner(accessKey.Id, accessKey.PrivateKey).SignRequest(req, 0)
-    reqbytes, _ := http.DumpRequest(req, true)
+    reqbytes, _ := httputil.DumpRequest(req, true)
     t.Log("Request is:\n", string(reqbytes), "\n\n")
     resp := webmachine.NewMockResponseWriter(req)
     wm.ServeHTTP(resp, req)
@@ -91,7 +92,7 @@ func TestUpdateUserAccount1(t *testing.T) {
     err := json.Unmarshal(resp.Buffer.Bytes(), &obj)
     user.InitFromJSONObject(obj.GetAsObject("result"))
     if err != nil {
-        t.Error("Error while unmarshaling JSON: ", err.String())
+        t.Error("Error while unmarshaling JSON: ", err.Error())
     }
     if obj.GetAsString("status") != "success" {
         t.Error("Expected status = \"success\", but was \"", obj.GetAsString("status"), "\"")
@@ -122,7 +123,7 @@ func TestUpdateUserAccount1(t *testing.T) {
             t.Error("Unable to find User account by id ", otherUser.Id)
         }
         if err != nil {
-            t.Error("Error trying to find user account by id: ", err.String())
+            t.Error("Error trying to find user account by id: ", err.Error())
         }
     }
     if theuser, err := ds.FindUserAccountByUsername(otherUser.Username); err != nil || theuser == nil {
@@ -130,7 +131,7 @@ func TestUpdateUserAccount1(t *testing.T) {
             t.Error("Unable to find User account by username ", otherUser.Username)
         }
         if err != nil {
-            t.Error("Error trying to find user account by username: ", err.String())
+            t.Error("Error trying to find user account by username: ", err.Error())
         }
     }
     if theusers, _, err := ds.FindUserAccountsByEmail(otherUser.Email, nil, 1000); err != nil || len(theusers) != 1 {
@@ -138,7 +139,7 @@ func TestUpdateUserAccount1(t *testing.T) {
             t.Error("Found ", len(theusers), " User accounts by email for ", otherUser.Email, " rather than 1: ", theusers)
         }
         if err != nil {
-            t.Error("Error trying to find user accounts by email: ", err.String())
+            t.Error("Error trying to find user accounts by email: ", err.Error())
         }
     }
 }
@@ -181,7 +182,7 @@ func TestUpdateUserAccountAsAdmin(t *testing.T) {
     err := json.Unmarshal(resp.Buffer.Bytes(), &obj)
     user.InitFromJSONObject(obj.GetAsObject("result"))
     if err != nil {
-        t.Error("Error while unmarshaling JSON: ", err.String())
+        t.Error("Error while unmarshaling JSON: ", err.Error())
     }
     if obj.GetAsString("status") != "success" {
         t.Error("Expected status = \"success\", but was \"", obj.GetAsString("status"), "\"")
@@ -212,7 +213,7 @@ func TestUpdateUserAccountAsAdmin(t *testing.T) {
             t.Error("Unable to find User account by id ", otherUser.Id)
         }
         if err != nil {
-            t.Error("Error trying to find user account by id: ", err.String())
+            t.Error("Error trying to find user account by id: ", err.Error())
         }
     }
     if theuser, err := ds.FindUserAccountByUsername(otherUser.Username); err != nil || theuser == nil {
@@ -220,7 +221,7 @@ func TestUpdateUserAccountAsAdmin(t *testing.T) {
             t.Error("Unable to find User account by username ", otherUser.Username)
         }
         if err != nil {
-            t.Error("Error trying to find user account by username: ", err.String())
+            t.Error("Error trying to find user account by username: ", err.Error())
         }
     }
     if theusers, _, err := ds.FindUserAccountsByEmail(otherUser.Email, nil, 1000); err != nil || len(theusers) != 1 {
@@ -228,7 +229,7 @@ func TestUpdateUserAccountAsAdmin(t *testing.T) {
             t.Error("Found ", len(theusers), " User accounts by email for ", otherUser.Email, " rather than 1: ", theusers)
         }
         if err != nil {
-            t.Error("Error trying to find user accounts by email: ", err.String())
+            t.Error("Error trying to find user accounts by email: ", err.Error())
         }
     }
 }
@@ -271,7 +272,7 @@ func TestUpdateUserAccountAsNonAdminSelf(t *testing.T) {
     err := json.Unmarshal(resp.Buffer.Bytes(), &obj)
     user.InitFromJSONObject(obj.GetAsObject("result"))
     if err != nil {
-        t.Error("Error while unmarshaling JSON: ", err.String())
+        t.Error("Error while unmarshaling JSON: ", err.Error())
     }
     if obj.GetAsString("status") != "success" {
         t.Error("Expected status = \"success\", but was \"", obj.GetAsString("status"), "\"")
@@ -302,7 +303,7 @@ func TestUpdateUserAccountAsNonAdminSelf(t *testing.T) {
             t.Error("Unable to find User account by id ", otherUser.Id)
         }
         if err != nil {
-            t.Error("Error trying to find user account by id: ", err.String())
+            t.Error("Error trying to find user account by id: ", err.Error())
         }
     }
     if theuser, err := ds.FindUserAccountByUsername(otherUser.Username); err != nil || theuser == nil {
@@ -310,7 +311,7 @@ func TestUpdateUserAccountAsNonAdminSelf(t *testing.T) {
             t.Error("Unable to find User account by username ", otherUser.Username)
         }
         if err != nil {
-            t.Error("Error trying to find user account by username: ", err.String())
+            t.Error("Error trying to find user account by username: ", err.Error())
         }
     }
     if theusers, _, err := ds.FindUserAccountsByEmail(otherUser.Email, nil, 1000); err != nil || len(theusers) != 1 {
@@ -318,7 +319,7 @@ func TestUpdateUserAccountAsNonAdminSelf(t *testing.T) {
             t.Error("Found ", len(theusers), " User accounts by email for ", otherUser.Email, " rather than 1: ", theusers)
         }
         if err != nil {
-            t.Error("Error trying to find user accounts by email: ", err.String())
+            t.Error("Error trying to find user accounts by email: ", err.Error())
         }
     }
 }

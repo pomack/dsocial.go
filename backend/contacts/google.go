@@ -6,10 +6,10 @@ import (
     "github.com/pomack/jsonhelper.go/jsonhelper"
     "github.com/pomack/oauth2_client.go/oauth2_client"
     //"github.com/pomack/jsonhelper.go/jsonhelper"
-    "os"
+
+    "net/url"
     "strconv"
     "strings"
-    "url"
 )
 
 type GoogleContactService struct {
@@ -38,7 +38,7 @@ func (p *GoogleContactService) ServiceId() string {
     return GOOGLE_CONTACT_SERVICE_ID
 }
 
-func (p *GoogleContactService) CreateOAuth2Client(settings jsonhelper.JSONObject) (client oauth2_client.OAuth2Client, err os.Error) {
+func (p *GoogleContactService) CreateOAuth2Client(settings jsonhelper.JSONObject) (client oauth2_client.OAuth2Client, err error) {
     client = oauth2_client.NewGoogleClient()
     client.Initialize(settings)
     return
@@ -158,21 +158,21 @@ func (p *GoogleContactService) ContactInfoIncludesGroups() bool {
     return true
 }
 
-func (p *GoogleContactService) RetrieveAllContacts(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId string) ([]*Contact, os.Error) {
+func (p *GoogleContactService) RetrieveAllContacts(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId string) ([]*Contact, error) {
     contacts, _, err := p.RetrieveContacts(client, ds, dsocialUserId, nil)
     return contacts, err
 }
 
-func (p *GoogleContactService) RetrieveAllConnections(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId string) ([]*Contact, os.Error) {
+func (p *GoogleContactService) RetrieveAllConnections(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId string) ([]*Contact, error) {
     return make([]*Contact, 0), nil
 }
 
-func (p *GoogleContactService) RetrieveAllGroups(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId string) ([]*Group, os.Error) {
+func (p *GoogleContactService) RetrieveAllGroups(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId string) ([]*Group, error) {
     groups, _, err := p.RetrieveGroups(client, ds, dsocialUserId, nil)
     return groups, err
 }
 
-func (p *GoogleContactService) RetrieveContacts(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId string, next NextToken) ([]*Contact, NextToken, os.Error) {
+func (p *GoogleContactService) RetrieveContacts(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId string, next NextToken) ([]*Contact, NextToken, error) {
     var m url.Values
     if next == nil {
     } else if s, ok := next.(string); ok {
@@ -196,7 +196,7 @@ func (p *GoogleContactService) RetrieveContacts(client oauth2_client.OAuth2Clien
         m.Add("max-results", strconv.Itoa(maxResults))
     } else if maxResults, ok := next.(int64); ok {
         m = make(url.Values)
-        m.Add("max-results", strconv.Itoa64(maxResults))
+        m.Add("max-results", strconv.FormatInt(maxResults, 10))
     } else if cq, ok := next.(*google.ContactQuery); ok {
         m = make(url.Values)
         if cq.Alt != "" {
@@ -206,10 +206,10 @@ func (p *GoogleContactService) RetrieveContacts(client oauth2_client.OAuth2Clien
             m.Add("q", cq.Q)
         }
         if cq.MaxResults > 0 {
-            m.Add("max-results", strconv.Itoa64(cq.MaxResults))
+            m.Add("max-results", strconv.FormatInt(cq.MaxResults, 10))
         }
         if cq.StartIndex > 0 {
-            m.Add("start-index", strconv.Itoa64(cq.StartIndex))
+            m.Add("start-index", strconv.FormatInt(cq.StartIndex, 10))
         }
         if cq.UpdatedMin != "" {
             m.Add("updated-min", cq.UpdatedMin)
@@ -247,7 +247,7 @@ func (p *GoogleContactService) RetrieveContacts(client oauth2_client.OAuth2Clien
     externalServiceId := p.ServiceId()
     userInfo, err := client.RetrieveUserInfo()
     externalUserId := userInfo.Guid()
-    var useErr os.Error = nil
+    var useErr error = nil
     for i, googleContact := range feed.Entries {
         externalContactId := googleContact.ContactId()
         dsocialContactId := ""
@@ -281,11 +281,11 @@ func (p *GoogleContactService) RetrieveContacts(client oauth2_client.OAuth2Clien
     return contacts, theNextToken, useErr
 }
 
-func (p *GoogleContactService) RetrieveConnections(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId string, next NextToken) ([]*Contact, NextToken, os.Error) {
+func (p *GoogleContactService) RetrieveConnections(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId string, next NextToken) ([]*Contact, NextToken, error) {
     return make([]*Contact, 0), nil, nil
 }
 
-func (p *GoogleContactService) RetrieveGroups(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId string, next NextToken) ([]*Group, NextToken, os.Error) {
+func (p *GoogleContactService) RetrieveGroups(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId string, next NextToken) ([]*Group, NextToken, error) {
     var m url.Values
     if next == nil {
     } else if s, ok := next.(string); ok {
@@ -309,7 +309,7 @@ func (p *GoogleContactService) RetrieveGroups(client oauth2_client.OAuth2Client,
         m.Add("max-results", strconv.Itoa(maxResults))
     } else if maxResults, ok := next.(int64); ok {
         m = make(url.Values)
-        m.Add("max-results", strconv.Itoa64(maxResults))
+        m.Add("max-results", strconv.FormatInt(maxResults, 10))
     } else if gq, ok := next.(*google.GroupQuery); ok {
         m = make(url.Values)
         if gq.Alt != "" {
@@ -319,10 +319,10 @@ func (p *GoogleContactService) RetrieveGroups(client oauth2_client.OAuth2Client,
             m.Add("q", gq.Q)
         }
         if gq.MaxResults > 0 {
-            m.Add("max-results", strconv.Itoa64(gq.MaxResults))
+            m.Add("max-results", strconv.FormatInt(gq.MaxResults, 10))
         }
         if gq.StartIndex > 0 {
-            m.Add("start-index", strconv.Itoa64(gq.StartIndex))
+            m.Add("start-index", strconv.FormatInt(gq.StartIndex, 10))
         }
         if gq.UpdatedMin != "" {
             m.Add("updated-min", gq.UpdatedMin)
@@ -356,7 +356,7 @@ func (p *GoogleContactService) RetrieveGroups(client oauth2_client.OAuth2Client,
     externalServiceId := p.ServiceId()
     userInfo, err := client.RetrieveUserInfo()
     externalUserId := userInfo.Guid()
-    var useErr os.Error = nil
+    var useErr error = nil
     for i, googleGroup := range resp.Feed.Entries {
         externalGroupId := googleGroup.GroupId()
         var origDsocialGroup *dm.Group = nil
@@ -394,7 +394,7 @@ func (p *GoogleContactService) RetrieveGroups(client oauth2_client.OAuth2Client,
     return groups, theNextToken, useErr
 }
 
-func (p *GoogleContactService) RetrieveContact(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId string, contactId string) (*Contact, os.Error) {
+func (p *GoogleContactService) RetrieveContact(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId string, contactId string) (*Contact, error) {
     googleContact, err := google.RetrieveContact(client, contactId, nil)
     if googleContact == nil || err != nil {
         return nil, err
@@ -432,7 +432,7 @@ func (p *GoogleContactService) RetrieveContact(client oauth2_client.OAuth2Client
     return contact, useErr
 }
 
-func (p *GoogleContactService) RetrieveGroup(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId string, groupId string) (*Group, os.Error) {
+func (p *GoogleContactService) RetrieveGroup(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId string, groupId string) (*Group, error) {
     resp, err := google.RetrieveGroup(client, groupId, nil)
     if resp == nil || resp.Entry == nil || err != nil {
         return nil, err
@@ -473,7 +473,7 @@ func (p *GoogleContactService) RetrieveGroup(client oauth2_client.OAuth2Client, 
     return group, useErr
 }
 
-func (p *GoogleContactService) CreateContactOnExternalService(client oauth2_client.OAuth2Client, externalContact interface{}) (externalContactResult interface{}, externalContactId string, err os.Error) {
+func (p *GoogleContactService) CreateContactOnExternalService(client oauth2_client.OAuth2Client, externalContact interface{}) (externalContactResult interface{}, externalContactId string, err error) {
     if externalContact == nil {
         return nil, "", nil
     }
@@ -485,7 +485,7 @@ func (p *GoogleContactService) CreateContactOnExternalService(client oauth2_clie
     return resp.Entry, resp.Entry.ContactId(), err
 }
 
-func (p *GoogleContactService) CreateGroupOnExternalService(client oauth2_client.OAuth2Client, externalGroup interface{}) (externalGroupResult interface{}, externalGroupId string, err os.Error) {
+func (p *GoogleContactService) CreateGroupOnExternalService(client oauth2_client.OAuth2Client, externalGroup interface{}) (externalGroupResult interface{}, externalGroupId string, err error) {
     if externalGroup == nil {
         return nil, "", nil
     }
@@ -497,7 +497,7 @@ func (p *GoogleContactService) CreateGroupOnExternalService(client oauth2_client
     return resp.Entry, resp.Entry.GroupId(), err
 }
 
-func (p *GoogleContactService) UpdateContactOnExternalService(client oauth2_client.OAuth2Client, originalContact, latestContact interface{}) (externalContactResult interface{}, externalContactId string, err os.Error) {
+func (p *GoogleContactService) UpdateContactOnExternalService(client oauth2_client.OAuth2Client, originalContact, latestContact interface{}) (externalContactResult interface{}, externalContactId string, err error) {
     if originalContact == nil || latestContact == nil {
         return nil, "", nil
     }
@@ -511,7 +511,7 @@ func (p *GoogleContactService) UpdateContactOnExternalService(client oauth2_clie
     return resp.Entry, resp.Entry.ContactId(), err
 }
 
-func (p *GoogleContactService) UpdateGroupOnExternalService(client oauth2_client.OAuth2Client, originalGroup, latestGroup interface{}) (externalGroupResult interface{}, externalGroupId string, err os.Error) {
+func (p *GoogleContactService) UpdateGroupOnExternalService(client oauth2_client.OAuth2Client, originalGroup, latestGroup interface{}) (externalGroupResult interface{}, externalGroupId string, err error) {
     if originalGroup == nil || latestGroup == nil {
         return nil, "", nil
     }
@@ -525,7 +525,7 @@ func (p *GoogleContactService) UpdateGroupOnExternalService(client oauth2_client
     return resp.Entry, resp.Entry.GroupId(), err
 }
 
-func (p *GoogleContactService) DeleteContactOnExternalService(client oauth2_client.OAuth2Client, originalContact interface{}) (bool, os.Error) {
+func (p *GoogleContactService) DeleteContactOnExternalService(client oauth2_client.OAuth2Client, originalContact interface{}) (bool, error) {
     if originalContact == nil {
         return false, nil
     }
@@ -534,7 +534,7 @@ func (p *GoogleContactService) DeleteContactOnExternalService(client oauth2_clie
     return true, err
 }
 
-func (p *GoogleContactService) DeleteGroupOnExternalService(client oauth2_client.OAuth2Client, originalGroup interface{}) (bool, os.Error) {
+func (p *GoogleContactService) DeleteGroupOnExternalService(client oauth2_client.OAuth2Client, originalGroup interface{}) (bool, error) {
     if originalGroup == nil {
         return false, nil
     }

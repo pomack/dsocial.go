@@ -1,6 +1,7 @@
 package account_test
 
 import (
+    "encoding/json"
     "github.com/pomack/dsocial.go/api/account"
     "github.com/pomack/dsocial.go/api/apiutil"
     "github.com/pomack/dsocial.go/backend/authentication"
@@ -8,8 +9,7 @@ import (
     dm "github.com/pomack/dsocial.go/models/dsocial"
     "github.com/pomack/jsonhelper.go/jsonhelper"
     "github.com/pomack/webmachine.go/webmachine"
-    "http"
-    "json"
+    "net/http"
     "testing"
 )
 
@@ -78,7 +78,7 @@ func TestViewUserAccount(t *testing.T) {
     err := json.Unmarshal(resp.Buffer.Bytes(), &obj)
     user.InitFromJSONObject(obj.GetAsObject("result"))
     if err != nil {
-        t.Error("Error while unmarshaling JSON: ", err.String())
+        t.Error("Error while unmarshaling JSON: ", err.Error())
     }
     if obj.GetAsString("status") != "success" {
         t.Error("Expected status = \"success\", but was \"", obj.GetAsString("status"), "\"")
@@ -109,7 +109,7 @@ func TestViewUserAccount(t *testing.T) {
             t.Error("Unable to find User account by id ", otherUser.Id)
         }
         if err != nil {
-            t.Error("Error trying to find user account by id: ", err.String())
+            t.Error("Error trying to find user account by id: ", err.Error())
         }
     }
     if theuser, err := ds.FindUserAccountByUsername(otherUser.Username); err != nil || theuser == nil {
@@ -117,7 +117,7 @@ func TestViewUserAccount(t *testing.T) {
             t.Error("Unable to find User account by username ", otherUser.Username)
         }
         if err != nil {
-            t.Error("Error trying to find user account by username: ", err.String())
+            t.Error("Error trying to find user account by username: ", err.Error())
         }
     }
     if theusers, _, err := ds.FindUserAccountsByEmail(otherUser.Email, nil, 1000); err != nil || len(theusers) != 1 {
@@ -125,7 +125,7 @@ func TestViewUserAccount(t *testing.T) {
             t.Error("Found ", len(theusers), " User accounts by email for ", otherUser.Email, " rather than 1: ", theusers)
         }
         if err != nil {
-            t.Error("Error trying to find user accounts by email: ", err.String())
+            t.Error("Error trying to find user accounts by email: ", err.Error())
         }
     }
 }
@@ -159,7 +159,7 @@ func TestViewUserAccountAsAdmin(t *testing.T) {
     err := json.Unmarshal(resp.Buffer.Bytes(), &obj)
     user.InitFromJSONObject(obj.GetAsObject("result"))
     if err != nil {
-        t.Error("Error while unmarshaling JSON: ", err.String())
+        t.Error("Error while unmarshaling JSON: ", err.Error())
     }
     if obj.GetAsString("status") != "success" {
         t.Error("Expected status = \"success\", but was \"", obj.GetAsString("status"), "\"")
@@ -190,7 +190,7 @@ func TestViewUserAccountAsAdmin(t *testing.T) {
             t.Error("Unable to find User account by id ", otherUser.Id)
         }
         if err != nil {
-            t.Error("Error trying to find user account by id: ", err.String())
+            t.Error("Error trying to find user account by id: ", err.Error())
         }
     }
     if theuser, err := ds.FindUserAccountByUsername(otherUser.Username); err != nil || theuser == nil {
@@ -198,7 +198,7 @@ func TestViewUserAccountAsAdmin(t *testing.T) {
             t.Error("Unable to find User account by username ", otherUser.Username)
         }
         if err != nil {
-            t.Error("Error trying to find user account by username: ", err.String())
+            t.Error("Error trying to find user account by username: ", err.Error())
         }
     }
     if theusers, _, err := ds.FindUserAccountsByEmail(otherUser.Email, nil, 1000); err != nil || len(theusers) != 1 {
@@ -206,7 +206,7 @@ func TestViewUserAccountAsAdmin(t *testing.T) {
             t.Error("Found ", len(theusers), " User accounts by email for ", otherUser.Email, " rather than 1: ", theusers)
         }
         if err != nil {
-            t.Error("Error trying to find user accounts by email: ", err.String())
+            t.Error("Error trying to find user accounts by email: ", err.Error())
         }
     }
 }
@@ -240,7 +240,7 @@ func TestViewUserAccountAsNonAdminSelf(t *testing.T) {
     err := json.Unmarshal(resp.Buffer.Bytes(), &obj)
     user.InitFromJSONObject(obj.GetAsObject("result"))
     if err != nil {
-        t.Error("Error while unmarshaling JSON: ", err.String())
+        t.Error("Error while unmarshaling JSON: ", err.Error())
     }
     if obj.GetAsString("status") != "success" {
         t.Error("Expected status = \"success\", but was \"", obj.GetAsString("status"), "\"")
@@ -271,7 +271,7 @@ func TestViewUserAccountAsNonAdminSelf(t *testing.T) {
             t.Error("Unable to find User account by id ", otherUser.Id)
         }
         if err != nil {
-            t.Error("Error trying to find user account by id: ", err.String())
+            t.Error("Error trying to find user account by id: ", err.Error())
         }
     }
     if theuser, err := ds.FindUserAccountByUsername(otherUser.Username); err != nil || theuser == nil {
@@ -279,7 +279,7 @@ func TestViewUserAccountAsNonAdminSelf(t *testing.T) {
             t.Error("Unable to find User account by username ", otherUser.Username)
         }
         if err != nil {
-            t.Error("Error trying to find user account by username: ", err.String())
+            t.Error("Error trying to find user account by username: ", err.Error())
         }
     }
     if theusers, _, err := ds.FindUserAccountsByEmail(otherUser.Email, nil, 1000); err != nil || len(theusers) != 1 {
@@ -287,7 +287,7 @@ func TestViewUserAccountAsNonAdminSelf(t *testing.T) {
             t.Error("Found ", len(theusers), " User accounts by email for ", otherUser.Email, " rather than 1: ", theusers)
         }
         if err != nil {
-            t.Error("Error trying to find user accounts by email: ", err.String())
+            t.Error("Error trying to find user accounts by email: ", err.Error())
         }
     }
 }

@@ -7,9 +7,8 @@ import (
     dm "github.com/pomack/dsocial.go/models/dsocial"
     "github.com/pomack/jsonhelper.go/jsonhelper"
     wm "github.com/pomack/webmachine.go/webmachine"
-    "http"
     "io"
-    "os"
+    "net/http"
     "strings"
     "time"
 )
@@ -29,7 +28,7 @@ type DeleteAccountContext interface {
     SetConsumer(consumer *dm.Consumer)
     ExternalUser() *dm.ExternalUser
     SetExternalUser(externalUser *dm.ExternalUser)
-    LastModified() *time.Time
+    LastModified() time.Time
     ETag() string
     ToObject() interface{}
     RequestingUser() *dm.User
@@ -86,14 +85,14 @@ func (p *deleteAccountContext) SetExternalUser(externalUser *dm.ExternalUser) {
     p.externalUser = externalUser
 }
 
-func (p *deleteAccountContext) LastModified() *time.Time {
-    var lastModified *time.Time
+func (p *deleteAccountContext) LastModified() time.Time {
+    var lastModified time.Time
     if p.user != nil && p.user.ModifiedAt != 0 {
-        lastModified = time.SecondsToUTC(p.user.ModifiedAt)
+        lastModified = time.Unix(p.user.ModifiedAt, 0).UTC()
     } else if p.consumer != nil && p.consumer.ModifiedAt != 0 {
-        lastModified = time.SecondsToUTC(p.consumer.ModifiedAt)
+        lastModified = time.Unix(p.consumer.ModifiedAt, 0).UTC()
     } else if p.externalUser != nil && p.externalUser.ModifiedAt != 0 {
-        lastModified = time.SecondsToUTC(p.externalUser.ModifiedAt)
+        lastModified = time.Unix(p.externalUser.ModifiedAt, 0).UTC()
     }
     return lastModified
 }
@@ -208,16 +207,16 @@ func (p *CreateAccountRequestHandler) ServiceAvailable(req wm.Request, cxt wm.Co
 }
 */
 
-func (p *DeleteAccountRequestHandler) ResourceExists(req wm.Request, cxt wm.Context) (bool, wm.Request, wm.Context, int, os.Error) {
+func (p *DeleteAccountRequestHandler) ResourceExists(req wm.Request, cxt wm.Context) (bool, wm.Request, wm.Context, int, error) {
     dac := cxt.(DeleteAccountContext)
     return dac.ToObject() != nil, req, cxt, 0, nil
 }
 
-func (p *DeleteAccountRequestHandler) AllowedMethods(req wm.Request, cxt wm.Context) ([]string, wm.Request, wm.Context, int, os.Error) {
+func (p *DeleteAccountRequestHandler) AllowedMethods(req wm.Request, cxt wm.Context) ([]string, wm.Request, wm.Context, int, error) {
     return []string{wm.POST, wm.DELETE}, req, cxt, 0, nil
 }
 
-func (p *DeleteAccountRequestHandler) IsAuthorized(req wm.Request, cxt wm.Context) (bool, string, wm.Request, wm.Context, int, os.Error) {
+func (p *DeleteAccountRequestHandler) IsAuthorized(req wm.Request, cxt wm.Context) (bool, string, wm.Request, wm.Context, int, error) {
     dac := cxt.(DeleteAccountContext)
     hasSignature, userId, consumerId, err := apiutil.CheckSignature(p.authDS, req.UnderlyingRequest())
     if !hasSignature || err != nil {
@@ -234,7 +233,7 @@ func (p *DeleteAccountRequestHandler) IsAuthorized(req wm.Request, cxt wm.Contex
     return true, "", req, cxt, 0, nil
 }
 
-func (p *DeleteAccountRequestHandler) Forbidden(req wm.Request, cxt wm.Context) (bool, wm.Request, wm.Context, int, os.Error) {
+func (p *DeleteAccountRequestHandler) Forbidden(req wm.Request, cxt wm.Context) (bool, wm.Request, wm.Context, int, error) {
     dac := cxt.(DeleteAccountContext)
     if dac.RequestingUser() != nil && dac.RequestingUser().Accessible() && (dac.RequestingUser().Role == dm.ROLE_ADMIN || (dac.User() != nil && dac.RequestingUser().Id == dac.User().Id)) {
         return false, req, cxt, 0, nil
@@ -261,9 +260,9 @@ func (p *DeleteAccountRequestHandler) URITooLong(req wm.Request, cxt wm.Context)
 }
 */
 
-func (p *DeleteAccountRequestHandler) DeleteResource(req wm.Request, cxt wm.Context) (bool, wm.Request, wm.Context, int, os.Error) {
+func (p *DeleteAccountRequestHandler) DeleteResource(req wm.Request, cxt wm.Context) (bool, wm.Request, wm.Context, int, error) {
     dac := cxt.(DeleteAccountContext)
-    var err os.Error
+    var err error
     if dac.User() != nil {
         _, err = p.ds.DeleteUserAccount(dac.User())
     } else if dac.Consumer() != nil {
@@ -296,12 +295,12 @@ func (p *DeleteAccountRequestHandler) CreatePath(req wm.Request, cxt wm.Context)
 }
 */
 
-func (p *DeleteAccountRequestHandler) ProcessPost(req wm.Request, cxt wm.Context) (wm.Request, wm.Context, int, http.Header, io.WriterTo, os.Error) {
+func (p *DeleteAccountRequestHandler) ProcessPost(req wm.Request, cxt wm.Context) (wm.Request, wm.Context, int, http.Header, io.WriterTo, error) {
     _, req, cxt, httpCode, httpError := p.DeleteResource(req, cxt)
     return req, cxt, httpCode, nil, nil, httpError
 }
 
-func (p *DeleteAccountRequestHandler) ContentTypesProvided(req wm.Request, cxt wm.Context) ([]wm.MediaTypeHandler, wm.Request, wm.Context, int, os.Error) {
+func (p *DeleteAccountRequestHandler) ContentTypesProvided(req wm.Request, cxt wm.Context) ([]wm.MediaTypeHandler, wm.Request, wm.Context, int, error) {
     cac := cxt.(DeleteAccountContext)
     obj := cac.ToObject()
     lastModified := cac.LastModified()
@@ -314,7 +313,7 @@ func (p *DeleteAccountRequestHandler) ContentTypesProvided(req wm.Request, cxt w
     return []wm.MediaTypeHandler{apiutil.NewJSONMediaTypeHandler(jsonObj, lastModified, etag)}, req, cac, 0, nil
 }
 
-func (p *DeleteAccountRequestHandler) ContentTypesAccepted(req wm.Request, cxt wm.Context) ([]wm.MediaTypeInputHandler, wm.Request, wm.Context, int, os.Error) {
+func (p *DeleteAccountRequestHandler) ContentTypesAccepted(req wm.Request, cxt wm.Context) ([]wm.MediaTypeInputHandler, wm.Request, wm.Context, int, error) {
     arr := []wm.MediaTypeInputHandler{apiutil.NewJSONMediaTypeInputHandler("", "", p, req.Body())}
     return arr, req, cxt, 0, nil
 }
@@ -411,14 +410,14 @@ func (p *DeleteAccountRequestHandler) HandleJSONObjectInputHandler(req wm.Reques
     dac := cxt.(DeleteAccountContext)
 
     obj := dac.ToObject()
-    var err os.Error
+    var err error
     if !dac.Deleted() {
         _, req, cxt, _, err = p.DeleteResource(req, cxt)
     }
     if err != nil {
-        return apiutil.OutputErrorMessage(err.String(), nil, http.StatusInternalServerError, nil)
+        return apiutil.OutputErrorMessage(err.Error(), nil, http.StatusInternalServerError, nil)
     }
     theobj, _ := jsonhelper.MarshalWithOptions(obj, dm.UTC_DATETIME_FORMAT)
     jsonObj, _ := theobj.(jsonhelper.JSONObject)
-    return apiutil.OutputJSONObject(jsonObj, nil, "", 0, nil)
+    return apiutil.OutputJSONObject(jsonObj, time.Time{}, "", 0, nil)
 }

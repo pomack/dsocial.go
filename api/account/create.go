@@ -7,9 +7,8 @@ import (
     dm "github.com/pomack/dsocial.go/models/dsocial"
     "github.com/pomack/jsonhelper.go/jsonhelper"
     wm "github.com/pomack/webmachine.go/webmachine"
-    "http"
     "io"
-    "os"
+    "net/http"
     "time"
 )
 
@@ -27,7 +26,7 @@ type CreateAccountContext interface {
     User() *dm.User
     Consumer() *dm.Consumer
     ExternalUser() *dm.ExternalUser
-    LastModified() *time.Time
+    LastModified() time.Time
     ETag() string
     ToObject() interface{}
     RequestingUser() *dm.User
@@ -107,14 +106,14 @@ func (p *createAccountContext) ExternalUser() *dm.ExternalUser {
     return p.externalUser
 }
 
-func (p *createAccountContext) LastModified() *time.Time {
-    var lastModified *time.Time
+func (p *createAccountContext) LastModified() time.Time {
+    var lastModified time.Time
     if p.user != nil && p.user.ModifiedAt != 0 {
-        lastModified = time.SecondsToUTC(p.user.ModifiedAt)
+        lastModified = time.Unix(p.user.ModifiedAt, 0).UTC()
     } else if p.consumer != nil && p.consumer.ModifiedAt != 0 {
-        lastModified = time.SecondsToUTC(p.consumer.ModifiedAt)
+        lastModified = time.Unix(p.consumer.ModifiedAt, 0).UTC()
     } else if p.externalUser != nil && p.externalUser.ModifiedAt != 0 {
-        lastModified = time.SecondsToUTC(p.externalUser.ModifiedAt)
+        lastModified = time.Unix(p.externalUser.ModifiedAt, 0).UTC()
     }
     return lastModified
 }
@@ -208,11 +207,11 @@ func (p *CreateAccountRequestHandler) ServiceAvailable(req wm.Request, cxt wm.Co
 }
 */
 
-func (p *CreateAccountRequestHandler) ResourceExists(req wm.Request, cxt wm.Context) (bool, wm.Request, wm.Context, int, os.Error) {
+func (p *CreateAccountRequestHandler) ResourceExists(req wm.Request, cxt wm.Context) (bool, wm.Request, wm.Context, int, error) {
     return false, req, cxt, 0, nil
 }
 
-func (p *CreateAccountRequestHandler) AllowedMethods(req wm.Request, cxt wm.Context) ([]string, wm.Request, wm.Context, int, os.Error) {
+func (p *CreateAccountRequestHandler) AllowedMethods(req wm.Request, cxt wm.Context) ([]string, wm.Request, wm.Context, int, error) {
     return []string{wm.POST, wm.PUT}, req, cxt, 0, nil
 }
 
@@ -222,7 +221,7 @@ func (p *CreateAccountRequestHandler) IsAuthorized(req wm.Request, cxt wm.Contex
 }
 */
 
-func (p *CreateAccountRequestHandler) Forbidden(req wm.Request, cxt wm.Context) (bool, wm.Request, wm.Context, int, os.Error) {
+func (p *CreateAccountRequestHandler) Forbidden(req wm.Request, cxt wm.Context) (bool, wm.Request, wm.Context, int, error) {
     cac := cxt.(CreateAccountContext)
     hasSignature, userId, consumerId, err := apiutil.CheckSignature(p.authDS, req.UnderlyingRequest())
     if err != nil {
@@ -245,7 +244,7 @@ func (p *CreateAccountRequestHandler) Forbidden(req wm.Request, cxt wm.Context) 
     return false, req, cxt, 0, nil
 }
 
-func (p *CreateAccountRequestHandler) AllowMissingPost(req wm.Request, cxt wm.Context) (bool, wm.Request, wm.Context, int, os.Error) {
+func (p *CreateAccountRequestHandler) AllowMissingPost(req wm.Request, cxt wm.Context) (bool, wm.Request, wm.Context, int, error) {
     return true, req, cxt, 0, nil
 }
 
@@ -261,7 +260,7 @@ func (p *CreateAccountRequestHandler) URITooLong(req wm.Request, cxt wm.Context)
 }
 */
 
-func (p *CreateAccountRequestHandler) DeleteResource(req wm.Request, cxt wm.Context) (bool, wm.Request, wm.Context, int, os.Error) {
+func (p *CreateAccountRequestHandler) DeleteResource(req wm.Request, cxt wm.Context) (bool, wm.Request, wm.Context, int, error) {
     return false, req, cxt, http.StatusInternalServerError, nil
 }
 
@@ -271,7 +270,7 @@ func (p *CreateAccountRequestHandler) DeleteCompleted(req wm.Request, cxt wm.Con
 }
 */
 
-func (p *CreateAccountRequestHandler) PostIsCreate(req wm.Request, cxt wm.Context) (bool, wm.Request, wm.Context, int, os.Error) {
+func (p *CreateAccountRequestHandler) PostIsCreate(req wm.Request, cxt wm.Context) (bool, wm.Request, wm.Context, int, error) {
     return true, req, cxt, 0, nil
 }
 
@@ -281,7 +280,7 @@ func (p *CreateAccountRequestHandler) CreatePath(req wm.Request, cxt wm.Context)
 }
 */
 
-func (p *CreateAccountRequestHandler) ProcessPost(req wm.Request, cxt wm.Context) (wm.Request, wm.Context, int, http.Header, io.WriterTo, os.Error) {
+func (p *CreateAccountRequestHandler) ProcessPost(req wm.Request, cxt wm.Context) (wm.Request, wm.Context, int, http.Header, io.WriterTo, error) {
     mths, req, cxt, code, err := p.ContentTypesAccepted(req, cxt)
     if len(mths) > 0 {
         httpCode, httpHeaders, writerTo := mths[0].MediaTypeHandleInputFrom(req, cxt)
@@ -290,7 +289,7 @@ func (p *CreateAccountRequestHandler) ProcessPost(req wm.Request, cxt wm.Context
     return req, cxt, code, nil, nil, err
 }
 
-func (p *CreateAccountRequestHandler) ContentTypesProvided(req wm.Request, cxt wm.Context) ([]wm.MediaTypeHandler, wm.Request, wm.Context, int, os.Error) {
+func (p *CreateAccountRequestHandler) ContentTypesProvided(req wm.Request, cxt wm.Context) ([]wm.MediaTypeHandler, wm.Request, wm.Context, int, error) {
     cac := cxt.(CreateAccountContext)
     obj := cac.ToObject()
     lastModified := cac.LastModified()
@@ -303,7 +302,7 @@ func (p *CreateAccountRequestHandler) ContentTypesProvided(req wm.Request, cxt w
     return []wm.MediaTypeHandler{apiutil.NewJSONMediaTypeHandler(jsonObj, lastModified, etag)}, req, cac, 0, nil
 }
 
-func (p *CreateAccountRequestHandler) ContentTypesAccepted(req wm.Request, cxt wm.Context) ([]wm.MediaTypeInputHandler, wm.Request, wm.Context, int, os.Error) {
+func (p *CreateAccountRequestHandler) ContentTypesAccepted(req wm.Request, cxt wm.Context) ([]wm.MediaTypeInputHandler, wm.Request, wm.Context, int, error) {
     arr := []wm.MediaTypeInputHandler{apiutil.NewJSONMediaTypeInputHandler("", "", p, req.Body())}
     return arr, req, cxt, 0, nil
 }
@@ -357,7 +356,7 @@ func (p *CreateAccountRequestHandler) MovedTemporarily(req wm.Request, cxt wm.Co
 }
 */
 
-func (p *CreateAccountRequestHandler) LastModified(req wm.Request, cxt wm.Context) (*time.Time, wm.Request, wm.Context, int, os.Error) {
+func (p *CreateAccountRequestHandler) LastModified(req wm.Request, cxt wm.Context) (time.Time, wm.Request, wm.Context, int, error) {
     cac := cxt.(CreateAccountContext)
     return cac.LastModified(), req, cxt, 0, nil
 }
@@ -394,10 +393,10 @@ func (p *CreateAccountRequestHandler) HandleJSONObjectInputHandler(req wm.Reques
     cac.SetFromJSON(inputObj)
     cac.CleanInput(cac.RequestingUser())
 
-    errors := make(map[string][]os.Error)
+    errors := make(map[string][]error)
     var obj map[string]interface{}
     var accessKey *dm.AccessKey
-    var err os.Error
+    var err error
     ds := p.ds
     authDS := p.authDS
     if user := cac.User(); user != nil {
@@ -451,7 +450,7 @@ func (p *CreateAccountRequestHandler) HandleJSONObjectInputHandler(req wm.Reques
         return apiutil.OutputErrorMessage("Value errors. See result", errors, http.StatusBadRequest, nil)
     }
     if err != nil {
-        return apiutil.OutputErrorMessage(err.String(), nil, http.StatusInternalServerError, nil)
+        return apiutil.OutputErrorMessage(err.Error(), nil, http.StatusInternalServerError, nil)
     }
     theobj, _ := jsonhelper.MarshalWithOptions(obj, dm.UTC_DATETIME_FORMAT)
     jsonObj, _ := theobj.(jsonhelper.JSONObject)

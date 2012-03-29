@@ -30,23 +30,23 @@ func googleDateTimeStringToDsocial(s string) (d *DateTime) {
         d.Day = int8(day)
     } else if len(s) == 7 {
         t, err := time.Parse("--01-02", s)
-        if err == nil && t != nil {
+        if err == nil && !t.IsZero() {
             d = new(DateTime)
-            d.Month = int8(t.Month)
-            d.Day = int8(t.Day)
+            d.Month = int8(t.Month())
+            d.Day = int8(t.Day())
         }
     } else if len(s) == 25 {
         // YYYY-MM-DDTHH:MM:SS-05:00
         t, err := time.Parse("2006-01-02T15:04:05-07:00", s)
-        if err == nil && t != nil {
-            t2 := time.SecondsToUTC(t.Seconds())
+        if err == nil && !t.IsZero() {
+            t2 := t.UTC()
             d = new(DateTime)
-            d.Year = int16(t2.Year)
-            d.Month = int8(t2.Month)
-            d.Day = int8(t2.Day)
-            d.Hour = int8(t2.Hour)
-            d.Minute = int8(t2.Minute)
-            d.Second = int8(t2.Second)
+            d.Year = int16(t2.Year())
+            d.Month = int8(t2.Month())
+            d.Day = int8(t2.Day())
+            d.Hour = int8(t2.Hour())
+            d.Minute = int8(t2.Minute())
+            d.Second = int8(t2.Second())
         }
     }
     return

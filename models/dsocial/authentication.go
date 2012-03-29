@@ -7,7 +7,7 @@ import (
     "crypto/sha512"
     "fmt"
     "hash"
-    "rand"
+    "math/rand"
     "strings"
 )
 
@@ -125,7 +125,7 @@ func generateHashedValued(hashType HashAlgorithm, salt, testData string) string 
     hasher := hashType.Hasher()
     hasher.Write([]byte(salt))
     hasher.Write([]byte(testData))
-    return fmt.Sprintf("%x", hasher.Sum())
+    return fmt.Sprintf("%x", hasher.Sum(nil))
 }
 
 func checkHashedValue(hashType HashAlgorithm, salt, testData, testHashedValue string) bool {
@@ -136,7 +136,7 @@ func generateHashedByteValued(hashType HashAlgorithm, salt string, testData []by
     hasher := hashType.Hasher()
     hasher.Write([]byte(salt))
     hasher.Write(testData)
-    return fmt.Sprintf("%x", hasher.Sum())
+    return fmt.Sprintf("%x", hasher.Sum(nil))
 }
 
 func checkHashedByteValue(hashType HashAlgorithm, salt string, testData []byte, testHashedValue string) bool {

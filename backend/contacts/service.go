@@ -5,7 +5,6 @@ import (
     dm "github.com/pomack/dsocial.go/models/dsocial"
     "github.com/pomack/jsonhelper.go/jsonhelper"
     "github.com/pomack/oauth2_client.go/oauth2_client"
-    "os"
     "time"
 )
 
@@ -46,35 +45,35 @@ type ContactsServiceSettings interface {
 type NextToken interface{}
 
 type DataStoreService interface {
-    RetrieveAllContactsServiceSettingsForUser(dsocialUserId string) (settings []ContactsServiceSettings, err os.Error)
-    RetrieveContactsServiceSettingsForService(dsocialUserId, contactsServiceId string) (settings []ContactsServiceSettings, err os.Error)
-    RetrieveContactsServiceSettings(dsocialUserId, contactsServiceId, id string) (settings ContactsServiceSettings, err os.Error)
-    SetContactsServiceSettings(settings ContactsServiceSettings) (id string, err os.Error)
-    DeleteContactsServiceSettings(dsocialUserId, contactsServiceId, id string) (err os.Error)
+    RetrieveAllContactsServiceSettingsForUser(dsocialUserId string) (settings []ContactsServiceSettings, err error)
+    RetrieveContactsServiceSettingsForService(dsocialUserId, contactsServiceId string) (settings []ContactsServiceSettings, err error)
+    RetrieveContactsServiceSettings(dsocialUserId, contactsServiceId, id string) (settings ContactsServiceSettings, err error)
+    SetContactsServiceSettings(settings ContactsServiceSettings) (id string, err error)
+    DeleteContactsServiceSettings(dsocialUserId, contactsServiceId, id string) (err error)
 
-    SearchForDsocialContacts(dsocialUserId string, contact *dm.Contact) (contacts []*dm.Contact, err os.Error)
-    SearchForDsocialGroups(dsocialUserId string, groupName string) (groups []*dm.Group, err os.Error)
+    SearchForDsocialContacts(dsocialUserId string, contact *dm.Contact) (contacts []*dm.Contact, err error)
+    SearchForDsocialGroups(dsocialUserId string, groupName string) (groups []*dm.Group, err error)
 
-    StoreContactChangeSet(dsocialUserId string, changeset *dm.ChangeSet) (*dm.ChangeSet, os.Error)
-    RetrieveContactChangeSets(dsocialId string, after *time.Time) ([]*dm.ChangeSet, NextToken, os.Error)
+    StoreContactChangeSet(dsocialUserId string, changeset *dm.ChangeSet) (*dm.ChangeSet, error)
+    RetrieveContactChangeSets(dsocialId string, after time.Time) ([]*dm.ChangeSet, NextToken, error)
 
-    StoreGroupChangeSet(dsocialUserId string, changeset *dm.ChangeSet) (*dm.ChangeSet, os.Error)
-    RetrieveGroupChangeSets(dsocialId string, after *time.Time) ([]*dm.ChangeSet, NextToken, os.Error)
+    StoreGroupChangeSet(dsocialUserId string, changeset *dm.ChangeSet) (*dm.ChangeSet, error)
+    RetrieveGroupChangeSets(dsocialId string, after time.Time) ([]*dm.ChangeSet, NextToken, error)
 
-    AddContactChangeSetsToApply(dsocialUserId, serviceId, serviceName string, changesetIds []string) (id string, err os.Error)
-    AddGroupChangeSetsToApply(dsocialUserId, serviceId, serviceName string, changesetIds []string) (id string, err os.Error)
-    AddContactChangeSetsNotCurrentlyApplyable(dsocialUserId, serviceId, serviceName string, changesetIds []string) (id string, err os.Error)
-    AddGroupChangeSetsNotCurrentlyApplyable(dsocialUserId, serviceId, serviceName string, changesetIds []string) (id string, err os.Error)
+    AddContactChangeSetsToApply(dsocialUserId, serviceId, serviceName string, changesetIds []string) (id string, err error)
+    AddGroupChangeSetsToApply(dsocialUserId, serviceId, serviceName string, changesetIds []string) (id string, err error)
+    AddContactChangeSetsNotCurrentlyApplyable(dsocialUserId, serviceId, serviceName string, changesetIds []string) (id string, err error)
+    AddGroupChangeSetsNotCurrentlyApplyable(dsocialUserId, serviceId, serviceName string, changesetIds []string) (id string, err error)
 
-    RetrieveContactChangeSetsToApply(dsocialUserId, serviceId, serviceName string) ([]*dm.ChangeSetsToApply, map[string]*dm.ChangeSet, os.Error)
-    RetrieveGroupChangeSetsToApply(dsocialUserId, serviceId, serviceName string) ([]*dm.ChangeSetsToApply, map[string]*dm.ChangeSet, os.Error)
-    RetrieveContactChangeSetsNotCurrentlyApplyable(dsocialUserId, serviceId, serviceName string) ([]*dm.ChangeSetsToApply, map[string]*dm.ChangeSet, os.Error)
-    RetrieveGroupChangeSetsNotCurrentlyApplyable(dsocialUserId, serviceId, serviceName string) ([]*dm.ChangeSetsToApply, map[string]*dm.ChangeSet, os.Error)
+    RetrieveContactChangeSetsToApply(dsocialUserId, serviceId, serviceName string) ([]*dm.ChangeSetsToApply, map[string]*dm.ChangeSet, error)
+    RetrieveGroupChangeSetsToApply(dsocialUserId, serviceId, serviceName string) ([]*dm.ChangeSetsToApply, map[string]*dm.ChangeSet, error)
+    RetrieveContactChangeSetsNotCurrentlyApplyable(dsocialUserId, serviceId, serviceName string) ([]*dm.ChangeSetsToApply, map[string]*dm.ChangeSet, error)
+    RetrieveGroupChangeSetsNotCurrentlyApplyable(dsocialUserId, serviceId, serviceName string) ([]*dm.ChangeSetsToApply, map[string]*dm.ChangeSet, error)
 
-    RemoveContactChangeSetsToApply(dsocialUserId, serviceId, serviceName string, changeSetIdsToApply []string) os.Error
-    RemoveGroupChangeSetsToApply(dsocialUserId, serviceId, serviceName string, changeSetIdsToApply []string) (err os.Error)
-    RemoveContactChangeSetsNotCurrentlyApplyable(dsocialUserId, serviceId, serviceName string, changeSetIdsToApply []string) (err os.Error)
-    RemoveGroupChangeSetsNotCurrentlyApplyable(dsocialUserId, serviceId, serviceName string, changeSetIdsToApply []string) (err os.Error)
+    RemoveContactChangeSetsToApply(dsocialUserId, serviceId, serviceName string, changeSetIdsToApply []string) error
+    RemoveGroupChangeSetsToApply(dsocialUserId, serviceId, serviceName string, changeSetIdsToApply []string) (err error)
+    RemoveContactChangeSetsNotCurrentlyApplyable(dsocialUserId, serviceId, serviceName string, changeSetIdsToApply []string) (err error)
+    RemoveGroupChangeSetsNotCurrentlyApplyable(dsocialUserId, serviceId, serviceName string, changeSetIdsToApply []string) (err error)
 
     // Generates a new unique id for the specified collection name
     GenerateId(dsocialUserId, collectionName string) string
@@ -83,146 +82,146 @@ type DataStoreService interface {
     // Returns:
     //   dsocialContactId : the dsocial contact id if it exists or empty if not found
     //   err : error or nil
-    DsocialIdForExternalContactId(externalServiceId, externalUserId, dsocialUserId, externalContactId string) (dsocialContactId string, err os.Error)
+    DsocialIdForExternalContactId(externalServiceId, externalUserId, dsocialUserId, externalContactId string) (dsocialContactId string, err error)
     // Retrieve the dsocial group id for the specified external service/user id/group id combo
     // Returns:
     //   dsocialGroupId : the dsocial group id if it exists or empty if not found
     //   err : error or nil
-    DsocialIdForExternalGroupId(externalServiceId, externalUserId, dsocialUserId, externalGroupId string) (dsocialGroupId string, err os.Error)
+    DsocialIdForExternalGroupId(externalServiceId, externalUserId, dsocialUserId, externalGroupId string) (dsocialGroupId string, err error)
     // Retrieve the external contact id for the specified external service/external user id/dsocial user id/dsocial contact id combo
     // Returns:
     //   externalContactId : the dsocial contact id if it exists or empty if not found
     //   err : error or nil
-    ExternalContactIdForDsocialId(externalServiceId, externalUserId, dsocialUserId, dsocialContactId string) (externalContactId string, err os.Error)
+    ExternalContactIdForDsocialId(externalServiceId, externalUserId, dsocialUserId, dsocialContactId string) (externalContactId string, err error)
     // Retrieve the external group id for the specified external service/external user id/dsocial user id/dsocial group id combo
     // Returns:
     //   externalGroupId : the dsocial group id if it exists or empty if not found
     //   err : error or nil
-    ExternalGroupIdForDsocialId(externalServiceId, externalUserId, dsocialUserId, dsocialGroupId string) (externalGroupId string, err os.Error)
+    ExternalGroupIdForDsocialId(externalServiceId, externalUserId, dsocialUserId, dsocialGroupId string) (externalGroupId string, err error)
     // Stores the dsocial contact id <-> external contact id mapping
     // Returns:
     //   externalExisted : whether the external contact id mapping already existed and was overwritten
     //   dsocialExisted : whether the dsocial contact id mapping already existed and was overwritten
     //   err : error or nil
-    StoreDsocialExternalContactMapping(externalServiceId, externalUserId, externalContactId, dsocialUserId, dsocialContactId string) (externalExisted, dsocialExisted bool, err os.Error)
+    StoreDsocialExternalContactMapping(externalServiceId, externalUserId, externalContactId, dsocialUserId, dsocialContactId string) (externalExisted, dsocialExisted bool, err error)
     // Stores the dsocial contact id <-> external group id mapping
     // Returns:
     //   externalExisted : whether the external group id mapping already existed and was overwritten
     //   dsocialExisted : whether the dsocial group id mapping already existed and was overwritten
     //   err : error or nil
-    StoreDsocialExternalGroupMapping(externalServiceId, externalUserId, externalGroupId, dsocialUserId, dsocialGroupId string) (externalExisted, dsocialExisted bool, err os.Error)
+    StoreDsocialExternalGroupMapping(externalServiceId, externalUserId, externalGroupId, dsocialUserId, dsocialGroupId string) (externalExisted, dsocialExisted bool, err error)
 
     // Retrieve external contact
     // Returns:
     //   externalContact : the contact as stored into the service using StoreExternalContact or nil if not found
     //   id : the internal id used to store the external contact
     //   err : error or nil
-    RetrieveExternalContact(externalServiceId, externalUserId, dsocialUserId, externalContactId string) (externalContact interface{}, id string, err os.Error)
+    RetrieveExternalContact(externalServiceId, externalUserId, dsocialUserId, externalContactId string) (externalContact interface{}, id string, err error)
     // Retrieve external group
     // Returns:
     //   externalGroup : the group as stored into the service using StoreExternalGroup or nil if not found
     //   id : the internal id used to store the external group
     //   err : error or nil
-    RetrieveExternalGroup(externalServiceId, externalUserId, dsocialUserId, externalGroupId string) (externalGroup interface{}, id string, err os.Error)
+    RetrieveExternalGroup(externalServiceId, externalUserId, dsocialUserId, externalGroupId string) (externalGroup interface{}, id string, err error)
     // Stores external contact
     // Returns:
     //   id : the internal id used to store the external contact
     //   err : error or nil
-    StoreExternalContact(externalServiceId, externalUserId, dsocialUserId, externalContactId string, contact interface{}) (id string, err os.Error)
+    StoreExternalContact(externalServiceId, externalUserId, dsocialUserId, externalContactId string, contact interface{}) (id string, err error)
     // Stores external group
     // Returns:
     //   id : the internal id used to store the external group
     //   err : error or nil
-    StoreExternalGroup(externalServiceId, externalUserId, dsocialUserId, externalGroupId string, group interface{}) (id string, err os.Error)
+    StoreExternalGroup(externalServiceId, externalUserId, dsocialUserId, externalGroupId string, group interface{}) (id string, err error)
     // Deletes external contact
     // Returns:
     //   existed : whether the contact existed upon deletion
     //   err : error or nil
-    DeleteExternalContact(externalServiceId, externalUserId, dsocialUserId, externalContactId string) (existed bool, err os.Error)
+    DeleteExternalContact(externalServiceId, externalUserId, dsocialUserId, externalContactId string) (existed bool, err error)
     // Deletes external group
     // Returns:
     //   existed : whether the group existed upon deletion
     //   err : error or nil
-    DeleteExternalGroup(externalServiceId, externalUserId, dsocialUserId, externalGroupId string) (existed bool, err os.Error)
+    DeleteExternalGroup(externalServiceId, externalUserId, dsocialUserId, externalGroupId string) (existed bool, err error)
 
     // Retrieve dsocial contact
     // Returns:
     //   dsocialContact : the contact as stored into the service using StoreDsocialContact or nil if not found
     //   id : the internal id used to store the dsocial contact
     //   err : error or nil
-    RetrieveDsocialContactForExternalContact(externalServiceId, externalUserId, externalContactId, dsocialUserId string) (dsocialContact *dm.Contact, id string, err os.Error)
+    RetrieveDsocialContactForExternalContact(externalServiceId, externalUserId, externalContactId, dsocialUserId string) (dsocialContact *dm.Contact, id string, err error)
     // Retrieve dsocial group
     // Returns:
     //   dsocialGroup : the group as stored into the service using StoreDsocialGroup or nil if not found
     //   id : the internal id used to store the dsocial group
     //   err : error or nil
-    RetrieveDsocialGroupForExternalGroup(externalServiceId, externalUserId, externalGroupId, dsocialUserId string) (dsocialGroup *dm.Group, id string, err os.Error)
+    RetrieveDsocialGroupForExternalGroup(externalServiceId, externalUserId, externalGroupId, dsocialUserId string) (dsocialGroup *dm.Group, id string, err error)
     // Stores dsocial contact
     // Returns:
     //   dsocialContact : the contact, modified to include items like Id and LastModified/Created
     //   err : error or nil
-    StoreDsocialContactForExternalContact(externalServiceId, externalUserId, externalContactId, dsocialUserId string, contact *dm.Contact) (dsocialContact *dm.Contact, err os.Error)
+    StoreDsocialContactForExternalContact(externalServiceId, externalUserId, externalContactId, dsocialUserId string, contact *dm.Contact) (dsocialContact *dm.Contact, err error)
     // Stores dsocial group
     // Returns:
     //   dsocialGroup : the group, modified to include items like Id and LastModified/Created
     //   err : error or nil
-    StoreDsocialGroupForExternalGroup(externalServiceId, externalUserId, externalGroupId, dsocialUserId string, group *dm.Group) (dsocialGroup *dm.Group, err os.Error)
+    StoreDsocialGroupForExternalGroup(externalServiceId, externalUserId, externalGroupId, dsocialUserId string, group *dm.Group) (dsocialGroup *dm.Group, err error)
     // Deletes dsocial contact
     // Returns:
     //   existed : whether the contact existed upon deletion
     //   err : error or nil
-    DeleteDsocialContactForExternalContact(externalServiceId, externalUserId, externalContactId, dsocialUserId string) (existed bool, err os.Error)
+    DeleteDsocialContactForExternalContact(externalServiceId, externalUserId, externalContactId, dsocialUserId string) (existed bool, err error)
     // Deletes dsocial group
     // Returns:
     //   existed : whether the group existed upon deletion
     //   err : error or nil
-    DeleteDsocialGroupForExternalGroup(externalServiceId, externalUserId, externalGroupId, dsocialUserId string) (existed bool, err os.Error)
+    DeleteDsocialGroupForExternalGroup(externalServiceId, externalUserId, externalGroupId, dsocialUserId string) (existed bool, err error)
 
     // List dsocial contacts
     // Returns:
     //   dsocialContacts : list of contacts stored in the service
     //   next : token for the next list of contacts
     //   err : error or nil
-    ListDsocialContacts(dsocialUserId string, from NextToken, maxCount int) (dsocialContacts []*dm.Contact, next NextToken, err os.Error)
+    ListDsocialContacts(dsocialUserId string, from NextToken, maxCount int) (dsocialContacts []*dm.Contact, next NextToken, err error)
 
     // Retrieve dsocial contact
     // Returns:
     //   dsocialContact : the contact as stored into the service using StoreDsocialContact or nil if not found
     //   id : the internal id used to store the dsocial contact
     //   err : error or nil
-    RetrieveDsocialContact(dsocialUserId, dsocialContactId string) (dsocialContact *dm.Contact, id string, err os.Error)
+    RetrieveDsocialContact(dsocialUserId, dsocialContactId string) (dsocialContact *dm.Contact, id string, err error)
     // Retrieve dsocial group
     // Returns:
     //   dsocialGroup : the group as stored into the service using StoreDsocialGroup or nil if not found
     //   id : the internal id used to store the dsocial group
     //   err : error or nil
-    RetrieveDsocialGroup(dsocialUserId, dsocialGroupId string) (dsocialGroup *dm.Group, id string, err os.Error)
+    RetrieveDsocialGroup(dsocialUserId, dsocialGroupId string) (dsocialGroup *dm.Group, id string, err error)
     // Stores dsocial contact
     // Returns:
     //   dsocialContact : the contact, modified to include items like Id and LastModified/Created
     //   err : error or nil
-    StoreDsocialContact(dsocialUserId, dsocialContactId string, contact *dm.Contact) (dsocialContact *dm.Contact, err os.Error)
+    StoreDsocialContact(dsocialUserId, dsocialContactId string, contact *dm.Contact) (dsocialContact *dm.Contact, err error)
     // Stores dsocial group
     // Returns:
     //   dsocialGroup : the group, modified to include items like Id and LastModified/Created
     //   err : error or nil
-    StoreDsocialGroup(dsocialUserId, dsocialGroupId string, group *dm.Group) (dsocialGroup *dm.Group, err os.Error)
+    StoreDsocialGroup(dsocialUserId, dsocialGroupId string, group *dm.Group) (dsocialGroup *dm.Group, err error)
     // Deletes dsocial contact
     // Returns:
     //   existed : whether the contact existed upon deletion
     //   err : error or nil
-    DeleteDsocialContact(dsocialUserId, dsocialContactId string) (existed bool, err os.Error)
+    DeleteDsocialContact(dsocialUserId, dsocialContactId string) (existed bool, err error)
     // Deletes dsocial group
     // Returns:
     //   existed : whether the group existed upon deletion
     //   err : error or nil
-    DeleteDsocialGroup(dsocialUserId, dsocialGroupId string) (existed bool, err os.Error)
+    DeleteDsocialGroup(dsocialUserId, dsocialGroupId string) (existed bool, err error)
 }
 
 type ContactsService interface {
     ServiceId() string
     // Create an OAuth2Client based on the specified settings for this contacts service
-    CreateOAuth2Client(settings jsonhelper.JSONObject) (client oauth2_client.OAuth2Client, err os.Error)
+    CreateOAuth2Client(settings jsonhelper.JSONObject) (client oauth2_client.OAuth2Client, err error)
     // Convert the external contact for this Contacts Service to a dsocial contact or nil if not convertible or input is nil
     ConvertToDsocialContact(externalContact interface{}, originalDsocialContact *dm.Contact, dsocialUserId string) (dsocialContact *dm.Contact)
     // Convert the dsocial contact to the external contact for this Contacts Service or nil if input is nil
@@ -275,80 +274,80 @@ type ContactsService interface {
     // Returns:
     //   contacts : all contacts
     //   err : error or nil
-    RetrieveAllContacts(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId string) (contacts []*Contact, err os.Error)
+    RetrieveAllContacts(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId string) (contacts []*Contact, err error)
     // Retrieve all connections using the specified client
     // Returns:
     //   connections : all connections
     //   err : error or nil
-    RetrieveAllConnections(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId string) (connections []*Contact, err os.Error)
+    RetrieveAllConnections(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId string) (connections []*Contact, err error)
     // Retrieve all groups using the specified client
     // Returns:
     //   groups : all groups
     //   err : error or nil
-    RetrieveAllGroups(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId string) (groups []*Group, err os.Error)
+    RetrieveAllGroups(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId string) (groups []*Group, err error)
     // Retrieve contacts using next as an opaque pointer for where to start listing from using the specified client
     // Returns:
     //   contacts : contacts
     //   nextToken : token to the next page, if contacts are empty then no more exist and nextToken is irrelevant
     //   err : error or nil
-    RetrieveContacts(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId string, next NextToken) (contacts []*Contact, nextToken NextToken, err os.Error)
+    RetrieveContacts(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId string, next NextToken) (contacts []*Contact, nextToken NextToken, err error)
     // Retrieve connections using next as an opaque pointer for where to start listing from using the specified client
     // Returns:
     //   connections : connections
     //   nextToken : token to the next page, if connections are empty then no more exist and nextToken is irrelevant
     //   err : error or nil
-    RetrieveConnections(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId string, next NextToken) (connections []*Contact, nextToken NextToken, err os.Error)
+    RetrieveConnections(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId string, next NextToken) (connections []*Contact, nextToken NextToken, err error)
     // Retrieve groups using next as an opaque pointer for where to start listing from using the specified client
     // Returns:
     //   groups : groups
     //   nextToken : token to the next page, if groups are empty then no more exist and nextToken is irrelevant
     //   err : error or nil
-    RetrieveGroups(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId string, next NextToken) (groups []*Group, nextToken NextToken, err os.Error)
+    RetrieveGroups(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId string, next NextToken) (groups []*Group, nextToken NextToken, err error)
     // Retrieve the specified contact for the contactId or self-contact if contactId is empty
     // Returns:
     //   contact : contact or nil if not found
     //   err : error or nil
-    RetrieveContact(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId string, contactId string) (contact *Contact, err os.Error)
+    RetrieveContact(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId string, contactId string) (contact *Contact, err error)
     // Retrieve the specified group for the groupId
     // Returns:
     //   group : group or nil if not found
     //   err : error or nil
-    RetrieveGroup(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId string, groupId string) (group *Group, err os.Error)
+    RetrieveGroup(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId string, groupId string) (group *Group, err error)
     // Creates the specified contact
     // Returns:
     //   updatedContact : updated version of contact with fields updated like Id and LastModified
     //   err : error or nil
-    CreateContactOnExternalService(client oauth2_client.OAuth2Client, externalContact interface{}) (externalContactResult interface{}, externalContactId string, err os.Error)
+    CreateContactOnExternalService(client oauth2_client.OAuth2Client, externalContact interface{}) (externalContactResult interface{}, externalContactId string, err error)
     //CreateContact(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId string, contact *dm.Contact) (updatedContact *Contact, err os.Error)
     // Creates the specified group
     // Returns:
     //   updatedGroup : updated version of group with fields updated like Id and LastModified
     //   err : error or nil
-    CreateGroupOnExternalService(client oauth2_client.OAuth2Client, externalGroup interface{}) (externalGroupResult interface{}, externalGroupId string, err os.Error)
+    CreateGroupOnExternalService(client oauth2_client.OAuth2Client, externalGroup interface{}) (externalGroupResult interface{}, externalGroupId string, err error)
     //CreateGroup(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId string, group *dm.Group) (updatedGroup *Group, err os.Error)
     // Updates the specified contact
     // Returns:
     //   updatedContact : updated version of contact with fields updated like LastModified
     //   err : error or nil
-    UpdateContactOnExternalService(client oauth2_client.OAuth2Client, originalExternalContact, latestExternalContact interface{}) (externalContactResult interface{}, externalContactId string, err os.Error)
+    UpdateContactOnExternalService(client oauth2_client.OAuth2Client, originalExternalContact, latestExternalContact interface{}) (externalContactResult interface{}, externalContactId string, err error)
     //UpdateContact(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId string, originalContact, contact *dm.Contact) (updatedContact *Contact, err os.Error)
     // Updates the specified group
     // Returns:
     //   updatedGroup : updated version of group with fields updated like LastModified
     //   err : error or nil
-    UpdateGroupOnExternalService(client oauth2_client.OAuth2Client, originalExternalGroup, latestExternalGroup interface{}) (externalGroupResult interface{}, externalGroupId string, err os.Error)
+    UpdateGroupOnExternalService(client oauth2_client.OAuth2Client, originalExternalGroup, latestExternalGroup interface{}) (externalGroupResult interface{}, externalGroupId string, err error)
     //UpdateGroup(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId string, originalGroup, group *dm.Group) (updatedGroup *Group, err os.Error)
     // Deletes the specified contact
     // Returns:
     //   existed : whether the contact existed upon deletiong
     //   err : error or nil
-    DeleteContactOnExternalService(client oauth2_client.OAuth2Client, originalExternalContact interface{}) (existed bool, err os.Error)
+    DeleteContactOnExternalService(client oauth2_client.OAuth2Client, originalExternalContact interface{}) (existed bool, err error)
     //DeleteContact(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId, dsocialContactId string) (existed bool, err os.Error)
     // Deletes the specified group
     // Returns:
     //   existed : whether the group existed upon deletiong
     //   err : error or nil
-    DeleteGroupOnExternalService(client oauth2_client.OAuth2Client, originalExternalGroup interface{}) (existed bool, err os.Error)
+    DeleteGroupOnExternalService(client oauth2_client.OAuth2Client, originalExternalGroup interface{}) (existed bool, err error)
     //DeleteGroup(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId, dsocialGroupId string) (existed bool, err os.Error)
 }
 
@@ -421,7 +420,7 @@ func addIdForAclPersistableModel(m *dm.AclPersistableModel, ds DataStoreService,
     }
 }
 
-func AddIdsForDsocialContact(c *dm.Contact, ds DataStoreService, dsocialUserId string) (err os.Error) {
+func AddIdsForDsocialContact(c *dm.Contact, ds DataStoreService, dsocialUserId string) (err error) {
     if c == nil {
         return
     }
@@ -567,7 +566,7 @@ func AddIdsForDsocialContact(c *dm.Contact, ds DataStoreService, dsocialUserId s
     return
 }
 
-func AddIdsForDsocialGroup(g *dm.Group, ds DataStoreService, dsocialUserId string) (err os.Error) {
+func AddIdsForDsocialGroup(g *dm.Group, ds DataStoreService, dsocialUserId string) (err error) {
     if g == nil {
         return
     }
@@ -583,7 +582,7 @@ func AddIdsForDsocialGroup(g *dm.Group, ds DataStoreService, dsocialUserId strin
     return
 }
 
-func CreateContactOnExternalService(client oauth2_client.OAuth2Client, cs ContactsService, ds DataStoreService, dsocialUserId string, contact *dm.Contact) (*Contact, os.Error) {
+func CreateContactOnExternalService(client oauth2_client.OAuth2Client, cs ContactsService, ds DataStoreService, dsocialUserId string, contact *dm.Contact) (*Contact, error) {
     if contact == nil {
         return nil, nil
     }
@@ -634,7 +633,7 @@ func CreateContactOnExternalService(client oauth2_client.OAuth2Client, cs Contac
     return outContact, err
 }
 
-func CreateGroupOnExternalService(client oauth2_client.OAuth2Client, cs ContactsService, ds DataStoreService, dsocialUserId string, group *dm.Group) (*Group, os.Error) {
+func CreateGroupOnExternalService(client oauth2_client.OAuth2Client, cs ContactsService, ds DataStoreService, dsocialUserId string, group *dm.Group) (*Group, error) {
     if group == nil {
         return nil, nil
     }
@@ -681,7 +680,7 @@ func CreateGroupOnExternalService(client oauth2_client.OAuth2Client, cs Contacts
     return outGroup, err
 }
 
-func UpdateContactOnExternalService(client oauth2_client.OAuth2Client, cs ContactsService, ds DataStoreService, dsocialUserId string, originalContact, contact *dm.Contact) (*Contact, os.Error) {
+func UpdateContactOnExternalService(client oauth2_client.OAuth2Client, cs ContactsService, ds DataStoreService, dsocialUserId string, originalContact, contact *dm.Contact) (*Contact, error) {
     if contact == nil || originalContact == nil {
         return nil, nil
     }
@@ -730,7 +729,7 @@ func UpdateContactOnExternalService(client oauth2_client.OAuth2Client, cs Contac
     return outContact, err
 }
 
-func UpdateGroupOnExternalService(client oauth2_client.OAuth2Client, cs ContactsService, ds DataStoreService, dsocialUserId string, originalGroup, group *dm.Group) (*Group, os.Error) {
+func UpdateGroupOnExternalService(client oauth2_client.OAuth2Client, cs ContactsService, ds DataStoreService, dsocialUserId string, originalGroup, group *dm.Group) (*Group, error) {
     if group == nil || originalGroup == nil {
         return nil, nil
     }
@@ -779,7 +778,7 @@ func UpdateGroupOnExternalService(client oauth2_client.OAuth2Client, cs Contacts
     return outGroup, err
 }
 
-func DeleteContactOnExternalService(client oauth2_client.OAuth2Client, cs ContactsService, ds DataStoreService, dsocialUserId, dsocialContactId string) (bool, os.Error) {
+func DeleteContactOnExternalService(client oauth2_client.OAuth2Client, cs ContactsService, ds DataStoreService, dsocialUserId, dsocialContactId string) (bool, error) {
     if dsocialContactId == "" || dsocialUserId == "" {
         return false, nil
     }
@@ -812,7 +811,7 @@ func DeleteContactOnExternalService(client oauth2_client.OAuth2Client, cs Contac
     return true, err
 }
 
-func DeleteGroupOnExternalService(client oauth2_client.OAuth2Client, cs ContactsService, ds DataStoreService, dsocialUserId, dsocialGroupId string) (bool, os.Error) {
+func DeleteGroupOnExternalService(client oauth2_client.OAuth2Client, cs ContactsService, ds DataStoreService, dsocialUserId, dsocialGroupId string) (bool, error) {
     if dsocialGroupId == "" || dsocialUserId == "" {
         return false, nil
     }

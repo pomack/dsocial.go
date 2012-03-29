@@ -5,7 +5,6 @@ import (
     dm "github.com/pomack/dsocial.go/models/dsocial"
     "github.com/pomack/jsonhelper.go/jsonhelper"
     "github.com/pomack/oauth2_client.go/oauth2_client"
-    "os"
 )
 
 type GooglePlusContactService struct {
@@ -34,7 +33,7 @@ func (p *GooglePlusContactService) ServiceId() string {
     return GOOGLE_PLUS_CONTACT_SERVICE_ID
 }
 
-func (p *GooglePlusContactService) CreateOAuth2Client(settings jsonhelper.JSONObject) (client oauth2_client.OAuth2Client, err os.Error) {
+func (p *GooglePlusContactService) CreateOAuth2Client(settings jsonhelper.JSONObject) (client oauth2_client.OAuth2Client, err error) {
     client = oauth2_client.NewGooglePlusClient()
     client.Initialize(settings)
     return
@@ -143,32 +142,32 @@ func (p *GooglePlusContactService) ContactInfoIncludesGroups() bool {
     return false
 }
 
-func (p *GooglePlusContactService) RetrieveAllContacts(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId string) ([]*Contact, os.Error) {
+func (p *GooglePlusContactService) RetrieveAllContacts(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId string) ([]*Contact, error) {
     contacts, _, err := p.RetrieveContacts(client, ds, dsocialUserId, nil)
     return contacts, err
 }
 
-func (p *GooglePlusContactService) RetrieveAllConnections(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId string) ([]*Contact, os.Error) {
+func (p *GooglePlusContactService) RetrieveAllConnections(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId string) ([]*Contact, error) {
     return make([]*Contact, 0), nil
 }
 
-func (p *GooglePlusContactService) RetrieveAllGroups(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId string) ([]*Group, os.Error) {
+func (p *GooglePlusContactService) RetrieveAllGroups(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId string) ([]*Group, error) {
     return make([]*Group, 0), nil
 }
 
-func (p *GooglePlusContactService) RetrieveContacts(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId string, next NextToken) ([]*Contact, NextToken, os.Error) {
+func (p *GooglePlusContactService) RetrieveContacts(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId string, next NextToken) ([]*Contact, NextToken, error) {
     return make([]*Contact, 0), nil, nil
 }
 
-func (p *GooglePlusContactService) RetrieveConnections(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId string, next NextToken) ([]*Contact, NextToken, os.Error) {
+func (p *GooglePlusContactService) RetrieveConnections(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId string, next NextToken) ([]*Contact, NextToken, error) {
     return make([]*Contact, 0), nil, nil
 }
 
-func (p *GooglePlusContactService) RetrieveGroups(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId string, next NextToken) ([]*Group, NextToken, os.Error) {
+func (p *GooglePlusContactService) RetrieveGroups(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId string, next NextToken) ([]*Group, NextToken, error) {
     return make([]*Group, 0), nil, nil
 }
 
-func (p *GooglePlusContactService) RetrieveContact(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId string, contactId string) (*Contact, os.Error) {
+func (p *GooglePlusContactService) RetrieveContact(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId string, contactId string) (*Contact, error) {
     googleplusContact, err := googleplus.RetrieveContact(client, contactId, nil)
     if googleplusContact == nil || err != nil {
         return nil, err
@@ -206,31 +205,31 @@ func (p *GooglePlusContactService) RetrieveContact(client oauth2_client.OAuth2Cl
     return contact, useErr
 }
 
-func (p *GooglePlusContactService) RetrieveGroup(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId string, groupId string) (*Group, os.Error) {
+func (p *GooglePlusContactService) RetrieveGroup(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId string, groupId string) (*Group, error) {
     return nil, nil
 }
 
-func (p *GooglePlusContactService) CreateContactOnExternalService(client oauth2_client.OAuth2Client, contact interface{}) (interface{}, string, os.Error) {
+func (p *GooglePlusContactService) CreateContactOnExternalService(client oauth2_client.OAuth2Client, contact interface{}) (interface{}, string, error) {
     return nil, "", nil
 }
 
-func (p *GooglePlusContactService) CreateGroupOnExternalService(client oauth2_client.OAuth2Client, group interface{}) (interface{}, string, os.Error) {
+func (p *GooglePlusContactService) CreateGroupOnExternalService(client oauth2_client.OAuth2Client, group interface{}) (interface{}, string, error) {
     return nil, "", nil
 }
 
-func (p *GooglePlusContactService) UpdateContactOnExternalService(client oauth2_client.OAuth2Client, originalContact, contact interface{}) (interface{}, string, os.Error) {
+func (p *GooglePlusContactService) UpdateContactOnExternalService(client oauth2_client.OAuth2Client, originalContact, contact interface{}) (interface{}, string, error) {
     return nil, "", nil
 }
 
-func (p *GooglePlusContactService) UpdateGroupOnExternalService(client oauth2_client.OAuth2Client, originalGroup, group interface{}) (interface{}, string, os.Error) {
+func (p *GooglePlusContactService) UpdateGroupOnExternalService(client oauth2_client.OAuth2Client, originalGroup, group interface{}) (interface{}, string, error) {
     return nil, "", nil
 }
 
-func (p *GooglePlusContactService) DeleteContactOnExternalService(client oauth2_client.OAuth2Client, contact interface{}) (bool, os.Error) {
+func (p *GooglePlusContactService) DeleteContactOnExternalService(client oauth2_client.OAuth2Client, contact interface{}) (bool, error) {
     return false, nil
 }
 
-func (p *GooglePlusContactService) DeleteGroupOnExternalService(client oauth2_client.OAuth2Client, group interface{}) (bool, os.Error) {
+func (p *GooglePlusContactService) DeleteGroupOnExternalService(client oauth2_client.OAuth2Client, group interface{}) (bool, error) {
     return false, nil
 }
 

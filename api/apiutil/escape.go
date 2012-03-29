@@ -5,8 +5,8 @@ package apiutil
 // see https://github.com/abneptis/GoAWS/blob/master/LICENSE
 
 import (
+    "net/url"
     "sort"
-    "url"
 )
 
 // (2011-06-21) - The standard go http.Values.Escape

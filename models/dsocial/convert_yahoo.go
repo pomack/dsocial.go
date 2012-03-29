@@ -2,7 +2,6 @@ package dsocial
 
 import (
     "container/list"
-    "container/vector"
     "github.com/pomack/contacts.go/yahoo"
 )
 
@@ -270,10 +269,9 @@ func DsocialContactToYahoo(c *Contact, o *yahoo.Contact) *yahoo.Contact {
         case REL_EMAIL_WORK:
             flag = yahoo.YAHOO_FIELD_FLAG_WORK
         }
-        var flags []string = nil
+        flags := make([]string, 0, 1)
         if flag != "" {
-            flags = make([]string, 1)
-            flags[0] = flag
+            flags = append(flags, flag)
         }
         fields.PushBack(&yahoo.ContactField{
             Type:  yahoo.YAHOO_FIELD_TYPE_EMAIL,
@@ -282,70 +280,70 @@ func DsocialContactToYahoo(c *Contact, o *yahoo.Contact) *yahoo.Contact {
         })
     }
     for _, im := range c.Ims {
-        var flags vector.StringVector
+        flags := make([]string, 0, 2)
         thetype := yahoo.YAHOO_FIELD_TYPE_OTHERID
         switch im.Rel {
         case REL_IM_HOME:
-            flags.Push(yahoo.YAHOO_FIELD_FLAG_HOME)
+            flags = append(flags, yahoo.YAHOO_FIELD_FLAG_HOME)
         case REL_IM_WORK:
-            flags.Push(yahoo.YAHOO_FIELD_FLAG_WORK)
+            flags = append(flags, yahoo.YAHOO_FIELD_FLAG_WORK)
         }
         switch im.Protocol {
         case REL_IM_PROT_YAHOO_MESSENGER:
             thetype = yahoo.YAHOO_FIELD_TYPE_YAHOOID
         case REL_IM_PROT_AIM:
-            flags.Push(yahoo.YAHOO_FIELD_FLAG_AOL)
+            flags = append(flags, yahoo.YAHOO_FIELD_FLAG_AOL)
         case REL_IM_PROT_DOTMAC:
-            flags.Push(yahoo.YAHOO_FIELD_FLAG_DOTMAC)
+            flags = append(flags, yahoo.YAHOO_FIELD_FLAG_DOTMAC)
         case REL_IM_PROT_GOOGLE_TALK:
-            flags.Push(yahoo.YAHOO_FIELD_FLAG_GOOGLE)
+            flags = append(flags, yahoo.YAHOO_FIELD_FLAG_GOOGLE)
         case REL_IM_PROT_SAMETIME:
-            flags.Push(yahoo.YAHOO_FIELD_FLAG_IBM)
+            flags = append(flags, yahoo.YAHOO_FIELD_FLAG_IBM)
         case REL_IM_PROT_ICQ:
-            flags.Push(yahoo.YAHOO_FIELD_FLAG_ICQ)
+            flags = append(flags, yahoo.YAHOO_FIELD_FLAG_ICQ)
         case REL_IM_PROT_IRC:
-            flags.Push(yahoo.YAHOO_FIELD_FLAG_IRC)
+            flags = append(flags, yahoo.YAHOO_FIELD_FLAG_IRC)
         case REL_IM_PROT_JABBER:
-            flags.Push(yahoo.YAHOO_FIELD_FLAG_JABBER)
+            flags = append(flags, yahoo.YAHOO_FIELD_FLAG_JABBER)
         case REL_IM_PROT_MSN:
-            flags.Push(yahoo.YAHOO_FIELD_FLAG_MSN)
+            flags = append(flags, yahoo.YAHOO_FIELD_FLAG_MSN)
         case REL_IM_PROT_QQ:
-            flags.Push(yahoo.YAHOO_FIELD_FLAG_QQ)
+            flags = append(flags, yahoo.YAHOO_FIELD_FLAG_QQ)
         case REL_IM_PROT_SKYPE:
-            flags.Push(yahoo.YAHOO_FIELD_FLAG_SKYPE)
+            flags = append(flags, yahoo.YAHOO_FIELD_FLAG_SKYPE)
         default:
             continue
         }
         fields.PushBack(&yahoo.ContactField{
             Type:  thetype,
             Value: im.Handle,
-            Flags: []string(flags),
+            Flags: flags,
         })
     }
     for _, phone := range c.PhoneNumbers {
-        var flags vector.StringVector
+        flags := make([]string, 0, 2)
         switch phone.Rel {
         case REL_PHONE_EXTERNAL:
-            flags.Push(yahoo.YAHOO_FIELD_FLAG_EXTERNAL)
+            flags = append(flags, yahoo.YAHOO_FIELD_FLAG_EXTERNAL)
         case REL_PHONE_FAX:
-            flags.Push(yahoo.YAHOO_FIELD_FLAG_FAX)
+            flags = append(flags, yahoo.YAHOO_FIELD_FLAG_FAX)
         case REL_PHONE_GOOGLE_VOICE:
-            flags.Push(yahoo.YAHOO_FIELD_FLAG_GOOGLE)
+            flags = append(flags, yahoo.YAHOO_FIELD_FLAG_GOOGLE)
         case REL_PHONE_HOME:
-            flags.Push(yahoo.YAHOO_FIELD_FLAG_HOME)
+            flags = append(flags, yahoo.YAHOO_FIELD_FLAG_HOME)
         case REL_PHONE_MOBILE:
-            flags.Push(yahoo.YAHOO_FIELD_FLAG_MOBILE)
+            flags = append(flags, yahoo.YAHOO_FIELD_FLAG_MOBILE)
         case REL_PHONE_PAGER:
-            flags.Push(yahoo.YAHOO_FIELD_FLAG_PAGER)
+            flags = append(flags, yahoo.YAHOO_FIELD_FLAG_PAGER)
         case REL_PHONE_SKYPE:
-            flags.Push(yahoo.YAHOO_FIELD_FLAG_SKYPE)
+            flags = append(flags, yahoo.YAHOO_FIELD_FLAG_SKYPE)
         case REL_PHONE_WORK:
-            flags.Push(yahoo.YAHOO_FIELD_FLAG_WORK)
+            flags = append(flags, yahoo.YAHOO_FIELD_FLAG_WORK)
         }
         fields.PushBack(&yahoo.ContactField{
             Type:  yahoo.YAHOO_FIELD_TYPE_PHONE,
             Value: phone.FormattedNumber,
-            Flags: []string(flags),
+            Flags: flags,
         })
     }
     if c.Title != "" {
@@ -373,17 +371,17 @@ func DsocialContactToYahoo(c *Contact, o *yahoo.Contact) *yahoo.Contact {
         })
     }
     for _, uri := range c.Uris {
-        var flags vector.StringVector
+        flags := make([]string, 0, 2)
         switch uri.Rel {
         case REL_URI_BLOG:
-            flags.Push(yahoo.YAHOO_FIELD_FLAG_BLOG)
+            flags = append(flags, yahoo.YAHOO_FIELD_FLAG_BLOG)
         case REL_URI_GOOGLE_PROFILE:
-            flags.Push(yahoo.YAHOO_FIELD_FLAG_GOOGLE)
+            flags = append(flags, yahoo.YAHOO_FIELD_FLAG_GOOGLE)
         }
         fields.PushBack(&yahoo.ContactField{
             Type:  yahoo.YAHOO_FIELD_TYPE_LINK,
             Value: uri.Uri,
-            Flags: []string(flags),
+            Flags: flags,
         })
     }
     if c.Prefix != "" || c.GivenName != "" || c.MiddleName != "" || c.Surname != "" || c.Suffix != "" {
@@ -399,12 +397,12 @@ func DsocialContactToYahoo(c *Contact, o *yahoo.Contact) *yahoo.Contact {
         })
     }
     for _, addr := range c.PostalAddresses {
-        var flags vector.StringVector
+        flags := make([]string, 0, 2)
         switch addr.Rel {
         case REL_ADDRESS_HOME:
-            flags.Push(yahoo.YAHOO_FIELD_FLAG_HOME)
+            flags = append(flags, yahoo.YAHOO_FIELD_FLAG_HOME)
         case REL_ADDRESS_WORK:
-            flags.Push(yahoo.YAHOO_FIELD_FLAG_WORK)
+            flags = append(flags, yahoo.YAHOO_FIELD_FLAG_WORK)
         }
         country := ""
         countryCode := ""
@@ -423,7 +421,7 @@ func DsocialContactToYahoo(c *Contact, o *yahoo.Contact) *yahoo.Contact {
                 Country:         country,
                 CountryCode:     countryCode,
             },
-            Flags: []string(flags),
+            Flags: flags,
         })
     }
     if c.Birthday != nil && !c.Birthday.IsEmpty() {

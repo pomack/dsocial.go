@@ -1,6 +1,7 @@
 package account_test
 
 import (
+    "encoding/json"
     "github.com/pomack/dsocial.go/api/account"
     "github.com/pomack/dsocial.go/api/apiutil"
     "github.com/pomack/dsocial.go/backend/authentication"
@@ -8,8 +9,7 @@ import (
     dm "github.com/pomack/dsocial.go/models/dsocial"
     "github.com/pomack/jsonhelper.go/jsonhelper"
     "github.com/pomack/webmachine.go/webmachine"
-    "http"
-    "json"
+    "net/http"
     "testing"
 )
 
@@ -78,7 +78,7 @@ func TestDeleteUserAccount(t *testing.T) {
     err := json.Unmarshal(resp.Buffer.Bytes(), &obj)
     user.InitFromJSONObject(obj.GetAsObject("result"))
     if err != nil {
-        t.Error("Error while unmarshaling JSON: ", err.String())
+        t.Error("Error while unmarshaling JSON: ", err.Error())
     }
     if obj.GetAsString("status") != "success" {
         t.Error("Expected status = \"success\", but was \"", obj.GetAsString("status"), "\"")
@@ -109,7 +109,7 @@ func TestDeleteUserAccount(t *testing.T) {
             t.Error("User account by id still finds ", oldUser.Id)
         }
         if err != nil {
-            t.Error("Error trying to find user account by id: ", err.String())
+            t.Error("Error trying to find user account by id: ", err.Error())
         }
     }
     if theuser, err := ds.FindUserAccountByUsername(oldUser.Username); err != nil || theuser != nil {
@@ -117,7 +117,7 @@ func TestDeleteUserAccount(t *testing.T) {
             t.Error("User account by username still finds ", oldUser.Username)
         }
         if err != nil {
-            t.Error("Error trying to find user account by username: ", err.String())
+            t.Error("Error trying to find user account by username: ", err.Error())
         }
     }
     if theusers, _, err := ds.FindUserAccountsByEmail(oldUser.Email, nil, 1000); err != nil || len(theusers) > 0 {
@@ -125,7 +125,7 @@ func TestDeleteUserAccount(t *testing.T) {
             t.Error("User accounts by email still finds ", oldUser.Email, ": ", theusers)
         }
         if err != nil {
-            t.Error("Error trying to find user accounts by email: ", err.String())
+            t.Error("Error trying to find user accounts by email: ", err.Error())
         }
     }
 }

@@ -6,9 +6,9 @@ import (
     "github.com/pomack/jsonhelper.go/jsonhelper"
     "github.com/pomack/oauth2_client.go/oauth2_client"
     //"github.com/pomack/jsonhelper.go/jsonhelper"
-    "os"
+
+    "net/url"
     "strconv"
-    "url"
 )
 
 type YahooContactServiceSettings struct {
@@ -37,7 +37,7 @@ func (p *YahooContactService) ServiceId() string {
     return YAHOO_CONTACT_SERVICE_ID
 }
 
-func (p *YahooContactService) CreateOAuth2Client(settings jsonhelper.JSONObject) (client oauth2_client.OAuth2Client, err os.Error) {
+func (p *YahooContactService) CreateOAuth2Client(settings jsonhelper.JSONObject) (client oauth2_client.OAuth2Client, err error) {
     client = oauth2_client.NewYahooClient()
     client.Initialize(settings)
     return
@@ -157,21 +157,21 @@ func (p *YahooContactService) ContactInfoIncludesGroups() bool {
     return true
 }
 
-func (p *YahooContactService) RetrieveAllContacts(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId string) ([]*Contact, os.Error) {
+func (p *YahooContactService) RetrieveAllContacts(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId string) ([]*Contact, error) {
     contacts, _, err := p.RetrieveContacts(client, ds, dsocialUserId, nil)
     return contacts, err
 }
 
-func (p *YahooContactService) RetrieveAllConnections(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId string) ([]*Contact, os.Error) {
+func (p *YahooContactService) RetrieveAllConnections(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId string) ([]*Contact, error) {
     return make([]*Contact, 0), nil
 }
 
-func (p *YahooContactService) RetrieveAllGroups(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId string) ([]*Group, os.Error) {
+func (p *YahooContactService) RetrieveAllGroups(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId string) ([]*Group, error) {
     groups, _, err := p.RetrieveGroups(client, ds, dsocialUserId, nil)
     return groups, err
 }
 
-func (p *YahooContactService) RetrieveContacts(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId string, next NextToken) ([]*Contact, NextToken, os.Error) {
+func (p *YahooContactService) RetrieveContacts(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId string, next NextToken) ([]*Contact, NextToken, error) {
     var m url.Values
     m = make(url.Values)
     m.Add("count", "max")
@@ -187,9 +187,9 @@ func (p *YahooContactService) RetrieveContacts(client oauth2_client.OAuth2Client
     externalServiceId := p.ServiceId()
     userInfo, err := client.RetrieveUserInfo()
     externalUserId := userInfo.Guid()
-    var useErr os.Error = nil
+    var useErr error = nil
     for i, yahooContact := range resp.Contacts.Contacts {
-        externalContactId := strconv.Itoa64(yahooContact.Id)
+        externalContactId := strconv.FormatInt(yahooContact.Id, 10)
         dsocialContactId := ""
         var origDsocialContact *dm.Contact = nil
         if len(externalContactId) > 0 {
@@ -221,11 +221,11 @@ func (p *YahooContactService) RetrieveContacts(client oauth2_client.OAuth2Client
     return contacts, nil, useErr
 }
 
-func (p *YahooContactService) RetrieveConnections(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId string, next NextToken) ([]*Contact, NextToken, os.Error) {
+func (p *YahooContactService) RetrieveConnections(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId string, next NextToken) ([]*Contact, NextToken, error) {
     return make([]*Contact, 0), nil, nil
 }
 
-func (p *YahooContactService) RetrieveGroups(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId string, next NextToken) ([]*Group, NextToken, os.Error) {
+func (p *YahooContactService) RetrieveGroups(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId string, next NextToken) ([]*Group, NextToken, error) {
     var m url.Values
     m = make(url.Values)
     m.Add("count", "max")
@@ -241,11 +241,11 @@ func (p *YahooContactService) RetrieveGroups(client oauth2_client.OAuth2Client, 
     externalServiceId := p.ServiceId()
     userInfo, err := client.RetrieveUserInfo()
     externalUserId := userInfo.Guid()
-    var useErr os.Error = nil
+    var useErr error = nil
     for i, yahooGroup := range resp.Categories.Categories {
         var externalGroupId string
         if yahooGroup.Id > 0 {
-            externalGroupId = strconv.Itoa64(yahooGroup.Id)
+            externalGroupId = strconv.FormatInt(yahooGroup.Id, 10)
         }
         var origDsocialGroup *dm.Group = nil
         dsocialGroupId := ""
@@ -282,7 +282,7 @@ func (p *YahooContactService) RetrieveGroups(client oauth2_client.OAuth2Client, 
     return groups, nil, useErr
 }
 
-func (p *YahooContactService) RetrieveContact(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId string, contactId string) (*Contact, os.Error) {
+func (p *YahooContactService) RetrieveContact(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId string, contactId string) (*Contact, error) {
     resp, err := yahoo.RetrieveContact(client, contactId, nil)
     if resp == nil || err != nil {
         return nil, err
@@ -296,7 +296,7 @@ func (p *YahooContactService) RetrieveContact(client oauth2_client.OAuth2Client,
     var origDsocialContact *dm.Contact = nil
     var externalContactId string
     if yahooContact.Id > 0 {
-        externalContactId = strconv.Itoa64(yahooContact.Id)
+        externalContactId = strconv.FormatInt(yahooContact.Id, 10)
     }
     if len(externalContactId) > 0 {
         dsocialContactId, err = ds.DsocialIdForExternalContactId(externalServiceId, externalUserId, dsocialUserId, contactId)
@@ -324,7 +324,7 @@ func (p *YahooContactService) RetrieveContact(client oauth2_client.OAuth2Client,
     return contact, useErr
 }
 
-func (p *YahooContactService) RetrieveGroup(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId string, groupId string) (*Group, os.Error) {
+func (p *YahooContactService) RetrieveGroup(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId string, groupId string) (*Group, error) {
     resp, err := yahoo.RetrieveCategory(client, groupId, nil)
     if resp == nil || err != nil {
         return nil, err
@@ -336,7 +336,7 @@ func (p *YahooContactService) RetrieveGroup(client oauth2_client.OAuth2Client, d
     useErr := err
     var externalGroupId string
     if yahooGroup.Id > 0 {
-        externalGroupId = strconv.Itoa64(yahooGroup.Id)
+        externalGroupId = strconv.FormatInt(yahooGroup.Id, 10)
     }
     dsocialGroupId := ""
     var origDsocialGroup *dm.Group = nil
@@ -368,20 +368,20 @@ func (p *YahooContactService) RetrieveGroup(client oauth2_client.OAuth2Client, d
     return group, useErr
 }
 
-func (p *YahooContactService) CreateContactOnExternalService(client oauth2_client.OAuth2Client, contact interface{}) (interface{}, string, os.Error) {
+func (p *YahooContactService) CreateContactOnExternalService(client oauth2_client.OAuth2Client, contact interface{}) (interface{}, string, error) {
     if contact == nil {
         return nil, "", nil
     }
     yContact := contact.(*yahoo.Contact)
     err := yahoo.CreateContact(client, "", yContact)
-    return yContact, strconv.Itoa64(yContact.Id), err
+    return yContact, strconv.FormatInt(yContact.Id, 10), err
 }
 
-func (p *YahooContactService) CreateGroupOnExternalService(client oauth2_client.OAuth2Client, group interface{}) (interface{}, string, os.Error) {
+func (p *YahooContactService) CreateGroupOnExternalService(client oauth2_client.OAuth2Client, group interface{}) (interface{}, string, error) {
     return nil, "", nil
 }
 
-func (p *YahooContactService) UpdateContactOnExternalService(client oauth2_client.OAuth2Client, originalContact, contact interface{}) (interface{}, string, os.Error) {
+func (p *YahooContactService) UpdateContactOnExternalService(client oauth2_client.OAuth2Client, originalContact, contact interface{}) (interface{}, string, error) {
     if contact == nil {
         return nil, "", nil
     }
@@ -390,24 +390,24 @@ func (p *YahooContactService) UpdateContactOnExternalService(client oauth2_clien
     }
     originalYContact := originalContact.(*yahoo.Contact)
     yContact := contact.(*yahoo.Contact)
-    err := yahoo.UpdateContact(client, "", strconv.Itoa64(originalYContact.Id), yContact)
-    return yContact, strconv.Itoa64(yContact.Id), err
+    err := yahoo.UpdateContact(client, "", strconv.FormatInt(originalYContact.Id, 10), yContact)
+    return yContact, strconv.FormatInt(yContact.Id, 10), err
 }
 
-func (p *YahooContactService) UpdateGroupOnExternalService(client oauth2_client.OAuth2Client, originalGroup, group interface{}) (interface{}, string, os.Error) {
+func (p *YahooContactService) UpdateGroupOnExternalService(client oauth2_client.OAuth2Client, originalGroup, group interface{}) (interface{}, string, error) {
     return nil, "", nil
 }
 
-func (p *YahooContactService) DeleteContactOnExternalService(client oauth2_client.OAuth2Client, contact interface{}) (bool, os.Error) {
+func (p *YahooContactService) DeleteContactOnExternalService(client oauth2_client.OAuth2Client, contact interface{}) (bool, error) {
     if contact == nil {
         return false, nil
     }
     yContact := contact.(*yahoo.Contact)
-    err := yahoo.DeleteContact(client, "", strconv.Itoa64(yContact.Id))
+    err := yahoo.DeleteContact(client, "", strconv.FormatInt(yContact.Id, 10))
     return true, err
 }
 
-func (p *YahooContactService) DeleteGroupOnExternalService(client oauth2_client.OAuth2Client, group interface{}) (bool, os.Error) {
+func (p *YahooContactService) DeleteGroupOnExternalService(client oauth2_client.OAuth2Client, group interface{}) (bool, error) {
     return false, nil
 }
 

@@ -9,15 +9,15 @@ import (
     "crypto"
     "crypto/hmac"
     "encoding/base64"
+    "errors"
     auth "github.com/pomack/dsocial.go/backend/authentication"
     dm "github.com/pomack/dsocial.go/models/dsocial"
     "hash"
-    "http"
-    "os"
+    "net/http"
+    "net/url"
     "strconv"
     "strings"
     "time"
-    "url"
 )
 
 // A signer simply holds the access & secret access keys
@@ -25,11 +25,11 @@ import (
 // to assist in generating an appropriate signature.
 type Signer interface {
     AccessKey() string
-    SignBytes(h crypto.Hash, buf []byte) (signature []byte, err os.Error)
-    SignString(h crypto.Hash, s string) (signature string, err os.Error)
-    SignEncoded(h crypto.Hash, s string, enc *base64.Encoding) (signature []byte, err os.Error)
+    SignBytes(h crypto.Hash, buf []byte) (signature []byte, err error)
+    SignString(h crypto.Hash, s string) (signature string, err error)
+    SignEncoded(h crypto.Hash, s string, enc *base64.Encoding) (signature []byte, err error)
     SignRequest(req *http.Request, expiresIn int64)
-    CheckSignature(req *http.Request) (hasSignature, validSignature bool, err os.Error)
+    CheckSignature(req *http.Request) (hasSignature, validSignature bool, err error)
 }
 
 type signer struct {
@@ -49,17 +49,17 @@ func (p *signer) AccessKey() string {
 }
 
 // the core function of the Signer, generates the raw hmac of he bytes.
-func (p *signer) SignBytes(h crypto.Hash, buf []byte) (signature []byte, err os.Error) {
+func (p *signer) SignBytes(h crypto.Hash, buf []byte) (signature []byte, err error) {
     hasher := hmac.New(func() hash.Hash { return h.New() }, p.secretAccessKey)
     _, err = hasher.Write(buf)
     if err == nil {
-        signature = hasher.Sum()
+        signature = hasher.Sum(nil)
     }
     return
 }
 
 // Same as SignBytes, but with strings.
-func (p *signer) SignString(h crypto.Hash, s string) (signature string, err os.Error) {
+func (p *signer) SignString(h crypto.Hash, s string) (signature string, err error) {
     buf, err := p.SignBytes(h, bytes.NewBufferString(s).Bytes())
     if err == nil {
         signature = string(buf)
@@ -68,7 +68,7 @@ func (p *signer) SignString(h crypto.Hash, s string) (signature string, err os.E
 }
 
 // SignBytes, but will base64 encode based on the specified encoder.
-func (p *signer) SignEncoded(h crypto.Hash, s string, enc *base64.Encoding) (signature []byte, err os.Error) {
+func (p *signer) SignEncoded(h crypto.Hash, s string, enc *base64.Encoding) (signature []byte, err error) {
     buf, err := p.SignBytes(h, bytes.NewBufferString(s).Bytes())
     if err == nil {
         signature = make([]byte, enc.EncodedLen(len(buf)))
@@ -89,11 +89,11 @@ func (p *signer) SignRequest(req *http.Request, expiresIn int64) {
         qstring["SignatureMethod"] = []string{DEFAULT_SIGNATURE_METHOD}
     }
     if expiresIn > 0 {
-        qstring["Expires"] = []string{strconv.Itoa64(time.Seconds() + expiresIn)}
+        qstring["Expires"] = []string{strconv.FormatInt(time.Now().Unix()+expiresIn, 10)}
     } else {
-        qstring["Timestamp"] = []string{time.UTC().Format(dm.UTC_DATETIME_FORMAT)}
+        qstring["Timestamp"] = []string{time.Now().UTC().Format(dm.UTC_DATETIME_FORMAT)}
     }
-    qstring["Signature"] = nil, false
+    delete(qstring, "Signature")
     qstring["DSOCAccessKeyId"] = []string{p.accessKey}
 
     var signature []byte
@@ -110,19 +110,18 @@ func (p *signer) SignRequest(req *http.Request, expiresIn int64) {
     case SIGNATURE_METHOD_HMAC_SHA1:
         signature, err = p.SignEncoded(crypto.SHA1, canonicalizedStringToSign, base64.StdEncoding)
     default:
-        err = os.NewError("Unknown SignatureMethod:" + req.Form.Get("SignatureMethod"))
+        err = errors.New("Unknown SignatureMethod:" + req.Form.Get("SignatureMethod"))
     }
 
     if err == nil {
         req.URL.RawQuery += "&" + url.Values{"Signature": []string{string(signature)}}.Encode()
-        req.RawURL = req.URL.String()
     }
     return
 }
 
 // Generates the canonical string-to-sign for dsocial services.
 // You shouldn't need to use this directly.
-func (p *signer) Canonicalize(req *http.Request) (out string, err os.Error) {
+func (p *signer) Canonicalize(req *http.Request) (out string, err error) {
     fv, err := url.ParseQuery(req.URL.RawQuery)
     if err == nil {
         out = strings.Join([]string{req.Method, req.Host, req.URL.Path, SortedEscape(fv)}, "\n")
@@ -132,7 +131,7 @@ func (p *signer) Canonicalize(req *http.Request) (out string, err os.Error) {
 
 // Checks whether the request has a signature, validates it if it does
 // and returns an error if signature is present but not valid
-func (p *signer) CheckSignature(req *http.Request) (hasSignature, validSignature bool, err os.Error) {
+func (p *signer) CheckSignature(req *http.Request) (hasSignature, validSignature bool, err error) {
     qstring, err := url.ParseQuery(req.URL.RawQuery)
     if err != nil {
         err = ErrorInvalidURI
@@ -142,16 +141,16 @@ func (p *signer) CheckSignature(req *http.Request) (hasSignature, validSignature
         return
     }
     hasSignature = true
-    now := time.UTC().Seconds()
+    now := time.Now().Unix()
     if expiresStr := qstring.Get("Expires"); expiresStr != "" {
-        expiresAt, _ := strconv.Atoi64(expiresStr)
+        expiresAt, _ := strconv.ParseInt(expiresStr, 10, 64)
         if expiresAt < now {
             err = ErrorRequestExpired
             return
         }
     } else if timestampStr := qstring.Get("Timestamp"); timestampStr != "" {
         timestamp, _ := time.Parse(dm.UTC_DATETIME_FORMAT, timestampStr)
-        if timestamp == nil || timestamp.Seconds()-MAX_VALID_TIMESTAMP_IN_SECONDS > now || timestamp.Seconds()+MAX_VALID_TIMESTAMP_IN_SECONDS < now {
+        if timestamp.IsZero() || timestamp.Unix()-MAX_VALID_TIMESTAMP_IN_SECONDS > now || timestamp.Unix()+MAX_VALID_TIMESTAMP_IN_SECONDS < now {
             err = ErrorTimestampTooOld
             return
         }
@@ -178,7 +177,7 @@ func (p *signer) CheckSignature(req *http.Request) (hasSignature, validSignature
         return
     }
     originalSignature := qstring.Get("Signature")
-    qstring["Signature"] = nil, false
+    delete(qstring, "Signature")
     qstring["DSOCAccessKeyId"] = []string{p.accessKey}
 
     var signature []byte
@@ -198,7 +197,7 @@ func (p *signer) CheckSignature(req *http.Request) (hasSignature, validSignature
     return
 }
 
-func CheckSignature(ds auth.DataStore, req *http.Request) (hasSignature bool, userId, consumerId string, err os.Error) {
+func CheckSignature(ds auth.DataStore, req *http.Request) (hasSignature bool, userId, consumerId string, err error) {
     q := req.URL.Query()
     signature := q.Get("Signature")
     accessKeyId := q.Get("DSOCAccessKeyId")
@@ -222,7 +221,7 @@ func CheckSignature(ds auth.DataStore, req *http.Request) (hasSignature bool, us
     return
 }
 
-func RetrieveAccessKeyFromRequest(ds auth.DataStore, req *http.Request) (*dm.AccessKey, os.Error) {
+func RetrieveAccessKeyFromRequest(ds auth.DataStore, req *http.Request) (*dm.AccessKey, error) {
     q := req.URL.Query()
     accessKeyId := q.Get("DSOCAccessKeyId")
     if accessKeyId == "" {

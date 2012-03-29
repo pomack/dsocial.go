@@ -3,7 +3,6 @@ package inmemory
 import (
     ba "github.com/pomack/dsocial.go/backend/accounts"
     dm "github.com/pomack/dsocial.go/models/dsocial"
-    "os"
     "strconv"
 )
 
@@ -28,12 +27,12 @@ func (p *InMemoryDataStore) retrieveExternalUserAccountCollection() (m *inMemory
 }
 
 func (p *InMemoryDataStore) generateIdForAccount(collectionName string) string {
-    nextId := collectionName + "/" + strconv.Itoa64(p.NextId)
+    nextId := collectionName + "/" + strconv.FormatInt(p.NextId, 10)
     p.NextId++
     return nextId
 }
 
-func (p *InMemoryDataStore) CreateUserAccount(user *dm.User) (*dm.User, os.Error) {
+func (p *InMemoryDataStore) CreateUserAccount(user *dm.User) (*dm.User, error) {
     if user == nil {
         return nil, nil
     }
@@ -67,7 +66,7 @@ func (p *InMemoryDataStore) CreateUserAccount(user *dm.User) (*dm.User, os.Error
     return user, nil
 }
 
-func (p *InMemoryDataStore) UpdateUserAccount(user *dm.User) (*dm.User, os.Error) {
+func (p *InMemoryDataStore) UpdateUserAccount(user *dm.User) (*dm.User, error) {
     if user == nil {
         return nil, nil
     }
@@ -115,7 +114,7 @@ func (p *InMemoryDataStore) UpdateUserAccount(user *dm.User) (*dm.User, os.Error
     return user, nil
 }
 
-func (p *InMemoryDataStore) DeleteUserAccount(user *dm.User) (*dm.User, os.Error) {
+func (p *InMemoryDataStore) DeleteUserAccount(user *dm.User) (*dm.User, error) {
     if user == nil {
         return nil, nil
     }
@@ -138,7 +137,7 @@ func (p *InMemoryDataStore) DeleteUserAccount(user *dm.User) (*dm.User, os.Error
     return oldUser, nil
 }
 
-func (p *InMemoryDataStore) CreateConsumerAccount(user *dm.Consumer) (*dm.Consumer, os.Error) {
+func (p *InMemoryDataStore) CreateConsumerAccount(user *dm.Consumer) (*dm.Consumer, error) {
     if user == nil {
         return nil, nil
     }
@@ -170,7 +169,7 @@ func (p *InMemoryDataStore) CreateConsumerAccount(user *dm.Consumer) (*dm.Consum
     return user, nil
 }
 
-func (p *InMemoryDataStore) UpdateConsumerAccount(user *dm.Consumer) (*dm.Consumer, os.Error) {
+func (p *InMemoryDataStore) UpdateConsumerAccount(user *dm.Consumer) (*dm.Consumer, error) {
     if user == nil {
         return nil, nil
     }
@@ -222,7 +221,7 @@ func (p *InMemoryDataStore) UpdateConsumerAccount(user *dm.Consumer) (*dm.Consum
     return user, nil
 }
 
-func (p *InMemoryDataStore) DeleteConsumerAccount(user *dm.Consumer) (*dm.Consumer, os.Error) {
+func (p *InMemoryDataStore) DeleteConsumerAccount(user *dm.Consumer) (*dm.Consumer, error) {
     if user == nil {
         return nil, nil
     }
@@ -249,7 +248,7 @@ func (p *InMemoryDataStore) DeleteConsumerAccount(user *dm.Consumer) (*dm.Consum
     return user, nil
 }
 
-func (p *InMemoryDataStore) CreateExternalUserAccount(user *dm.ExternalUser) (*dm.ExternalUser, os.Error) {
+func (p *InMemoryDataStore) CreateExternalUserAccount(user *dm.ExternalUser) (*dm.ExternalUser, error) {
     if user == nil {
         return nil, nil
     }
@@ -277,7 +276,7 @@ func (p *InMemoryDataStore) CreateExternalUserAccount(user *dm.ExternalUser) (*d
     return user, nil
 }
 
-func (p *InMemoryDataStore) UpdateExternalUserAccount(user *dm.ExternalUser) (*dm.ExternalUser, os.Error) {
+func (p *InMemoryDataStore) UpdateExternalUserAccount(user *dm.ExternalUser) (*dm.ExternalUser, error) {
     if user == nil {
         return nil, nil
     }
@@ -315,7 +314,7 @@ func (p *InMemoryDataStore) UpdateExternalUserAccount(user *dm.ExternalUser) (*d
     return user, nil
 }
 
-func (p *InMemoryDataStore) DeleteExternalUserAccount(user *dm.ExternalUser) (*dm.ExternalUser, os.Error) {
+func (p *InMemoryDataStore) DeleteExternalUserAccount(user *dm.ExternalUser) (*dm.ExternalUser, error) {
     if user == nil {
         return nil, nil
     }
@@ -341,7 +340,7 @@ func (p *InMemoryDataStore) DeleteExternalUserAccount(user *dm.ExternalUser) (*d
     return user, nil
 }
 
-func (p *InMemoryDataStore) RetrieveUserAccountById(id string) (*dm.User, os.Error) {
+func (p *InMemoryDataStore) RetrieveUserAccountById(id string) (*dm.User, error) {
     user, _ := p.retrieve(_INMEMORY_USER_ACCOUNT_COLLECTION_NAME, id)
     if user != nil {
         return user.(*dm.User), nil
@@ -349,7 +348,7 @@ func (p *InMemoryDataStore) RetrieveUserAccountById(id string) (*dm.User, os.Err
     return nil, nil
 }
 
-func (p *InMemoryDataStore) FindUserAccountByUsername(username string) (*dm.User, os.Error) {
+func (p *InMemoryDataStore) FindUserAccountByUsername(username string) (*dm.User, error) {
     uid, _ := p.retrieveString(_INMEMORY_USER_ACCOUNT_ID_FOR_USERNAME_COLLECTION_NAME, username)
     if uid == "" {
         return nil, nil
@@ -357,7 +356,7 @@ func (p *InMemoryDataStore) FindUserAccountByUsername(username string) (*dm.User
     return p.RetrieveUserAccountById(uid)
 }
 
-func (p *InMemoryDataStore) FindUserAccountsByEmail(email string, next ba.NextToken, maxResults int) ([]*dm.User, ba.NextToken, os.Error) {
+func (p *InMemoryDataStore) FindUserAccountsByEmail(email string, next ba.NextToken, maxResults int) ([]*dm.User, ba.NextToken, error) {
     uid, _ := p.retrieveString(_INMEMORY_USER_ACCOUNT_ID_FOR_EMAIL_COLLECTION_NAME, email)
     if uid == "" {
         return nil, nil, nil
@@ -369,7 +368,7 @@ func (p *InMemoryDataStore) FindUserAccountsByEmail(email string, next ba.NextTo
     return []*dm.User{user}, nil, err
 }
 
-func (p *InMemoryDataStore) RetrieveConsumerAccountById(id string) (*dm.Consumer, os.Error) {
+func (p *InMemoryDataStore) RetrieveConsumerAccountById(id string) (*dm.Consumer, error) {
     user, _ := p.retrieve(_INMEMORY_CONSUMER_ACCOUNT_COLLECTION_NAME, id)
     if user != nil {
         return user.(*dm.Consumer), nil
@@ -377,7 +376,7 @@ func (p *InMemoryDataStore) RetrieveConsumerAccountById(id string) (*dm.Consumer
     return nil, nil
 }
 
-func (p *InMemoryDataStore) FindConsumerAccountByShortName(shortName string) (*dm.Consumer, os.Error) {
+func (p *InMemoryDataStore) FindConsumerAccountByShortName(shortName string) (*dm.Consumer, error) {
     uid, _ := p.retrieveString(_INMEMORY_CONSUMER_ACCOUNT_ID_FOR_SHORTNAME_COLLECTION_NAME, shortName)
     if uid == "" {
         return nil, nil
@@ -385,7 +384,7 @@ func (p *InMemoryDataStore) FindConsumerAccountByShortName(shortName string) (*d
     return p.RetrieveConsumerAccountById(uid)
 }
 
-func (p *InMemoryDataStore) FindConsumerAccountsByDomainName(domainName string, next ba.NextToken, maxResults int) ([]*dm.Consumer, ba.NextToken, os.Error) {
+func (p *InMemoryDataStore) FindConsumerAccountsByDomainName(domainName string, next ba.NextToken, maxResults int) ([]*dm.Consumer, ba.NextToken, error) {
     m := p.retrieveStringMapCollection("", _INMEMORY_CONSUMER_ACCOUNT_IDS_FOR_DOMAIN_NAME_COLLECTION_NAME, domainName)
     arr := make([]*dm.Consumer, len(m))
     i := 0
@@ -396,7 +395,7 @@ func (p *InMemoryDataStore) FindConsumerAccountsByDomainName(domainName string, 
     return arr, nil, nil
 }
 
-func (p *InMemoryDataStore) FindConsumerAccountsByName(name string, exact bool, next ba.NextToken, maxResults int) ([]*dm.Consumer, ba.NextToken, os.Error) {
+func (p *InMemoryDataStore) FindConsumerAccountsByName(name string, exact bool, next ba.NextToken, maxResults int) ([]*dm.Consumer, ba.NextToken, error) {
     // TODO handle non-exact name matches
     m := p.retrieveStringMapCollection("", _INMEMORY_CONSUMER_ACCOUNT_IDS_FOR_NAME_COLLECTION_NAME, name)
     arr := make([]*dm.Consumer, len(m))
@@ -408,7 +407,7 @@ func (p *InMemoryDataStore) FindConsumerAccountsByName(name string, exact bool, 
     return arr, nil, nil
 }
 
-func (p *InMemoryDataStore) RetrieveExternalUserAccountById(id string) (*dm.ExternalUser, os.Error) {
+func (p *InMemoryDataStore) RetrieveExternalUserAccountById(id string) (*dm.ExternalUser, error) {
     user, _ := p.retrieve(_INMEMORY_EXTERNAL_USER_ACCOUNT_COLLECTION_NAME, id)
     if user != nil {
         return user.(*dm.ExternalUser), nil
@@ -416,11 +415,11 @@ func (p *InMemoryDataStore) RetrieveExternalUserAccountById(id string) (*dm.Exte
     return nil, nil
 }
 
-func (p *InMemoryDataStore) RetrieveExternalUserAccountByConsumerAndExternalUserId(consumerId, externalUserId string) (*dm.ExternalUser, os.Error) {
+func (p *InMemoryDataStore) RetrieveExternalUserAccountByConsumerAndExternalUserId(consumerId, externalUserId string) (*dm.ExternalUser, error) {
     return nil, nil
 }
 
-func (p *InMemoryDataStore) FindExternalUserAccountsByConsumerId(consumerId string, next ba.NextToken, maxResults int) ([]*dm.ExternalUser, ba.NextToken, os.Error) {
+func (p *InMemoryDataStore) FindExternalUserAccountsByConsumerId(consumerId string, next ba.NextToken, maxResults int) ([]*dm.ExternalUser, ba.NextToken, error) {
     m := p.retrieveStringMapCollection("", _INMEMORY_EXTERNAL_ACCOUNT_IDS_FOR_CONSUMER_ID_COLLECTION_NAME, consumerId)
     arr := make([]*dm.ExternalUser, len(m))
     i := 0
@@ -431,7 +430,7 @@ func (p *InMemoryDataStore) FindExternalUserAccountsByConsumerId(consumerId stri
     return arr, nil, nil
 }
 
-func (p *InMemoryDataStore) FindExternalUserAccountsByExternalUserId(externalUserId string, next ba.NextToken, maxResults int) ([]*dm.ExternalUser, ba.NextToken, os.Error) {
+func (p *InMemoryDataStore) FindExternalUserAccountsByExternalUserId(externalUserId string, next ba.NextToken, maxResults int) ([]*dm.ExternalUser, ba.NextToken, error) {
     m := p.retrieveStringMapCollection("", _INMEMORY_EXTERNAL_ACCOUNT_IDS_FOR_EXTERNAL_USER_ID_COLLECTION_NAME, externalUserId)
     arr := make([]*dm.ExternalUser, len(m))
     i := 0

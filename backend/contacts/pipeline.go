@@ -2,11 +2,9 @@ package contacts
 
 import (
     "container/list"
-    "container/vector"
     "fmt"
     dm "github.com/pomack/dsocial.go/models/dsocial"
     "github.com/pomack/oauth2_client.go/oauth2_client"
-    "os"
     "time"
 )
 
@@ -17,11 +15,11 @@ func NewPipeline() *Pipeline {
     return new(Pipeline)
 }
 
-func (p *Pipeline) InitialSync(client oauth2_client.OAuth2Client, ds DataStoreService, cs ContactsService, csSettings ContactsServiceSettings, dsocialUserId, meContactId string) os.Error {
+func (p *Pipeline) InitialSync(client oauth2_client.OAuth2Client, ds DataStoreService, cs ContactsService, csSettings ContactsServiceSettings, dsocialUserId, meContactId string) error {
     return p.Sync(client, ds, cs, csSettings, dsocialUserId, meContactId, true, false, false)
 }
 
-func (p *Pipeline) IncrementalSync(client oauth2_client.OAuth2Client, ds DataStoreService, cs ContactsService, csSettings ContactsServiceSettings, dsocialUserId, meContactId string) os.Error {
+func (p *Pipeline) IncrementalSync(client oauth2_client.OAuth2Client, ds DataStoreService, cs ContactsService, csSettings ContactsServiceSettings, dsocialUserId, meContactId string) error {
     return p.Sync(client, ds, cs, csSettings, dsocialUserId, meContactId, true, true, true)
 }
 
@@ -58,7 +56,7 @@ func (p *Pipeline) RemoveUnacceptedChanges(l *list.List, allowAdd, allowDelete, 
     return n
 }
 
-func (p *Pipeline) findMatchingDsocialContact(ds DataStoreService, dsocialUserId string, contact *Contact) (extDsocialContact *dm.Contact, isSame bool, err os.Error) {
+func (p *Pipeline) findMatchingDsocialContact(ds DataStoreService, dsocialUserId string, contact *Contact) (extDsocialContact *dm.Contact, isSame bool, err error) {
     emptyContact := new(dm.Contact)
     if contact.DsocialContactId != "" {
         extDsocialContact, _, _ = ds.RetrieveDsocialContact(dsocialUserId, contact.DsocialContactId)
@@ -91,7 +89,7 @@ func (p *Pipeline) findMatchingDsocialContact(ds DataStoreService, dsocialUserId
     return extDsocialContact, isSame, err
 }
 
-func (p *Pipeline) contactImport(cs ContactsService, ds DataStoreService, dsocialUserId string, contact *Contact, allowAdd, allowDelete, allowUpdate bool) (*dm.Contact, string, os.Error) {
+func (p *Pipeline) contactImport(cs ContactsService, ds DataStoreService, dsocialUserId string, contact *Contact, allowAdd, allowDelete, allowUpdate bool) (*dm.Contact, string, error) {
     emptyContact := new(dm.Contact)
     if contact == nil || contact.Value == nil {
         return nil, "", nil
@@ -173,7 +171,7 @@ func (p *Pipeline) contactImport(cs ContactsService, ds DataStoreService, dsocia
         changes[i] = iter.Value.(*dm.Change)
     }
     changeset := &dm.ChangeSet{
-        CreatedAt:      time.UTC().Format(dm.UTC_DATETIME_FORMAT),
+        CreatedAt:      time.Now().UTC().Format(dm.UTC_DATETIME_FORMAT),
         ChangedBy:      contact.ExternalServiceId,
         ChangeImportId: contact.ExternalContactId,
         RecordId:       contact.DsocialContactId,
@@ -219,7 +217,7 @@ func (p *Pipeline) contactImport(cs ContactsService, ds DataStoreService, dsocia
     return storedDsocialContact, changeset.Id, err
 }
 
-func (p *Pipeline) findMatchingDsocialGroup(ds DataStoreService, dsocialUserId string, group *Group) (extDsocialGroup *dm.Group, isSame bool, err os.Error) {
+func (p *Pipeline) findMatchingDsocialGroup(ds DataStoreService, dsocialUserId string, group *Group) (extDsocialGroup *dm.Group, isSame bool, err error) {
     emptyGroup := new(dm.Group)
     if group.DsocialGroupId != "" {
         extDsocialGroup, _, _ = ds.RetrieveDsocialGroup(dsocialUserId, group.DsocialGroupId)
@@ -252,7 +250,7 @@ func (p *Pipeline) findMatchingDsocialGroup(ds DataStoreService, dsocialUserId s
     return extDsocialGroup, isSame, err
 }
 
-func (p *Pipeline) groupImport(cs ContactsService, ds DataStoreService, dsocialUserId string, group *Group, minimumIncludes *list.List, allowAdd, allowDelete, allowUpdate bool) (*dm.Group, string, os.Error) {
+func (p *Pipeline) groupImport(cs ContactsService, ds DataStoreService, dsocialUserId string, group *Group, minimumIncludes *list.List, allowAdd, allowDelete, allowUpdate bool) (*dm.Group, string, error) {
     emptyGroup := new(dm.Group)
     if group == nil || group.Value == nil {
         return nil, "", nil
@@ -265,14 +263,14 @@ func (p *Pipeline) groupImport(cs ContactsService, ds DataStoreService, dsocialU
         group.Value.ContactNames = make([]string, 0, 10)
     }
     if len(group.Value.ContactIds) == 0 && len(group.Value.ContactNames) == 0 && minimumIncludes != nil {
-        sv1 := vector.StringVector(group.Value.ContactIds)
-        sv2 := vector.StringVector(group.Value.ContactNames)
-        sv1.Resize(sv1.Len(), sv1.Len()+minimumIncludes.Len())
-        sv2.Resize(sv2.Len(), sv2.Len()+minimumIncludes.Len())
+        sv1 := make([]string, len(group.Value.ContactIds), len(group.Value.ContactIds)+minimumIncludes.Len())
+        sv2 := make([]string, len(group.Value.ContactNames), len(group.Value.ContactNames)+minimumIncludes.Len())
+        copy(sv1, group.Value.ContactIds)
+        copy(sv2, group.Value.ContactNames)
         for iter := minimumIncludes.Front(); iter != nil; iter = iter.Next() {
             contactRef := iter.Value.(*dm.ContactRef)
-            sv1.Push(contactRef.Id)
-            sv2.Push(contactRef.Name)
+            sv1 = append(sv1, contactRef.Id)
+            sv2 = append(sv2, contactRef.Name)
         }
     } else if minimumIncludes != nil {
         for iter := minimumIncludes.Front(); iter != nil; iter = iter.Next() {
@@ -295,10 +293,12 @@ func (p *Pipeline) groupImport(cs ContactsService, ds DataStoreService, dsocialU
                 }
             }
             if refLocation == -1 {
-                sv1 := vector.StringVector(group.Value.ContactIds)
-                sv2 := vector.StringVector(group.Value.ContactNames)
-                sv1.Push(contactRef.Id)
-                sv2.Push(contactRef.Name)
+                sv1 := make([]string, len(group.Value.ContactIds), len(group.Value.ContactIds)+1)
+                sv2 := make([]string, len(group.Value.ContactNames), len(group.Value.ContactNames)+1)
+                copy(sv1, group.Value.ContactIds)
+                copy(sv2, group.Value.ContactNames)
+                sv1 = append(sv1, contactRef.Id)
+                sv2 = append(sv2, contactRef.Name)
             } else {
                 group.Value.ContactIds[refLocation] = contactRef.Id
                 group.Value.ContactNames[refLocation] = contactRef.Name
@@ -383,7 +383,7 @@ func (p *Pipeline) groupImport(cs ContactsService, ds DataStoreService, dsocialU
         changes[i] = iter.Value.(*dm.Change)
     }
     changeset := &dm.ChangeSet{
-        CreatedAt:      time.UTC().Format(dm.UTC_DATETIME_FORMAT),
+        CreatedAt:      time.Now().UTC().Format(dm.UTC_DATETIME_FORMAT),
         ChangedBy:      group.ExternalServiceId,
         ChangeImportId: group.ExternalGroupId,
         RecordId:       group.DsocialGroupId,
@@ -444,7 +444,7 @@ func (p *Pipeline) addContactToGroupMappings(m map[string]*list.List, contact *d
     }
 }
 
-func (p *Pipeline) Sync(client oauth2_client.OAuth2Client, ds DataStoreService, cs ContactsService, csSettings ContactsServiceSettings, dsocialUserId, meContactId string, allowAdd, allowDelete, allowUpdate bool) (err os.Error) {
+func (p *Pipeline) Sync(client oauth2_client.OAuth2Client, ds DataStoreService, cs ContactsService, csSettings ContactsServiceSettings, dsocialUserId, meContactId string, allowAdd, allowDelete, allowUpdate bool) (err error) {
     err = p.Import(client, ds, cs, csSettings, dsocialUserId, meContactId, allowAdd, allowDelete, allowUpdate)
     if err != nil {
         return err
@@ -453,7 +453,7 @@ func (p *Pipeline) Sync(client oauth2_client.OAuth2Client, ds DataStoreService, 
     return
 }
 
-func (p *Pipeline) importContacts(client oauth2_client.OAuth2Client, ds DataStoreService, cs ContactsService, dsocialUserId string, allowAdd, allowDelete, allowUpdate bool, groupMappings map[string]*list.List, contactChangesetIds *vector.StringVector) (err os.Error) {
+func (p *Pipeline) importContacts(client oauth2_client.OAuth2Client, ds DataStoreService, cs ContactsService, dsocialUserId string, allowAdd, allowDelete, allowUpdate bool, groupMappings map[string]*list.List, contactChangesetIds []string) (err error) {
     checkGroupsInContacts := cs.ContactInfoIncludesGroups()
     var nextToken NextToken = "blah"
     for contacts, useNextToken, err := cs.RetrieveContacts(client, ds, dsocialUserId, nil); (len(contacts) > 0 && nextToken != nil) || err != nil; contacts, useNextToken, err = cs.RetrieveContacts(client, ds, dsocialUserId, nextToken) {
@@ -463,7 +463,7 @@ func (p *Pipeline) importContacts(client oauth2_client.OAuth2Client, ds DataStor
         for _, contact := range contacts {
             finalContact, changesetId, err := p.contactImport(cs, ds, dsocialUserId, contact, allowAdd, allowDelete, allowUpdate)
             if changesetId != "" {
-                contactChangesetIds.Push(changesetId)
+                contactChangesetIds = append(contactChangesetIds, changesetId)
             }
             if checkGroupsInContacts && finalContact != nil && finalContact.GroupReferences != nil && len(finalContact.GroupReferences) > 0 {
                 p.addContactToGroupMappings(groupMappings, finalContact)
@@ -480,7 +480,7 @@ func (p *Pipeline) importContacts(client oauth2_client.OAuth2Client, ds DataStor
     return
 }
 
-func (p *Pipeline) importConnections(client oauth2_client.OAuth2Client, ds DataStoreService, cs ContactsService, dsocialUserId string, allowAdd, allowDelete, allowUpdate bool, groupMappings map[string]*list.List, contactChangesetIds *vector.StringVector) (err os.Error) {
+func (p *Pipeline) importConnections(client oauth2_client.OAuth2Client, ds DataStoreService, cs ContactsService, dsocialUserId string, allowAdd, allowDelete, allowUpdate bool, groupMappings map[string]*list.List, contactChangesetIds []string) (err error) {
     checkGroupsInContacts := cs.ContactInfoIncludesGroups()
     var nextToken NextToken = "blah"
     for connections, useNextToken, err := cs.RetrieveConnections(client, ds, dsocialUserId, nil); (len(connections) > 0 && nextToken != nil) || err != nil; connections, useNextToken, err = cs.RetrieveConnections(client, ds, dsocialUserId, nextToken) {
@@ -494,7 +494,7 @@ func (p *Pipeline) importConnections(client oauth2_client.OAuth2Client, ds DataS
             }
             finalContact, changesetId, err := p.contactImport(cs, ds, dsocialUserId, contact, allowAdd, allowDelete, allowUpdate)
             if changesetId != "" {
-                contactChangesetIds.Push(changesetId)
+                contactChangesetIds = append(contactChangesetIds, changesetId)
             }
             if checkGroupsInContacts && finalContact != nil && finalContact != nil && finalContact.GroupReferences != nil && len(finalContact.GroupReferences) > 0 {
                 p.addContactToGroupMappings(groupMappings, finalContact)
@@ -511,7 +511,7 @@ func (p *Pipeline) importConnections(client oauth2_client.OAuth2Client, ds DataS
     return
 }
 
-func (p *Pipeline) importGroups(client oauth2_client.OAuth2Client, ds DataStoreService, cs ContactsService, dsocialUserId string, allowAdd, allowDelete, allowUpdate bool, groupMappings map[string]*list.List, groupChangesetIds *vector.StringVector) (err os.Error) {
+func (p *Pipeline) importGroups(client oauth2_client.OAuth2Client, ds DataStoreService, cs ContactsService, dsocialUserId string, allowAdd, allowDelete, allowUpdate bool, groupMappings map[string]*list.List, groupChangesetIds []string) (err error) {
     var nextToken NextToken = "blah"
     for groups, useNextToken, err := cs.RetrieveGroups(client, ds, dsocialUserId, nil); (len(groups) > 0 && nextToken != nil) || err != nil; groups, useNextToken, err = cs.RetrieveGroups(client, ds, dsocialUserId, nextToken) {
         if err != nil {
@@ -521,7 +521,7 @@ func (p *Pipeline) importGroups(client oauth2_client.OAuth2Client, ds DataStoreS
             var changesetId string
             _, changesetId, err = p.groupImport(cs, ds, dsocialUserId, group, groupMappings[group.Value.Name], allowAdd, allowDelete, allowUpdate)
             if changesetId != "" {
-                groupChangesetIds.Push(changesetId)
+                groupChangesetIds = append(groupChangesetIds, changesetId)
             }
             if err != nil {
                 break
@@ -535,13 +535,13 @@ func (p *Pipeline) importGroups(client oauth2_client.OAuth2Client, ds DataStoreS
     return
 }
 
-func (p *Pipeline) queueContactChangeSetsToApply(ds DataStoreService, cs ContactsService, csSettings ContactsServiceSettings, settings []ContactsServiceSettings, dsocialUserId string, changesetIds *vector.StringVector) (err os.Error) {
-    if changesetIds == nil || changesetIds.Len() == 0 || settings == nil || len(settings) == 0 {
+func (p *Pipeline) queueContactChangeSetsToApply(ds DataStoreService, cs ContactsService, csSettings ContactsServiceSettings, settings []ContactsServiceSettings, dsocialUserId string, changesetIds []string) (err error) {
+    if changesetIds == nil || len(changesetIds) == 0 || settings == nil || len(settings) == 0 {
         return
     }
     thisServiceName := cs.ServiceId()
     thisServiceId := csSettings.Id()
-    ids := []string(*changesetIds)
+    ids := []string(changesetIds)
     for _, setting := range settings {
         if setting.Id() == thisServiceId && thisServiceName == setting.ContactsServiceId() {
             // if we import from this service, don't export to it
@@ -557,13 +557,13 @@ func (p *Pipeline) queueContactChangeSetsToApply(ds DataStoreService, cs Contact
     return
 }
 
-func (p *Pipeline) queueGroupChangeSetsToApply(ds DataStoreService, cs ContactsService, csSettings ContactsServiceSettings, settings []ContactsServiceSettings, dsocialUserId string, changesetIds *vector.StringVector) (err os.Error) {
-    if changesetIds == nil || changesetIds.Len() == 0 || settings == nil || len(settings) == 0 {
+func (p *Pipeline) queueGroupChangeSetsToApply(ds DataStoreService, cs ContactsService, csSettings ContactsServiceSettings, settings []ContactsServiceSettings, dsocialUserId string, changesetIds []string) (err error) {
+    if changesetIds == nil || len(changesetIds) == 0 || settings == nil || len(settings) == 0 {
         return
     }
     thisServiceName := cs.ServiceId()
     thisServiceId := csSettings.Id()
-    ids := []string(*changesetIds)
+    ids := []string(changesetIds)
     for _, setting := range settings {
         if setting.Id() == thisServiceId && thisServiceName == setting.ContactsServiceId() {
             // if we import from this service, don't export to it
@@ -579,14 +579,14 @@ func (p *Pipeline) queueGroupChangeSetsToApply(ds DataStoreService, cs ContactsS
     return
 }
 
-func (p *Pipeline) Import(client oauth2_client.OAuth2Client, ds DataStoreService, cs ContactsService, csSettings ContactsServiceSettings, dsocialUserId, meContactId string, allowAdd, allowDelete, allowUpdate bool) (err os.Error) {
+func (p *Pipeline) Import(client oauth2_client.OAuth2Client, ds DataStoreService, cs ContactsService, csSettings ContactsServiceSettings, dsocialUserId, meContactId string, allowAdd, allowDelete, allowUpdate bool) (err error) {
     fmt.Printf("[PIPELINE]: Starting importing...\n")
     if !csSettings.AllowRetrieveContactInfo() || !cs.CanImportContactsOrGroups() {
         // do nothing
     } else {
         groupMappings := make(map[string]*list.List)
-        contactChangesetIds := new(vector.StringVector)
-        groupChangesetIds := new(vector.StringVector)
+        contactChangesetIds := make([]string, 0, 8)
+        groupChangesetIds := make([]string, 0, 8)
         if cs.CanRetrieveContacts() {
             err = p.importContacts(client, ds, cs, dsocialUserId, allowAdd, allowDelete, allowUpdate, groupMappings, contactChangesetIds)
         } else if cs.CanRetrieveConnections() {
@@ -595,7 +595,7 @@ func (p *Pipeline) Import(client oauth2_client.OAuth2Client, ds DataStoreService
         if err == nil && cs.CanRetrieveGroups() {
             err = p.importGroups(client, ds, cs, dsocialUserId, allowAdd, allowDelete, allowUpdate, groupMappings, groupChangesetIds)
         }
-        if contactChangesetIds.Len() > 0 || groupChangesetIds.Len() > 0 {
+        if len(contactChangesetIds) > 0 || len(groupChangesetIds) > 0 {
             settings, _ := ds.RetrieveAllContactsServiceSettingsForUser(dsocialUserId)
             err = p.queueContactChangeSetsToApply(ds, cs, csSettings, settings, dsocialUserId, contactChangesetIds)
             if err == nil {
@@ -608,19 +608,19 @@ func (p *Pipeline) Import(client oauth2_client.OAuth2Client, ds DataStoreService
 }
 
 func (p *Pipeline) extractAllChangeSetIds(applyable []*dm.ChangeSetsToApply, changesets map[string]*dm.ChangeSet) []string {
-    arr := make(vector.StringVector, 0, len(changesets))
+    arr := make([]string, 0, len(changesets))
     for _, toApply := range applyable {
         for _, changesetId := range toApply.ChangeSetIds {
             changeset, _ := changesets[changesetId]
             if changeset != nil {
-                arr.Push(changeset.Id)
+                arr = append(arr, changeset.Id)
             }
         }
     }
     return arr
 }
 
-func (p *Pipeline) markAllContactChangeSetsNotApplyable(ds DataStoreService, dsocialUserId, externalServiceId, externalServiceName string) (err os.Error) {
+func (p *Pipeline) markAllContactChangeSetsNotApplyable(ds DataStoreService, dsocialUserId, externalServiceId, externalServiceName string) (err error) {
     applyable, changesets, err := ds.RetrieveContactChangeSetsToApply(dsocialUserId, externalServiceId, externalServiceName)
     if err != nil {
         return
@@ -630,7 +630,7 @@ func (p *Pipeline) markAllContactChangeSetsNotApplyable(ds DataStoreService, dso
     return
 }
 
-func (p *Pipeline) markAllGroupChangeSetsNotApplyable(ds DataStoreService, dsocialUserId, externalServiceId, externalServiceName string) (err os.Error) {
+func (p *Pipeline) markAllGroupChangeSetsNotApplyable(ds DataStoreService, dsocialUserId, externalServiceId, externalServiceName string) (err error) {
     applyable, changesets, err := ds.RetrieveGroupChangeSetsToApply(dsocialUserId, externalServiceId, externalServiceName)
     if err != nil {
         return
@@ -640,7 +640,7 @@ func (p *Pipeline) markAllGroupChangeSetsNotApplyable(ds DataStoreService, dsoci
     return
 }
 
-func (p *Pipeline) markContactChangeSetsNotApplyable(ds DataStoreService, dsocialUserId, externalServiceId, externalServiceName string, changesetIdsNotApplyable []string) (err os.Error) {
+func (p *Pipeline) markContactChangeSetsNotApplyable(ds DataStoreService, dsocialUserId, externalServiceId, externalServiceName string, changesetIdsNotApplyable []string) (err error) {
     if changesetIdsNotApplyable == nil || len(changesetIdsNotApplyable) == 0 {
         return
     }
@@ -651,7 +651,7 @@ func (p *Pipeline) markContactChangeSetsNotApplyable(ds DataStoreService, dsocia
     return
 }
 
-func (p *Pipeline) markGroupChangeSetsNotApplyable(ds DataStoreService, dsocialUserId, externalServiceId, externalServiceName string, changesetIdsNotApplyable []string) (err os.Error) {
+func (p *Pipeline) markGroupChangeSetsNotApplyable(ds DataStoreService, dsocialUserId, externalServiceId, externalServiceName string, changesetIdsNotApplyable []string) (err error) {
     if changesetIdsNotApplyable == nil || len(changesetIdsNotApplyable) == 0 {
         return
     }
@@ -662,7 +662,7 @@ func (p *Pipeline) markGroupChangeSetsNotApplyable(ds DataStoreService, dsocialU
     return
 }
 
-func (p *Pipeline) handleDeleteContact(client oauth2_client.OAuth2Client, ds DataStoreService, cs ContactsService, dsocialUserId, externalServiceId, externalUserId, dsocialContactId string) (err os.Error) {
+func (p *Pipeline) handleDeleteContact(client oauth2_client.OAuth2Client, ds DataStoreService, cs ContactsService, dsocialUserId, externalServiceId, externalUserId, dsocialContactId string) (err error) {
     fmt.Printf("[PIPELINE]: Handling Delete Contact...\n")
     externalContactId, err := ds.ExternalContactIdForDsocialId(externalServiceId, externalUserId, dsocialUserId, dsocialContactId)
     if err != nil {
@@ -676,7 +676,7 @@ func (p *Pipeline) handleDeleteContact(client oauth2_client.OAuth2Client, ds Dat
     return
 }
 
-func (p *Pipeline) handleCreateContact(client oauth2_client.OAuth2Client, ds DataStoreService, cs ContactsService, dsocialUserId, dsocialContactId string) (err os.Error) {
+func (p *Pipeline) handleCreateContact(client oauth2_client.OAuth2Client, ds DataStoreService, cs ContactsService, dsocialUserId, dsocialContactId string) (err error) {
     fmt.Printf("[PIPELINE]: Handling Create Contact...\n")
     // don't have it locally
     dsocContact, _, err := ds.RetrieveDsocialContact(dsocialUserId, dsocialContactId)
@@ -691,16 +691,16 @@ func (p *Pipeline) handleCreateContact(client oauth2_client.OAuth2Client, ds Dat
     return
 }
 
-func (p *Pipeline) handleUpdateContact(client oauth2_client.OAuth2Client, ds DataStoreService, cs ContactsService, dsocialUserId, externalServiceId, externalUserId, dsocialContactId string, changeset *dm.ChangeSet) (err os.Error) {
+func (p *Pipeline) handleUpdateContact(client oauth2_client.OAuth2Client, ds DataStoreService, cs ContactsService, dsocialUserId, externalServiceId, externalUserId, dsocialContactId string, changeset *dm.ChangeSet) error {
     fmt.Printf("[PIPELINE]: Handling Update Contact...\n")
     externalContactId, err := ds.ExternalContactIdForDsocialId(externalServiceId, externalUserId, dsocialUserId, dsocialContactId)
     if err != nil {
-        return
+        return err
     }
     if externalContactId != "" {
         dsocExternalContact, _, err := ds.RetrieveDsocialContactForExternalContact(externalServiceId, externalUserId, externalContactId, dsocialUserId)
         if err != nil {
-            return
+            return err
         }
         if dsocExternalContact != nil {
             for _, change := range changeset.Changes {
@@ -709,16 +709,16 @@ func (p *Pipeline) handleUpdateContact(client oauth2_client.OAuth2Client, ds Dat
         }
         origDsocExternalContact, _, err := ds.RetrieveDsocialContactForExternalContact(externalServiceId, externalUserId, externalContactId, dsocialUserId)
         if err != nil {
-            return
+            return err
         }
         _, err = UpdateContactOnExternalService(client, cs, ds, dsocialUserId, origDsocExternalContact, dsocExternalContact)
     } else {
         err = p.handleCreateContact(client, ds, cs, dsocialUserId, dsocialContactId)
     }
-    return
+    return err
 }
 
-func (p *Pipeline) handleDeleteGroup(client oauth2_client.OAuth2Client, ds DataStoreService, cs ContactsService, dsocialUserId, externalServiceId, externalUserId, dsocialGroupId string) (err os.Error) {
+func (p *Pipeline) handleDeleteGroup(client oauth2_client.OAuth2Client, ds DataStoreService, cs ContactsService, dsocialUserId, externalServiceId, externalUserId, dsocialGroupId string) (err error) {
     fmt.Printf("[PIPELINE]: Handling Delete Group...\n")
     externalGroupId, err := ds.ExternalGroupIdForDsocialId(externalServiceId, externalUserId, dsocialUserId, dsocialGroupId)
     if err != nil {
@@ -732,7 +732,7 @@ func (p *Pipeline) handleDeleteGroup(client oauth2_client.OAuth2Client, ds DataS
     return
 }
 
-func (p *Pipeline) handleCreateGroup(client oauth2_client.OAuth2Client, ds DataStoreService, cs ContactsService, dsocialUserId, dsocialGroupId string) (err os.Error) {
+func (p *Pipeline) handleCreateGroup(client oauth2_client.OAuth2Client, ds DataStoreService, cs ContactsService, dsocialUserId, dsocialGroupId string) (err error) {
     fmt.Printf("[PIPELINE]: Handling Create Group...\n")
     // don't have it locally
     dsocGroup, _, err := ds.RetrieveDsocialGroup(dsocialUserId, dsocialGroupId)
@@ -747,16 +747,16 @@ func (p *Pipeline) handleCreateGroup(client oauth2_client.OAuth2Client, ds DataS
     return
 }
 
-func (p *Pipeline) handleUpdateGroup(client oauth2_client.OAuth2Client, ds DataStoreService, cs ContactsService, dsocialUserId, externalServiceId, externalUserId, dsocialGroupId string, changeset *dm.ChangeSet) (err os.Error) {
+func (p *Pipeline) handleUpdateGroup(client oauth2_client.OAuth2Client, ds DataStoreService, cs ContactsService, dsocialUserId, externalServiceId, externalUserId, dsocialGroupId string, changeset *dm.ChangeSet) error {
     fmt.Printf("[PIPELINE]: Handling Update Group...\n")
     externalGroupId, err := ds.ExternalGroupIdForDsocialId(externalServiceId, externalUserId, dsocialUserId, dsocialGroupId)
     if err != nil {
-        return
+        return err
     }
     if externalGroupId != "" {
         dsocExternalGroup, _, err := ds.RetrieveDsocialGroupForExternalGroup(externalServiceId, externalUserId, externalGroupId, dsocialUserId)
         if err != nil {
-            return
+            return err
         }
         if dsocExternalGroup != nil {
             for _, change := range changeset.Changes {
@@ -765,16 +765,16 @@ func (p *Pipeline) handleUpdateGroup(client oauth2_client.OAuth2Client, ds DataS
         }
         origDsocExternalGroup, _, err := ds.RetrieveDsocialGroupForExternalGroup(externalServiceId, externalUserId, externalGroupId, dsocialUserId)
         if err != nil {
-            return
+            return err
         }
         _, err = UpdateGroupOnExternalService(client, cs, ds, dsocialUserId, origDsocExternalGroup, dsocExternalGroup)
     } else {
         err = p.handleCreateGroup(client, ds, cs, dsocialUserId, dsocialGroupId)
     }
-    return
+    return err
 }
 
-func (p *Pipeline) applyContactChangeSets(client oauth2_client.OAuth2Client, ds DataStoreService, cs ContactsService, csSettings ContactsServiceSettings, dsocialUserId, meContactId string) (err os.Error) {
+func (p *Pipeline) applyContactChangeSets(client oauth2_client.OAuth2Client, ds DataStoreService, cs ContactsService, csSettings ContactsServiceSettings, dsocialUserId, meContactId string) (err error) {
     externalServiceId := csSettings.Id()
     externalServiceName := csSettings.ContactsServiceId()
     externalUserId := csSettings.ExternalUserId()
@@ -783,8 +783,8 @@ func (p *Pipeline) applyContactChangeSets(client oauth2_client.OAuth2Client, ds 
         return
     }
     fmt.Printf("[PIPELINE]: Will be applying up to %d changesets from %d applyable for %s, %s, %s\n", len(changesets), len(applyable), externalServiceId, externalServiceName, externalUserId)
-    changesetIdsNotApplyable := new(vector.StringVector)
-    changesetIdsApplied := new(vector.StringVector)
+    changesetIdsNotApplyable := make([]string, 0, 8)
+    changesetIdsApplied := make([]string, 0, 8)
     for _, toApply := range applyable {
         if err != nil {
             break
@@ -798,7 +798,7 @@ func (p *Pipeline) applyContactChangeSets(client oauth2_client.OAuth2Client, ds 
                 isMe := changeset.RecordId == meContactId
                 canCreate, canUpdate, canDelete := cs.CanCreateContact(isMe), cs.CanUpdateContact(isMe), cs.CanDeleteContact(isMe)
                 if !canCreate && !canUpdate && !canDelete {
-                    changesetIdsNotApplyable.Push(changeset.Id)
+                    changesetIdsNotApplyable = append(changesetIdsNotApplyable, changeset.Id)
                     continue
                 }
                 fmt.Printf("[PIPELINE]: handling changeset id %s\n", changeset.Id)
@@ -826,7 +826,7 @@ func (p *Pipeline) applyContactChangeSets(client oauth2_client.OAuth2Client, ds 
                     }
                 }
                 if !(isCreate && canCreate) && !(isUpdate && canUpdate) && !(isDelete && canDelete) {
-                    changesetIdsNotApplyable.Push(changeset.Id)
+                    changesetIdsNotApplyable = append(changesetIdsNotApplyable, changeset.Id)
                     continue
                 }
                 dsocialContactId := changeset.RecordId
@@ -838,24 +838,24 @@ func (p *Pipeline) applyContactChangeSets(client oauth2_client.OAuth2Client, ds 
                     // must be update
                     err = p.handleUpdateContact(client, ds, cs, dsocialUserId, externalServiceId, externalUserId, dsocialContactId, changeset)
                 }
-                changesetIdsApplied.Push(changeset.Id)
+                changesetIdsApplied = append(changesetIdsApplied, changeset.Id)
             } else {
                 fmt.Printf("[PIPELINE]: Unable to apply nil changeset\n")
             }
         }
     }
     if err == nil {
-        fmt.Printf("[PIPELINE]: Skipped applying %d changesets\n", changesetIdsNotApplyable.Len())
-        err = p.markContactChangeSetsNotApplyable(ds, dsocialUserId, externalServiceId, externalServiceName, []string(*changesetIdsNotApplyable))
+        fmt.Printf("[PIPELINE]: Skipped applying %d changesets\n", len(changesetIdsNotApplyable))
+        err = p.markContactChangeSetsNotApplyable(ds, dsocialUserId, externalServiceId, externalServiceName, changesetIdsNotApplyable)
         if err == nil {
-            err = ds.RemoveContactChangeSetsToApply(dsocialUserId, externalServiceId, externalServiceName, []string(*changesetIdsApplied))
+            err = ds.RemoveContactChangeSetsToApply(dsocialUserId, externalServiceId, externalServiceName, changesetIdsApplied)
         }
     }
     fmt.Printf("[PIPELINE]: Done applying contact changesets\n")
     return
 }
 
-func (p *Pipeline) applyGroupChangeSets(client oauth2_client.OAuth2Client, ds DataStoreService, cs ContactsService, csSettings ContactsServiceSettings, dsocialUserId, meContactId string) (err os.Error) {
+func (p *Pipeline) applyGroupChangeSets(client oauth2_client.OAuth2Client, ds DataStoreService, cs ContactsService, csSettings ContactsServiceSettings, dsocialUserId, meContactId string) (err error) {
     externalServiceId := csSettings.Id()
     externalServiceName := csSettings.ContactsServiceId()
     externalUserId := csSettings.ExternalUserId()
@@ -864,8 +864,8 @@ func (p *Pipeline) applyGroupChangeSets(client oauth2_client.OAuth2Client, ds Da
         return
     }
     fmt.Printf("[PIPELINE]: Will be applying up to %d changesets from %d applyable\n", len(changesets), len(applyable))
-    changesetIdsNotApplyable := new(vector.StringVector)
-    changesetIdsApplied := new(vector.StringVector)
+    changesetIdsNotApplyable := make([]string, 0, 8)
+    changesetIdsApplied := make([]string, 0, 8)
     for _, toApply := range applyable {
         if err != nil {
             break
@@ -879,7 +879,7 @@ func (p *Pipeline) applyGroupChangeSets(client oauth2_client.OAuth2Client, ds Da
                 isMe := changeset.RecordId == meContactId
                 canCreate, canUpdate, canDelete := cs.CanCreateGroup(isMe), cs.CanUpdateGroup(isMe), cs.CanDeleteGroup(isMe)
                 if !canCreate && !canUpdate && !canDelete {
-                    changesetIdsNotApplyable.Push(changeset.Id)
+                    changesetIdsNotApplyable = append(changesetIdsNotApplyable, changeset.Id)
                     continue
                 }
                 fmt.Printf("[PIPELINE]: handling changeset id %s\n", changeset.Id)
@@ -907,7 +907,7 @@ func (p *Pipeline) applyGroupChangeSets(client oauth2_client.OAuth2Client, ds Da
                     }
                 }
                 if !(isCreate && canCreate) && !(isUpdate && canUpdate) && !(isDelete && canDelete) {
-                    changesetIdsNotApplyable.Push(changeset.Id)
+                    changesetIdsNotApplyable = append(changesetIdsNotApplyable, changeset.Id)
                     continue
                 }
                 dsocialGroupId := changeset.RecordId
@@ -919,22 +919,22 @@ func (p *Pipeline) applyGroupChangeSets(client oauth2_client.OAuth2Client, ds Da
                     // must be update
                     err = p.handleUpdateGroup(client, ds, cs, dsocialUserId, externalServiceId, externalUserId, dsocialGroupId, changeset)
                 }
-                changesetIdsApplied.Push(changeset.Id)
+                changesetIdsApplied = append(changesetIdsApplied, changeset.Id)
             }
         }
     }
     if err == nil {
-        fmt.Printf("[PIPELINE]: Skipped applying %d changesets\n", changesetIdsNotApplyable.Len())
-        err = p.markGroupChangeSetsNotApplyable(ds, dsocialUserId, externalServiceId, externalServiceName, []string(*changesetIdsNotApplyable))
+        fmt.Printf("[PIPELINE]: Skipped applying %d changesets\n", len(changesetIdsNotApplyable))
+        err = p.markGroupChangeSetsNotApplyable(ds, dsocialUserId, externalServiceId, externalServiceName, changesetIdsNotApplyable)
         if err == nil {
-            err = ds.RemoveContactChangeSetsToApply(dsocialUserId, externalServiceId, externalServiceName, []string(*changesetIdsApplied))
+            err = ds.RemoveContactChangeSetsToApply(dsocialUserId, externalServiceId, externalServiceName, changesetIdsApplied)
         }
     }
     fmt.Printf("[PIPELINE]: Done applying group changesets\n")
     return
 }
 
-func (p *Pipeline) Export(client oauth2_client.OAuth2Client, ds DataStoreService, cs ContactsService, csSettings ContactsServiceSettings, dsocialUserId, meContactId string) (err os.Error) {
+func (p *Pipeline) Export(client oauth2_client.OAuth2Client, ds DataStoreService, cs ContactsService, csSettings ContactsServiceSettings, dsocialUserId, meContactId string) (err error) {
     fmt.Printf("[PIPELINE]: Starting exporting...\n")
     externalServiceId := csSettings.Id()
     externalServiceName := csSettings.ContactsServiceId()

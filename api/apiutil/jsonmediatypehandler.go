@@ -2,27 +2,27 @@ package apiutil
 
 import (
     "bytes"
+    "encoding/json"
     "github.com/pomack/jsonhelper.go/jsonhelper"
     wm "github.com/pomack/webmachine.go/webmachine"
-    "http"
     "io"
     "io/ioutil"
-    "json"
+    "net/http"
     "strconv"
     "time"
 )
 
-type JSONResponseGenerator func() (jsonhelper.JSONObject, *time.Time, string, int, http.Header)
+type JSONResponseGenerator func() (jsonhelper.JSONObject, time.Time, string, int, http.Header)
 
 type JSONMediaTypeHandler struct {
     responseGenerator   JSONResponseGenerator
     obj                 jsonhelper.JSONObject
-    lastModified        *time.Time
+    lastModified        time.Time
     etag                string
     writtenStatusHeader bool
 }
 
-func NewJSONMediaTypeHandler(obj jsonhelper.JSONObject, lastModified *time.Time, etag string) *JSONMediaTypeHandler {
+func NewJSONMediaTypeHandler(obj jsonhelper.JSONObject, lastModified time.Time, etag string) *JSONMediaTypeHandler {
     return &JSONMediaTypeHandler{
         obj:          obj,
         lastModified: lastModified,
@@ -30,7 +30,7 @@ func NewJSONMediaTypeHandler(obj jsonhelper.JSONObject, lastModified *time.Time,
     }
 }
 
-func NewJSONMediaTypeHandlerWithGenerator(generator JSONResponseGenerator, lastModified *time.Time, etag string) *JSONMediaTypeHandler {
+func NewJSONMediaTypeHandlerWithGenerator(generator JSONResponseGenerator, lastModified time.Time, etag string) *JSONMediaTypeHandler {
     return &JSONMediaTypeHandler{
         responseGenerator: generator,
         lastModified:      lastModified,
@@ -63,7 +63,7 @@ func (p *JSONMediaTypeHandler) MediaTypeHandleOutputTo(req wm.Request, cxt wm.Co
         m := jsonhelper.NewJSONObject()
         w := json.NewEncoder(writer)
         m.Set("status", "error")
-        m.Set("message", err.String())
+        m.Set("message", err.Error())
         m.Set("result", nil)
         w.Encode(m)
         return
@@ -83,7 +83,7 @@ func (p *JSONMediaTypeHandler) MediaTypeHandleOutputTo(req wm.Request, cxt wm.Co
     }
     //resp.Header().Set("Content-Type", wm.MIME_TYPE_JSON)
     resp.Header().Set("Content-Length", strconv.Itoa(buf.Len()))
-    if p.lastModified != nil {
+    if !p.lastModified.IsZero() {
         resp.Header().Set("Last-Modified", p.lastModified.Format(http.TimeFormat))
     }
     if len(p.etag) > 0 {

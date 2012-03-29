@@ -1,19 +1,24 @@
-include $(GOROOT)/src/Make.inc
+# Copyright 2012 Aalok Shah. All rights reserved.
+# Use of this source code is governed by a BSD-style
+# license that can be found in the LICENSE file.
 
-TARG=github.com/pomack/dsocial.go/backend/datastore/inmemory
-GOFILES=\
-	accounts_service.go\
-	authentication_service.go\
-	authorization_service.go\
-	changesets.go\
-	const.go\
-	contacts_service.go\
-	datastore.go\
+all: install
 
+GOPATH:=$(GOPATH):`pwd`
+PACKAGE_NAME=github.com/pomack/dsocial.go/backend/datastore/inmemory
 
-include $(GOROOT)/src/Make.pkg
+clean:
+	GOPATH=$(GOPATH) go clean $(PACKAGE_NAME)
+
+install:
+	GOPATH=$(GOPATH) go install $(PACKAGE_NAME)
+
+nuke:
+	GOPATH=$(GOPATH) go clean -i $(PACKAGE_NAME)
+
+test:
+	GOPATH=$(GOPATH) go test $(PACKAGE_NAME)
 
 check:
-	gomake test
-
+	GOPATH=$(GOPATH) go build $(PACKAGE_NAME)
 

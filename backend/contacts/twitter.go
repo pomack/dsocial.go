@@ -6,7 +6,6 @@ import (
     dm "github.com/pomack/dsocial.go/models/dsocial"
     "github.com/pomack/jsonhelper.go/jsonhelper"
     "github.com/pomack/oauth2_client.go/oauth2_client"
-    "os"
 )
 
 type TwitterContactServiceSettings struct {
@@ -35,7 +34,7 @@ func (p *TwitterContactService) ServiceId() string {
     return TWITTER_CONTACT_SERVICE_ID
 }
 
-func (p *TwitterContactService) CreateOAuth2Client(settings jsonhelper.JSONObject) (client oauth2_client.OAuth2Client, err os.Error) {
+func (p *TwitterContactService) CreateOAuth2Client(settings jsonhelper.JSONObject) (client oauth2_client.OAuth2Client, err error) {
     client = oauth2_client.NewTwitterClient()
     client.Initialize(settings)
     return
@@ -144,15 +143,15 @@ func (p *TwitterContactService) ContactInfoIncludesGroups() bool {
     return false
 }
 
-func (p *TwitterContactService) RetrieveAllContacts(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId string) ([]*Contact, os.Error) {
+func (p *TwitterContactService) RetrieveAllContacts(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId string) ([]*Contact, error) {
     return make([]*Contact, 0), nil
 }
 
-func (p *TwitterContactService) RetrieveAllConnections(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId string) ([]*Contact, os.Error) {
+func (p *TwitterContactService) RetrieveAllConnections(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId string) ([]*Contact, error) {
     return make([]*Contact, 0), nil
 }
 
-func (p *TwitterContactService) RetrieveAllGroups(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId string) ([]*Group, os.Error) {
+func (p *TwitterContactService) RetrieveAllGroups(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId string) ([]*Group, error) {
     return make([]*Group, 0), nil
 }
 
@@ -169,19 +168,19 @@ func (p *TwitterContactService) listToContacts(l *list.List) []*Contact {
     return arr
 }
 
-func (p *TwitterContactService) RetrieveContacts(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId string, next NextToken) ([]*Contact, NextToken, os.Error) {
+func (p *TwitterContactService) RetrieveContacts(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId string, next NextToken) ([]*Contact, NextToken, error) {
     return make([]*Contact, 0), nil, nil
 }
 
-func (p *TwitterContactService) RetrieveConnections(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId string, next NextToken) ([]*Contact, NextToken, os.Error) {
+func (p *TwitterContactService) RetrieveConnections(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId string, next NextToken) ([]*Contact, NextToken, error) {
     return make([]*Contact, 0), nil, nil
 }
 
-func (p *TwitterContactService) RetrieveGroups(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId string, next NextToken) ([]*Group, NextToken, os.Error) {
+func (p *TwitterContactService) RetrieveGroups(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId string, next NextToken) ([]*Group, NextToken, error) {
     return make([]*Group, 0), nil, nil
 }
 
-func (p *TwitterContactService) RetrieveContact(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId string, contactId string) (*Contact, os.Error) {
+func (p *TwitterContactService) RetrieveContact(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId string, contactId string) (*Contact, error) {
     extContact, err := twitter.RetrieveUser(client, contactId, 0, true, nil)
     if extContact == nil || err != nil {
         return nil, err
@@ -189,14 +188,14 @@ func (p *TwitterContactService) RetrieveContact(client oauth2_client.OAuth2Clien
     return p.handleRetrievedContact(client, ds, dsocialUserId, extContact.IdStr, extContact)
 }
 
-func (p *TwitterContactService) handleRetrievedContact(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId string, contactId string, extContact *twitter.User) (contact *Contact, err os.Error) {
+func (p *TwitterContactService) handleRetrievedContact(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId string, contactId string, extContact *twitter.User) (contact *Contact, err error) {
     if extContact == nil {
         return nil, nil
     }
     externalServiceId := p.ServiceId()
     userInfo, err := client.RetrieveUserInfo()
     externalUserId := userInfo.Guid()
-    var useErr os.Error = nil
+    var useErr error = nil
     dsocialContactId := ""
     var origDsocialContact *dm.Contact = nil
     externalContactId := extContact.IdStr
@@ -226,31 +225,31 @@ func (p *TwitterContactService) handleRetrievedContact(client oauth2_client.OAut
     return contact, useErr
 }
 
-func (p *TwitterContactService) RetrieveGroup(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId string, groupId string) (*Group, os.Error) {
+func (p *TwitterContactService) RetrieveGroup(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId string, groupId string) (*Group, error) {
     return nil, nil
 }
 
-func (p *TwitterContactService) CreateContactOnExternalService(client oauth2_client.OAuth2Client, contact interface{}) (interface{}, string, os.Error) {
+func (p *TwitterContactService) CreateContactOnExternalService(client oauth2_client.OAuth2Client, contact interface{}) (interface{}, string, error) {
     return nil, "", nil
 }
 
-func (p *TwitterContactService) CreateGroupOnExternalService(client oauth2_client.OAuth2Client, group interface{}) (interface{}, string, os.Error) {
+func (p *TwitterContactService) CreateGroupOnExternalService(client oauth2_client.OAuth2Client, group interface{}) (interface{}, string, error) {
     return nil, "", nil
 }
 
-func (p *TwitterContactService) UpdateContactOnExternalService(client oauth2_client.OAuth2Client, originalContact, contact interface{}) (interface{}, string, os.Error) {
+func (p *TwitterContactService) UpdateContactOnExternalService(client oauth2_client.OAuth2Client, originalContact, contact interface{}) (interface{}, string, error) {
     return nil, "", nil
 }
 
-func (p *TwitterContactService) UpdateGroupOnExternalService(client oauth2_client.OAuth2Client, originalGroup, group interface{}) (interface{}, string, os.Error) {
+func (p *TwitterContactService) UpdateGroupOnExternalService(client oauth2_client.OAuth2Client, originalGroup, group interface{}) (interface{}, string, error) {
     return nil, "", nil
 }
 
-func (p *TwitterContactService) DeleteContactOnExternalService(client oauth2_client.OAuth2Client, contact interface{}) (bool, os.Error) {
+func (p *TwitterContactService) DeleteContactOnExternalService(client oauth2_client.OAuth2Client, contact interface{}) (bool, error) {
     return false, nil
 }
 
-func (p *TwitterContactService) DeleteGroupOnExternalService(client oauth2_client.OAuth2Client, group interface{}) (bool, os.Error) {
+func (p *TwitterContactService) DeleteGroupOnExternalService(client oauth2_client.OAuth2Client, group interface{}) (bool, error) {
     return false, nil
 }
 

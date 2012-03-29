@@ -2,9 +2,9 @@ package apiutil
 
 import (
     wm "github.com/pomack/webmachine.go/webmachine"
-    "http"
     "io"
-    "url"
+    "net/http"
+    "net/url"
 )
 
 type UrlEncodedInputHandler interface {
@@ -34,7 +34,7 @@ func (p *UrlEncodedMediaTypeInputHandler) MediaTypeHandleInputFrom(req wm.Reques
     m := req.Form()
     if m == nil || len(m) == 0 {
         if err := req.ParseForm(); err != nil {
-            return OutputErrorMessage(err.String(), nil, http.StatusBadRequest, nil)
+            return OutputErrorMessage(err.Error(), nil, http.StatusBadRequest, nil)
         }
         m = req.Form()
     }

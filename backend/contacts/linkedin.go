@@ -6,9 +6,8 @@ import (
     dm "github.com/pomack/dsocial.go/models/dsocial"
     "github.com/pomack/jsonhelper.go/jsonhelper"
     "github.com/pomack/oauth2_client.go/oauth2_client"
-    "os"
+    "net/url"
     "strconv"
-    "url"
 )
 
 const (
@@ -42,7 +41,7 @@ func (p *LinkedInContactService) ServiceId() string {
     return LINKEDIN_CONTACT_SERVICE_ID
 }
 
-func (p *LinkedInContactService) CreateOAuth2Client(settings jsonhelper.JSONObject) (client oauth2_client.OAuth2Client, err os.Error) {
+func (p *LinkedInContactService) CreateOAuth2Client(settings jsonhelper.JSONObject) (client oauth2_client.OAuth2Client, err error) {
     client = oauth2_client.NewLinkedInClient()
     client.Initialize(settings)
     return
@@ -151,7 +150,7 @@ func (p *LinkedInContactService) ContactInfoIncludesGroups() bool {
     return false
 }
 
-func (p *LinkedInContactService) RetrieveAllContacts(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId string) ([]*Contact, os.Error) {
+func (p *LinkedInContactService) RetrieveAllContacts(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId string) ([]*Contact, error) {
     contacts, nextToken, err := p.RetrieveContacts(client, ds, dsocialUserId, nil)
     if contacts == nil || len(contacts) == 0 || nextToken == nil || err != nil {
         return contacts, err
@@ -173,15 +172,15 @@ func (p *LinkedInContactService) RetrieveAllContacts(client oauth2_client.OAuth2
     return contacts, err
 }
 
-func (p *LinkedInContactService) RetrieveAllConnections(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId string) ([]*Contact, os.Error) {
+func (p *LinkedInContactService) RetrieveAllConnections(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId string) ([]*Contact, error) {
     return make([]*Contact, 0), nil
 }
 
-func (p *LinkedInContactService) RetrieveAllGroups(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId string) ([]*Group, os.Error) {
+func (p *LinkedInContactService) RetrieveAllGroups(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId string) ([]*Group, error) {
     return make([]*Group, 0), nil
 }
 
-func (p *LinkedInContactService) RetrieveContacts(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId string, next NextToken) ([]*Contact, NextToken, os.Error) {
+func (p *LinkedInContactService) RetrieveContacts(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId string, next NextToken) ([]*Contact, NextToken, error) {
     m := make(url.Values)
     start := 0
     if next != nil {
@@ -211,15 +210,15 @@ func (p *LinkedInContactService) RetrieveContacts(client oauth2_client.OAuth2Cli
     return contacts, outputNextToken, err
 }
 
-func (p *LinkedInContactService) RetrieveConnections(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId string, next NextToken) ([]*Contact, NextToken, os.Error) {
+func (p *LinkedInContactService) RetrieveConnections(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId string, next NextToken) ([]*Contact, NextToken, error) {
     return make([]*Contact, 0), nil, nil
 }
 
-func (p *LinkedInContactService) RetrieveGroups(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId string, next NextToken) ([]*Group, NextToken, os.Error) {
+func (p *LinkedInContactService) RetrieveGroups(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId string, next NextToken) ([]*Group, NextToken, error) {
     return make([]*Group, 0), nil, nil
 }
 
-func (p *LinkedInContactService) RetrieveContact(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId string, contactId string) (*Contact, os.Error) {
+func (p *LinkedInContactService) RetrieveContact(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId string, contactId string) (*Contact, error) {
     extContact, err := linkedin.RetrieveProfile(client, contactId, nil, nil)
     if extContact == nil || err != nil {
         return nil, err
@@ -227,14 +226,14 @@ func (p *LinkedInContactService) RetrieveContact(client oauth2_client.OAuth2Clie
     return p.handleRetrievedContact(client, ds, dsocialUserId, extContact.Id, extContact)
 }
 
-func (p *LinkedInContactService) handleRetrievedContact(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId string, contactId string, extContact *linkedin.Contact) (contact *Contact, err os.Error) {
+func (p *LinkedInContactService) handleRetrievedContact(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId string, contactId string, extContact *linkedin.Contact) (contact *Contact, err error) {
     if extContact == nil {
         return nil, nil
     }
     externalServiceId := p.ServiceId()
     userInfo, err := client.RetrieveUserInfo()
     externalUserId := userInfo.Guid()
-    var useErr os.Error = nil
+    var useErr error = nil
     dsocialContactId := ""
     var origDsocialContact *dm.Contact = nil
     externalContactId := extContact.Id
@@ -264,31 +263,31 @@ func (p *LinkedInContactService) handleRetrievedContact(client oauth2_client.OAu
     return contact, useErr
 }
 
-func (p *LinkedInContactService) RetrieveGroup(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId string, groupId string) (*Group, os.Error) {
+func (p *LinkedInContactService) RetrieveGroup(client oauth2_client.OAuth2Client, ds DataStoreService, dsocialUserId string, groupId string) (*Group, error) {
     return nil, nil
 }
 
-func (p *LinkedInContactService) CreateContactOnExternalService(client oauth2_client.OAuth2Client, contact interface{}) (interface{}, string, os.Error) {
+func (p *LinkedInContactService) CreateContactOnExternalService(client oauth2_client.OAuth2Client, contact interface{}) (interface{}, string, error) {
     return nil, "", nil
 }
 
-func (p *LinkedInContactService) CreateGroupOnExternalService(client oauth2_client.OAuth2Client, group interface{}) (interface{}, string, os.Error) {
+func (p *LinkedInContactService) CreateGroupOnExternalService(client oauth2_client.OAuth2Client, group interface{}) (interface{}, string, error) {
     return nil, "", nil
 }
 
-func (p *LinkedInContactService) UpdateContactOnExternalService(client oauth2_client.OAuth2Client, originalContact, contact interface{}) (interface{}, string, os.Error) {
+func (p *LinkedInContactService) UpdateContactOnExternalService(client oauth2_client.OAuth2Client, originalContact, contact interface{}) (interface{}, string, error) {
     return nil, "", nil
 }
 
-func (p *LinkedInContactService) UpdateGroupOnExternalService(client oauth2_client.OAuth2Client, originalGroup, group interface{}) (interface{}, string, os.Error) {
+func (p *LinkedInContactService) UpdateGroupOnExternalService(client oauth2_client.OAuth2Client, originalGroup, group interface{}) (interface{}, string, error) {
     return nil, "", nil
 }
 
-func (p *LinkedInContactService) DeleteContactOnExternalService(client oauth2_client.OAuth2Client, contact interface{}) (bool, os.Error) {
+func (p *LinkedInContactService) DeleteContactOnExternalService(client oauth2_client.OAuth2Client, contact interface{}) (bool, error) {
     return false, nil
 }
 
-func (p *LinkedInContactService) DeleteGroupOnExternalService(client oauth2_client.OAuth2Client, group interface{}) (bool, os.Error) {
+func (p *LinkedInContactService) DeleteGroupOnExternalService(client oauth2_client.OAuth2Client, group interface{}) (bool, error) {
     return false, nil
 }
 

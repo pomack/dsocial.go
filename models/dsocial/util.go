@@ -1,10 +1,8 @@
 package dsocial
 
 import (
-    "container/vector"
     "fmt"
     "github.com/pomack/jsonhelper.go/jsonhelper"
-    "os"
     "strings"
     "time"
 )
@@ -75,72 +73,72 @@ func (p *PersistableModel) CleanFromUser(user *User, original *PersistableModel)
     }
 }
 
-func (p *PersistableModel) Validate(createNew bool, errors map[string][]os.Error) (isValid bool) {
+func (p *PersistableModel) Validate(createNew bool, errors map[string][]error) (isValid bool) {
     if errors == nil {
-        errors = make(map[string][]os.Error)
+        errors = make(map[string][]error)
     }
     p.Id, _ = validateId(p.Id, createNew, "id", errors)
     isValid = len(errors) == 0
     return
 }
 
-func (p *PersistableModel) BeforeCreate() os.Error {
+func (p *PersistableModel) BeforeCreate() error {
     p.Etag = GenerateEtag()
-    p.CreatedAt = time.UTC().Seconds()
+    p.CreatedAt = time.Now().Unix()
     p.ModifiedAt = p.CreatedAt
     return nil
 }
 
-func (p *PersistableModel) BeforeUpdate() os.Error {
+func (p *PersistableModel) BeforeUpdate() error {
     p.Etag = GenerateEtag()
-    p.ModifiedAt = time.UTC().Seconds()
+    p.ModifiedAt = time.Now().Unix()
     return nil
 }
 
-func (p *PersistableModel) BeforeSave() os.Error {
+func (p *PersistableModel) BeforeSave() error {
     return nil
 }
 
-func (p *PersistableModel) BeforeDelete() os.Error {
+func (p *PersistableModel) BeforeDelete() error {
     return nil
 }
 
-func (p *PersistableModel) AfterCreate() os.Error {
+func (p *PersistableModel) AfterCreate() error {
     return nil
 }
 
-func (p *PersistableModel) AfterUpdate() os.Error {
+func (p *PersistableModel) AfterUpdate() error {
     return nil
 }
 
-func (p *PersistableModel) AfterSave() os.Error {
+func (p *PersistableModel) AfterSave() error {
     return nil
 }
 
-func (p *PersistableModel) AfterDelete() os.Error {
+func (p *PersistableModel) AfterDelete() error {
     return nil
 }
 
 func removeEmptyStrings(arr []string) []string {
-    sv := new(vector.StringVector)
-    sv.Resize(0, len(arr))
+    sv := make([]string, 0, len(arr))
     for _, s := range arr {
         if s != "" {
-            sv.Push(s)
+            sv = append(sv, s)
         }
     }
-    return *sv
+    return sv
 }
 
 func join(sep string, values ...string) string {
     return strings.Join(removeEmptyStrings(values), sep)
 }
 
-func addIfNonSpaces(sv *vector.StringVector, s string) {
+func addIfNonSpaces(sv []string, s string) []string {
     p := strings.TrimSpace(s)
     if s != "" {
-        sv.Push(p)
+        sv = append(sv, p)
     }
+    return sv
 }
 
 func ParsePhoneNumber(s string, number *PhoneNumber) {
@@ -149,23 +147,23 @@ func ParsePhoneNumber(s string, number *PhoneNumber) {
         return
     }
     number.FormattedNumber = s
-    sv := new(vector.StringVector)
+    sv := make([]string, 0, 2*slen)
     start := 0
     for i := 0; i < slen; i++ {
         b := s[i]
         switch b {
         case '-', ' ', '.', ')', '_':
             if start < i {
-                addIfNonSpaces(sv, s[start:i])
+                sv = addIfNonSpaces(sv, s[start:i])
             }
             start = i + 1
         case '(':
             for j := i + 1; j < slen; j++ {
                 if s[j] == ')' {
                     if start < i {
-                        addIfNonSpaces(sv, s[start:i])
+                        sv = addIfNonSpaces(sv, s[start:i])
                     }
-                    addIfNonSpaces(sv, s[i+1:j])
+                    sv = addIfNonSpaces(sv, s[i+1:j])
                     i = j
                     start = j + 1
                     break
@@ -177,10 +175,7 @@ func ParsePhoneNumber(s string, number *PhoneNumber) {
                 if lastChar == 'e' || lastChar == 'E' {
                     continue
                 }
-                p := strings.TrimSpace(s[start:i])
-                if p != "" {
-                    sv.Push(p)
-                }
+                sv = addIfNonSpaces(sv, s[start:i])
             }
             number.ExtensionNumber = strings.TrimSpace(s[i+1:])
             start = slen
@@ -190,10 +185,7 @@ func ParsePhoneNumber(s string, number *PhoneNumber) {
             l := i - start
             if l > 2 && strings.ToLower(s[i-2:i+1]) == "ext" {
                 if start < i-2 {
-                    p := strings.TrimSpace(s[start : i-2])
-                    if p != "" {
-                        sv.Push(p)
-                    }
+                    sv = addIfNonSpaces(sv, s[start:i-2])
                 }
             }
             number.ExtensionNumber = strings.TrimSpace(s[i+1:])
@@ -203,13 +195,10 @@ func ParsePhoneNumber(s string, number *PhoneNumber) {
         }
     }
     if start < slen {
-        p := strings.TrimSpace(s[start:])
-        if p != "" {
-            sv.Push(p)
-        }
+        sv = addIfNonSpaces(sv, s[start:])
     }
-    parts := *sv
-    if sv.Len() == 0 {
+    parts := sv
+    if len(sv) == 0 {
         return
     }
     at := 0

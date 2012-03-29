@@ -8,12 +8,11 @@ import (
     dm "github.com/pomack/dsocial.go/models/dsocial"
     "github.com/pomack/jsonhelper.go/jsonhelper"
     wm "github.com/pomack/webmachine.go/webmachine"
-    "http"
     "io"
-    "os"
+    "net/http"
+    "net/url"
     "strconv"
     "time"
-    "url"
 )
 
 type ListContactsRequestHandler struct {
@@ -163,11 +162,11 @@ func (p *ListContactsRequestHandler) ResourceExists(req wm.Request, cxt wm.Conte
 }
 */
 
-func (p *ListContactsRequestHandler) AllowedMethods(req wm.Request, cxt wm.Context) ([]string, wm.Request, wm.Context, int, os.Error) {
+func (p *ListContactsRequestHandler) AllowedMethods(req wm.Request, cxt wm.Context) ([]string, wm.Request, wm.Context, int, error) {
     return []string{wm.GET, wm.HEAD}, req, cxt, 0, nil
 }
 
-func (p *ListContactsRequestHandler) IsAuthorized(req wm.Request, cxt wm.Context) (bool, string, wm.Request, wm.Context, int, os.Error) {
+func (p *ListContactsRequestHandler) IsAuthorized(req wm.Request, cxt wm.Context) (bool, string, wm.Request, wm.Context, int, error) {
     lcc := cxt.(ListContactsContext)
     hasSignature, authUserId, _, err := apiutil.CheckSignature(p.authDS, req.UnderlyingRequest())
     if !hasSignature || err != nil {
@@ -185,7 +184,7 @@ func (p *ListContactsRequestHandler) IsAuthorized(req wm.Request, cxt wm.Context
     return true, "", req, cxt, 0, nil
 }
 
-func (p *ListContactsRequestHandler) Forbidden(req wm.Request, cxt wm.Context) (bool, wm.Request, wm.Context, int, os.Error) {
+func (p *ListContactsRequestHandler) Forbidden(req wm.Request, cxt wm.Context) (bool, wm.Request, wm.Context, int, error) {
     lcc := cxt.(ListContactsContext)
     if lcc.AuthUser() != nil && lcc.AuthUser().Accessible() && lcc.User() != nil && lcc.User().Accessible() && lcc.AuthUser().Id == lcc.User().Id {
         return false, req, cxt, 0, nil
@@ -247,17 +246,17 @@ func (p *ListContactsRequestHandler) ProcessPost(req wm.Request, cxt wm.Context)
 }
 */
 
-func (p *ListContactsRequestHandler) ContentTypesProvided(req wm.Request, cxt wm.Context) ([]wm.MediaTypeHandler, wm.Request, wm.Context, int, os.Error) {
-    genFunc := func() (jsonhelper.JSONObject, *time.Time, string, int, http.Header) {
+func (p *ListContactsRequestHandler) ContentTypesProvided(req wm.Request, cxt wm.Context) ([]wm.MediaTypeHandler, wm.Request, wm.Context, int, error) {
+    genFunc := func() (jsonhelper.JSONObject, time.Time, string, int, http.Header) {
         lcc := cxt.(ListContactsContext)
         jsonObj := lcc.Result()
         headers := apiutil.AddNoCacheHeaders(nil)
-        return jsonObj, nil, "", http.StatusOK, headers
+        return jsonObj, time.Time{}, "", http.StatusOK, headers
     }
-    return []wm.MediaTypeHandler{apiutil.NewJSONMediaTypeHandlerWithGenerator(genFunc, nil, "")}, req, cxt, 0, nil
+    return []wm.MediaTypeHandler{apiutil.NewJSONMediaTypeHandlerWithGenerator(genFunc, time.Time{}, "")}, req, cxt, 0, nil
 }
 
-func (p *ListContactsRequestHandler) ContentTypesAccepted(req wm.Request, cxt wm.Context) ([]wm.MediaTypeInputHandler, wm.Request, wm.Context, int, os.Error) {
+func (p *ListContactsRequestHandler) ContentTypesAccepted(req wm.Request, cxt wm.Context) ([]wm.MediaTypeInputHandler, wm.Request, wm.Context, int, error) {
     arr := []wm.MediaTypeInputHandler{
         apiutil.NewJSONMediaTypeInputHandler("", "", p, req.Body()),
         apiutil.NewUrlEncodedMediaTypeInputHandler("", "", p),
@@ -365,7 +364,7 @@ func (p *ListContactsRequestHandler) HandleInputHandlerAfterSetup(cxt ListContac
     from := cxt.ListFrom()
     dsocialContacts, next, err := contactsDS.ListDsocialContacts(user.Id, from, cxt.Count())
     if err != nil {
-        return apiutil.OutputErrorMessage(err.String(), nil, http.StatusInternalServerError, nil)
+        return apiutil.OutputErrorMessage(err.Error(), nil, http.StatusInternalServerError, nil)
     }
     obj := jsonhelper.NewJSONObject()
     contactsArr, _ := jsonhelper.Marshal(dsocialContacts)

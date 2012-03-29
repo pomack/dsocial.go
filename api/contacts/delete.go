@@ -8,9 +8,8 @@ import (
     dm "github.com/pomack/dsocial.go/models/dsocial"
     "github.com/pomack/jsonhelper.go/jsonhelper"
     wm "github.com/pomack/webmachine.go/webmachine"
-    "http"
     "io"
-    "os"
+    "net/http"
     "time"
 )
 
@@ -34,8 +33,8 @@ type DeleteContactContext interface {
     SetResult(result jsonhelper.JSONObject)
     ETag() string
     SetETag(etag string)
-    LastModified() *time.Time
-    SetLastModified(lastModified *time.Time)
+    LastModified() time.Time
+    SetLastModified(lastModified time.Time)
     MarkAsDeleted()
     Deleted() bool
 }
@@ -44,7 +43,7 @@ type deleteContactContext struct {
     authUser     *dm.User
     user         *dm.User
     contact      *dm.Contact
-    lastModified *time.Time
+    lastModified time.Time
     etag         string
     contactId    string
     deleted      bool
@@ -103,11 +102,11 @@ func (p *deleteContactContext) SetETag(etag string) {
     p.etag = etag
 }
 
-func (p *deleteContactContext) LastModified() *time.Time {
+func (p *deleteContactContext) LastModified() time.Time {
     return p.lastModified
 }
 
-func (p *deleteContactContext) SetLastModified(lastModified *time.Time) {
+func (p *deleteContactContext) SetLastModified(lastModified time.Time) {
     p.lastModified = lastModified
 }
 
@@ -162,7 +161,7 @@ func (p *CreateAccountRequestHandler) ServiceAvailable(req wm.Request, cxt wm.Co
 }
 */
 
-func (p *DeleteContactRequestHandler) ResourceExists(req wm.Request, cxt wm.Context) (bool, wm.Request, wm.Context, int, os.Error) {
+func (p *DeleteContactRequestHandler) ResourceExists(req wm.Request, cxt wm.Context) (bool, wm.Request, wm.Context, int, error) {
     dcc := cxt.(DeleteContactContext)
     path := req.URLParts()
     pathLen := len(path)
@@ -185,11 +184,11 @@ func (p *DeleteContactRequestHandler) ResourceExists(req wm.Request, cxt wm.Cont
     if contact != nil {
         dcc.SetETag(contact.Etag)
         if contact.ModifiedAt > 0 {
-            dcc.SetLastModified(time.SecondsToUTC(contact.ModifiedAt))
+            dcc.SetLastModified(time.Unix(contact.ModifiedAt, 0).UTC())
         }
     } else {
         dcc.SetETag("")
-        dcc.SetLastModified(nil)
+        dcc.SetLastModified(time.Time{})
     }
     httpStatus := 0
     if err != nil {
@@ -198,11 +197,11 @@ func (p *DeleteContactRequestHandler) ResourceExists(req wm.Request, cxt wm.Cont
     return contact != nil, req, cxt, httpStatus, err
 }
 
-func (p *DeleteContactRequestHandler) AllowedMethods(req wm.Request, cxt wm.Context) ([]string, wm.Request, wm.Context, int, os.Error) {
+func (p *DeleteContactRequestHandler) AllowedMethods(req wm.Request, cxt wm.Context) ([]string, wm.Request, wm.Context, int, error) {
     return []string{wm.POST, wm.DELETE}, req, cxt, 0, nil
 }
 
-func (p *DeleteContactRequestHandler) IsAuthorized(req wm.Request, cxt wm.Context) (bool, string, wm.Request, wm.Context, int, os.Error) {
+func (p *DeleteContactRequestHandler) IsAuthorized(req wm.Request, cxt wm.Context) (bool, string, wm.Request, wm.Context, int, error) {
     dcc := cxt.(DeleteContactContext)
     hasSignature, authUserId, _, err := apiutil.CheckSignature(p.authDS, req.UnderlyingRequest())
     if !hasSignature || err != nil {
@@ -220,7 +219,7 @@ func (p *DeleteContactRequestHandler) IsAuthorized(req wm.Request, cxt wm.Contex
     return true, "", req, cxt, 0, nil
 }
 
-func (p *DeleteContactRequestHandler) Forbidden(req wm.Request, cxt wm.Context) (bool, wm.Request, wm.Context, int, os.Error) {
+func (p *DeleteContactRequestHandler) Forbidden(req wm.Request, cxt wm.Context) (bool, wm.Request, wm.Context, int, error) {
     dcc := cxt.(DeleteContactContext)
     if dcc.AuthUser() != nil && dcc.AuthUser().Accessible() && dcc.User() != nil && dcc.User().Accessible() && (dcc.AuthUser().Id == dcc.User().Id || dcc.AuthUser().Role == dm.ROLE_ADMIN) {
         return false, req, cxt, 0, nil
@@ -247,7 +246,7 @@ func (p *DeleteContactRequestHandler) URITooLong(req wm.Request, cxt wm.Context)
 }
 */
 
-func (p *DeleteContactRequestHandler) DeleteResource(req wm.Request, cxt wm.Context) (bool, wm.Request, wm.Context, int, os.Error) {
+func (p *DeleteContactRequestHandler) DeleteResource(req wm.Request, cxt wm.Context) (bool, wm.Request, wm.Context, int, error) {
     dcc := cxt.(DeleteContactContext)
     _, err := p.contactsDS.DeleteDsocialContact(dcc.User().Id, dcc.ContactId())
     if err != nil {
@@ -274,12 +273,12 @@ func (p *DeleteContactRequestHandler) CreatePath(req wm.Request, cxt wm.Context)
 }
 */
 
-func (p *DeleteContactRequestHandler) ProcessPost(req wm.Request, cxt wm.Context) (wm.Request, wm.Context, int, http.Header, io.WriterTo, os.Error) {
+func (p *DeleteContactRequestHandler) ProcessPost(req wm.Request, cxt wm.Context) (wm.Request, wm.Context, int, http.Header, io.WriterTo, error) {
     _, req, cxt, httpCode, httpError := p.DeleteResource(req, cxt)
     return req, cxt, httpCode, nil, nil, httpError
 }
 
-func (p *DeleteContactRequestHandler) ContentTypesProvided(req wm.Request, cxt wm.Context) ([]wm.MediaTypeHandler, wm.Request, wm.Context, int, os.Error) {
+func (p *DeleteContactRequestHandler) ContentTypesProvided(req wm.Request, cxt wm.Context) ([]wm.MediaTypeHandler, wm.Request, wm.Context, int, error) {
     dcc := cxt.(DeleteContactContext)
     obj := dcc.Result()
     lastModified := dcc.LastModified()
@@ -292,7 +291,7 @@ func (p *DeleteContactRequestHandler) ContentTypesProvided(req wm.Request, cxt w
     return []wm.MediaTypeHandler{apiutil.NewJSONMediaTypeHandler(jsonObj, lastModified, etag)}, req, dcc, 0, nil
 }
 
-func (p *DeleteContactRequestHandler) ContentTypesAccepted(req wm.Request, cxt wm.Context) ([]wm.MediaTypeInputHandler, wm.Request, wm.Context, int, os.Error) {
+func (p *DeleteContactRequestHandler) ContentTypesAccepted(req wm.Request, cxt wm.Context) ([]wm.MediaTypeInputHandler, wm.Request, wm.Context, int, error) {
     arr := []wm.MediaTypeInputHandler{apiutil.NewJSONMediaTypeInputHandler("", "", p, req.Body())}
     return arr, req, cxt, 0, nil
 }
@@ -387,17 +386,17 @@ func (p *DeleteContactRequestHandler) HasRespBody(req wm.Request, cxt wm.Context
 
 func (p *DeleteContactRequestHandler) HandleJSONObjectInputHandler(req wm.Request, cxt wm.Context, inputObj jsonhelper.JSONObject) (int, http.Header, io.WriterTo) {
     dcc := cxt.(DeleteContactContext)
-    var err os.Error
+    var err error
     if !dcc.Deleted() {
         _, req, cxt, _, err = p.DeleteResource(req, cxt)
     }
     if err != nil {
-        return apiutil.OutputErrorMessage(err.String(), nil, http.StatusInternalServerError, nil)
+        return apiutil.OutputErrorMessage(err.Error(), nil, http.StatusInternalServerError, nil)
     }
     obj := jsonhelper.NewJSONObject()
     obj.Set("type", "contact")
     obj.Set("contact", dcc.Contact())
     theobj, _ := jsonhelper.MarshalWithOptions(obj, dm.UTC_DATETIME_FORMAT)
     jsonObj, _ := theobj.(jsonhelper.JSONObject)
-    return apiutil.OutputJSONObject(jsonObj, nil, "", 0, nil)
+    return apiutil.OutputJSONObject(jsonObj, time.Time{}, "", 0, nil)
 }

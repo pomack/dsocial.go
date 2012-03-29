@@ -4,13 +4,14 @@ import (
     "github.com/pomack/dsocial.go/api/auth"
     //"github.com/pomack/dsocial.go/api/apiutil"
     "bytes"
+    "encoding/json"
     "github.com/pomack/dsocial.go/backend/authentication"
     "github.com/pomack/dsocial.go/backend/datastore/inmemory"
     dm "github.com/pomack/dsocial.go/models/dsocial"
     "github.com/pomack/jsonhelper.go/jsonhelper"
     "github.com/pomack/webmachine.go/webmachine"
-    "http"
-    "json"
+    "net/http"
+    "net/http/httputil"
     "testing"
 )
 
@@ -75,7 +76,7 @@ func TestAuthLoginAdmin(t *testing.T) {
     req.Header.Set("Accept-Encoding", "identity")
     req.Header.Set("Accept-Language", "en-us")
     req.Header.Set("Connection", "close")
-    reqbytes, _ := http.DumpRequest(req, true)
+    reqbytes, _ := httputil.DumpRequest(req, true)
     t.Log("Request is:\n", string(reqbytes), "\n\n")
     resp := webmachine.NewMockResponseWriter(req)
     wm.ServeHTTP(resp, req)
@@ -89,7 +90,7 @@ func TestAuthLoginAdmin(t *testing.T) {
     obj := jsonhelper.NewJSONObject()
     err := json.Unmarshal(resp.Buffer.Bytes(), &obj)
     if err != nil {
-        t.Error("Unable to unmarshal login response due to error:", err.String())
+        t.Error("Unable to unmarshal login response due to error:", err.Error())
     }
     if status := obj.GetAsString("status"); status != "success" {
         t.Error("Expected successful operation, but had status:", status)
@@ -146,7 +147,7 @@ func TestAuthLoginUser(t *testing.T) {
     req.Header.Set("Accept-Encoding", "identity")
     req.Header.Set("Accept-Language", "en-us")
     req.Header.Set("Connection", "close")
-    reqbytes, _ := http.DumpRequest(req, true)
+    reqbytes, _ := httputil.DumpRequest(req, true)
     t.Log("Request is:\n", string(reqbytes), "\n\n")
     resp := webmachine.NewMockResponseWriter(req)
     wm.ServeHTTP(resp, req)
@@ -160,7 +161,7 @@ func TestAuthLoginUser(t *testing.T) {
     obj := jsonhelper.NewJSONObject()
     err := json.Unmarshal(resp.Buffer.Bytes(), &obj)
     if err != nil {
-        t.Error("Unable to unmarshal login response due to error:", err.String())
+        t.Error("Unable to unmarshal login response due to error:", err.Error())
     }
     if status := obj.GetAsString("status"); status != "success" {
         t.Error("Expected successful operation, but had status:", status)
@@ -216,7 +217,7 @@ func TestAuthLoginDisabledUser(t *testing.T) {
     req.Header.Set("Accept-Encoding", "identity")
     req.Header.Set("Accept-Language", "en-us")
     req.Header.Set("Connection", "close")
-    reqbytes, _ := http.DumpRequest(req, true)
+    reqbytes, _ := httputil.DumpRequest(req, true)
     t.Log("Request is:\n", string(reqbytes), "\n\n")
     resp := webmachine.NewMockResponseWriter(req)
     wm.ServeHTTP(resp, req)
@@ -230,7 +231,7 @@ func TestAuthLoginDisabledUser(t *testing.T) {
     obj := jsonhelper.NewJSONObject()
     err := json.Unmarshal(resp.Buffer.Bytes(), &obj)
     if err != nil {
-        t.Error("Unable to unmarshal login response due to error:", err.String())
+        t.Error("Unable to unmarshal login response due to error:", err.Error())
     }
     if status := obj.GetAsString("status"); status != "error" {
         t.Error("Expected error operation, but had status:", status)
@@ -238,7 +239,7 @@ func TestAuthLoginDisabledUser(t *testing.T) {
     if result := obj.Get("result"); result != nil {
         t.Error("Expected result to be nil, but was", result)
     }
-    if message := obj.GetAsString("message"); message != auth.ERR_INVALID_USERNAME_PASSWORD_COMBO.String() {
+    if message := obj.GetAsString("message"); message != auth.ERR_INVALID_USERNAME_PASSWORD_COMBO.Error() {
         t.Error("Expected ERR_INVALID_USERNAME_PASSWORD_COMBO for message, but was", message)
     }
     if accessKeys2, _, _ := ds.RetrieveUserKeys(user.Id, nil, 1000); len(accessKeys2) != 1 {
@@ -258,7 +259,7 @@ func TestAuthLoginNoUsername(t *testing.T) {
     req.Header.Set("Accept-Encoding", "identity")
     req.Header.Set("Accept-Language", "en-us")
     req.Header.Set("Connection", "close")
-    reqbytes, _ := http.DumpRequest(req, true)
+    reqbytes, _ := httputil.DumpRequest(req, true)
     t.Log("Request is:\n", string(reqbytes), "\n\n")
     resp := webmachine.NewMockResponseWriter(req)
     wm.ServeHTTP(resp, req)
@@ -272,7 +273,7 @@ func TestAuthLoginNoUsername(t *testing.T) {
     obj := jsonhelper.NewJSONObject()
     err := json.Unmarshal(resp.Buffer.Bytes(), &obj)
     if err != nil {
-        t.Error("Unable to unmarshal login response due to error:", err.String())
+        t.Error("Unable to unmarshal login response due to error:", err.Error())
     }
     if status := obj.GetAsString("status"); status != "error" {
         t.Error("Expected error operation, but had status:", status)
@@ -281,10 +282,10 @@ func TestAuthLoginNoUsername(t *testing.T) {
     if result.Len() != 1 {
         t.Error("Expected a result object with 1 entry, but has", result.Len(), "entries as:", result)
     }
-    if username := result.GetAsArray("username"); len(username) != 1 || username[0] != auth.ERR_MUST_SPECIFY_USERNAME.String() {
+    if username := result.GetAsArray("username"); len(username) != 1 || username[0] != auth.ERR_MUST_SPECIFY_USERNAME.Error() {
         t.Error("Expected one error for missing username, but was", result)
     }
-    if message := obj.GetAsString("message"); message != auth.ERR_VALUE_ERRORS.String() {
+    if message := obj.GetAsString("message"); message != auth.ERR_VALUE_ERRORS.Error() {
         t.Error("Expected ERR_VALUE_ERRORS for message, but was", message)
     }
 }
@@ -306,7 +307,7 @@ func TestAuthLoginNoPassword(t *testing.T) {
     req.Header.Set("Accept-Encoding", "identity")
     req.Header.Set("Accept-Language", "en-us")
     req.Header.Set("Connection", "close")
-    reqbytes, _ := http.DumpRequest(req, true)
+    reqbytes, _ := httputil.DumpRequest(req, true)
     t.Log("Request is:\n", string(reqbytes), "\n\n")
     resp := webmachine.NewMockResponseWriter(req)
     wm.ServeHTTP(resp, req)
@@ -320,7 +321,7 @@ func TestAuthLoginNoPassword(t *testing.T) {
     obj := jsonhelper.NewJSONObject()
     err := json.Unmarshal(resp.Buffer.Bytes(), &obj)
     if err != nil {
-        t.Error("Unable to unmarshal login response due to error:", err.String())
+        t.Error("Unable to unmarshal login response due to error:", err.Error())
     }
     if status := obj.GetAsString("status"); status != "error" {
         t.Error("Expected error operation, but had status:", status)
@@ -329,10 +330,10 @@ func TestAuthLoginNoPassword(t *testing.T) {
     if result.Len() != 1 {
         t.Error("Expected a result object with 1 entry, but has", result.Len(), "entries as:", result)
     }
-    if password := result.GetAsArray("password"); len(password) != 1 || password[0] != auth.ERR_MUST_SPECIFY_PASSWORD.String() {
+    if password := result.GetAsArray("password"); len(password) != 1 || password[0] != auth.ERR_MUST_SPECIFY_PASSWORD.Error() {
         t.Error("Expected one error for missing password, but was", result)
     }
-    if message := obj.GetAsString("message"); message != auth.ERR_VALUE_ERRORS.String() {
+    if message := obj.GetAsString("message"); message != auth.ERR_VALUE_ERRORS.Error() {
         t.Error("Expected ERR_VALUE_ERRORS for message, but was", message)
     }
     if accessKeys2, _, _ := ds.RetrieveUserKeys(user.Id, nil, 1000); len(accessKeys2) != 1 {
@@ -351,7 +352,7 @@ func TestAuthLoginNoUsernameNorPassword(t *testing.T) {
     req.Header.Set("Accept-Encoding", "identity")
     req.Header.Set("Accept-Language", "en-us")
     req.Header.Set("Connection", "close")
-    reqbytes, _ := http.DumpRequest(req, true)
+    reqbytes, _ := httputil.DumpRequest(req, true)
     t.Log("Request is:\n", string(reqbytes), "\n\n")
     resp := webmachine.NewMockResponseWriter(req)
     wm.ServeHTTP(resp, req)
@@ -365,7 +366,7 @@ func TestAuthLoginNoUsernameNorPassword(t *testing.T) {
     obj := jsonhelper.NewJSONObject()
     err := json.Unmarshal(resp.Buffer.Bytes(), &obj)
     if err != nil {
-        t.Error("Unable to unmarshal login response due to error:", err.String())
+        t.Error("Unable to unmarshal login response due to error:", err.Error())
     }
     if status := obj.GetAsString("status"); status != "error" {
         t.Error("Expected error operation, but had status:", status)
@@ -374,13 +375,13 @@ func TestAuthLoginNoUsernameNorPassword(t *testing.T) {
     if result.Len() != 2 {
         t.Error("Expected a result object with 2 entries, but has", result.Len(), "entries as:", result)
     }
-    if username := result.GetAsArray("username"); len(username) != 1 || username[0] != auth.ERR_MUST_SPECIFY_USERNAME.String() {
+    if username := result.GetAsArray("username"); len(username) != 1 || username[0] != auth.ERR_MUST_SPECIFY_USERNAME.Error() {
         t.Error("Expected one error for missing username, but was", result)
     }
-    if password := result.GetAsArray("password"); len(password) != 1 || password[0] != auth.ERR_MUST_SPECIFY_PASSWORD.String() {
+    if password := result.GetAsArray("password"); len(password) != 1 || password[0] != auth.ERR_MUST_SPECIFY_PASSWORD.Error() {
         t.Error("Expected one error for missing password, but was", result)
     }
-    if message := obj.GetAsString("message"); message != auth.ERR_VALUE_ERRORS.String() {
+    if message := obj.GetAsString("message"); message != auth.ERR_VALUE_ERRORS.Error() {
         t.Error("Expected ERR_VALUE_ERRORS for message, but was", message)
     }
 }
@@ -403,7 +404,7 @@ func TestAuthLoginBadPassword(t *testing.T) {
     req.Header.Set("Accept-Encoding", "identity")
     req.Header.Set("Accept-Language", "en-us")
     req.Header.Set("Connection", "close")
-    reqbytes, _ := http.DumpRequest(req, true)
+    reqbytes, _ := httputil.DumpRequest(req, true)
     t.Log("Request is:\n", string(reqbytes), "\n\n")
     resp := webmachine.NewMockResponseWriter(req)
     wm.ServeHTTP(resp, req)
@@ -417,7 +418,7 @@ func TestAuthLoginBadPassword(t *testing.T) {
     obj := jsonhelper.NewJSONObject()
     err := json.Unmarshal(resp.Buffer.Bytes(), &obj)
     if err != nil {
-        t.Error("Unable to unmarshal login response due to error:", err.String())
+        t.Error("Unable to unmarshal login response due to error:", err.Error())
     }
     if status := obj.GetAsString("status"); status != "error" {
         t.Error("Expected error operation, but had status:", status)
@@ -425,7 +426,7 @@ func TestAuthLoginBadPassword(t *testing.T) {
     if result := obj.Get("result"); result != nil {
         t.Error("Expected result to be nil, but was", result)
     }
-    if message := obj.GetAsString("message"); message != auth.ERR_INVALID_USERNAME_PASSWORD_COMBO.String() {
+    if message := obj.GetAsString("message"); message != auth.ERR_INVALID_USERNAME_PASSWORD_COMBO.Error() {
         t.Error("Expected ERR_INVALID_USERNAME_PASSWORD_COMBO for message, but was", message)
     }
     if accessKeys2, _, _ := ds.RetrieveUserKeys(user.Id, nil, 1000); len(accessKeys2) != 1 {
@@ -446,7 +447,7 @@ func TestAuthLoginAccountDoesNotExist(t *testing.T) {
     req.Header.Set("Accept-Encoding", "identity")
     req.Header.Set("Accept-Language", "en-us")
     req.Header.Set("Connection", "close")
-    reqbytes, _ := http.DumpRequest(req, true)
+    reqbytes, _ := httputil.DumpRequest(req, true)
     t.Log("Request is:\n", string(reqbytes), "\n\n")
     resp := webmachine.NewMockResponseWriter(req)
     wm.ServeHTTP(resp, req)
@@ -460,7 +461,7 @@ func TestAuthLoginAccountDoesNotExist(t *testing.T) {
     obj := jsonhelper.NewJSONObject()
     err := json.Unmarshal(resp.Buffer.Bytes(), &obj)
     if err != nil {
-        t.Error("Unable to unmarshal login response due to error:", err.String())
+        t.Error("Unable to unmarshal login response due to error:", err.Error())
     }
     if status := obj.GetAsString("status"); status != "error" {
         t.Error("Expected error operation, but had status:", status)
@@ -468,7 +469,7 @@ func TestAuthLoginAccountDoesNotExist(t *testing.T) {
     if result := obj.Get("result"); result != nil {
         t.Error("Expected result to be nil, but was", result)
     }
-    if message := obj.GetAsString("message"); message != auth.ERR_INVALID_USERNAME_PASSWORD_COMBO.String() {
+    if message := obj.GetAsString("message"); message != auth.ERR_INVALID_USERNAME_PASSWORD_COMBO.Error() {
         t.Error("Expected ERR_INVALID_USERNAME_PASSWORD_COMBO for message, but was", message)
     }
 }

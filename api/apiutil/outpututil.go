@@ -1,11 +1,10 @@
 package apiutil
 
 import (
+    "encoding/json"
     "github.com/pomack/jsonhelper.go/jsonhelper"
-    "http"
     "io"
-    "json"
-    "os"
+    "net/http"
     "time"
 )
 
@@ -17,7 +16,7 @@ func newJSONWriter(obj jsonhelper.JSONObject) *jsonWriter {
     return &jsonWriter{obj: obj}
 }
 
-func (p *jsonWriter) WriteTo(writer io.Writer) (n int64, err os.Error) {
+func (p *jsonWriter) WriteTo(writer io.Writer) (n int64, err error) {
     w := json.NewEncoder(writer)
     err = w.Encode(p.obj)
     return
@@ -26,7 +25,7 @@ func (p *jsonWriter) WriteTo(writer io.Writer) (n int64, err os.Error) {
 func (p *jsonWriter) String() string {
     b, err := json.Marshal(p.obj)
     if err != nil {
-        return err.String()
+        return err.Error()
     }
     return string(b)
 }
@@ -46,7 +45,7 @@ func OutputErrorMessage(message string, result interface{}, statusCode int, head
     return statusCode, headers, newJSONWriter(m)
 }
 
-func OutputJSONObject(obj jsonhelper.JSONObject, lastModified *time.Time, etag string, statusCode int, headers http.Header) (int, http.Header, io.WriterTo) {
+func OutputJSONObject(obj jsonhelper.JSONObject, lastModified time.Time, etag string, statusCode int, headers http.Header) (int, http.Header, io.WriterTo) {
     if statusCode == 0 {
         statusCode = http.StatusOK
     }
@@ -54,7 +53,7 @@ func OutputJSONObject(obj jsonhelper.JSONObject, lastModified *time.Time, etag s
         headers = make(http.Header)
     }
     //headers.Set("Content-Type", wm.MIME_TYPE_JSON)
-    if lastModified != nil {
+    if !lastModified.IsZero() {
         headers.Set("Last-Modified", lastModified.Format(http.TimeFormat))
     }
     if len(etag) > 0 {

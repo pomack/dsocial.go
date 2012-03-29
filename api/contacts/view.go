@@ -8,11 +8,10 @@ import (
     dm "github.com/pomack/dsocial.go/models/dsocial"
     "github.com/pomack/jsonhelper.go/jsonhelper"
     wm "github.com/pomack/webmachine.go/webmachine"
-    "http"
     "io"
-    "os"
+    "net/http"
+    "net/url"
     "time"
-    "url"
 )
 
 type ViewContactRequestHandler struct {
@@ -33,8 +32,8 @@ type ViewContactContext interface {
     SetContact(contact *dm.Contact)
     Result() jsonhelper.JSONObject
     SetResult(result jsonhelper.JSONObject)
-    LastModified() *time.Time
-    SetLastModified(lastModified *time.Time)
+    LastModified() time.Time
+    SetLastModified(lastModified time.Time)
     SetETag(etag string)
     ETag() string
 }
@@ -45,7 +44,7 @@ type viewContactContext struct {
     contact      *dm.Contact
     contactId    string
     result       jsonhelper.JSONObject
-    lastModified *time.Time
+    lastModified time.Time
     etag         string
 }
 
@@ -93,11 +92,11 @@ func (p *viewContactContext) SetResult(result jsonhelper.JSONObject) {
     p.result = result
 }
 
-func (p *viewContactContext) LastModified() *time.Time {
+func (p *viewContactContext) LastModified() time.Time {
     return p.lastModified
 }
 
-func (p *viewContactContext) SetLastModified(lastModified *time.Time) {
+func (p *viewContactContext) SetLastModified(lastModified time.Time) {
     p.lastModified = lastModified
 }
 
@@ -153,7 +152,7 @@ func (p *UpdateAccountRequestHandler) ServiceAvailable(req wm.Request, cxt wm.Co
 }
 */
 
-func (p *ViewContactRequestHandler) ResourceExists(req wm.Request, cxt wm.Context) (bool, wm.Request, wm.Context, int, os.Error) {
+func (p *ViewContactRequestHandler) ResourceExists(req wm.Request, cxt wm.Context) (bool, wm.Request, wm.Context, int, error) {
     vcc := cxt.(ViewContactContext)
     path := req.URLParts()
     pathLen := len(path)
@@ -176,11 +175,11 @@ func (p *ViewContactRequestHandler) ResourceExists(req wm.Request, cxt wm.Contex
     if contact != nil {
         vcc.SetETag(contact.Etag)
         if contact.ModifiedAt > 0 {
-            vcc.SetLastModified(time.SecondsToUTC(contact.ModifiedAt))
+            vcc.SetLastModified(time.Unix(contact.ModifiedAt, 0).UTC())
         }
     } else {
         vcc.SetETag("")
-        vcc.SetLastModified(nil)
+        vcc.SetLastModified(time.Time{})
     }
     httpStatus := 0
     if err != nil {
@@ -189,11 +188,11 @@ func (p *ViewContactRequestHandler) ResourceExists(req wm.Request, cxt wm.Contex
     return contact != nil, req, cxt, httpStatus, err
 }
 
-func (p *ViewContactRequestHandler) AllowedMethods(req wm.Request, cxt wm.Context) ([]string, wm.Request, wm.Context, int, os.Error) {
+func (p *ViewContactRequestHandler) AllowedMethods(req wm.Request, cxt wm.Context) ([]string, wm.Request, wm.Context, int, error) {
     return []string{wm.GET, wm.HEAD}, req, cxt, 0, nil
 }
 
-func (p *ViewContactRequestHandler) IsAuthorized(req wm.Request, cxt wm.Context) (bool, string, wm.Request, wm.Context, int, os.Error) {
+func (p *ViewContactRequestHandler) IsAuthorized(req wm.Request, cxt wm.Context) (bool, string, wm.Request, wm.Context, int, error) {
     vcc := cxt.(ViewContactContext)
     hasSignature, authUserId, _, err := apiutil.CheckSignature(p.authDS, req.UnderlyingRequest())
     if !hasSignature || err != nil {
@@ -211,7 +210,7 @@ func (p *ViewContactRequestHandler) IsAuthorized(req wm.Request, cxt wm.Context)
     return true, "", req, cxt, 0, nil
 }
 
-func (p *ViewContactRequestHandler) Forbidden(req wm.Request, cxt wm.Context) (bool, wm.Request, wm.Context, int, os.Error) {
+func (p *ViewContactRequestHandler) Forbidden(req wm.Request, cxt wm.Context) (bool, wm.Request, wm.Context, int, error) {
     vcc := cxt.(ViewContactContext)
     if vcc.AuthUser() != nil && vcc.AuthUser().Accessible() && vcc.User() != nil && vcc.User().Accessible() && vcc.AuthUser().Id == vcc.User().Id {
         return false, req, cxt, 0, nil
@@ -273,17 +272,17 @@ func (p *ViewContactRequestHandler) ProcessPost(req wm.Request, cxt wm.Context) 
 }
 */
 
-func (p *ViewContactRequestHandler) ContentTypesProvided(req wm.Request, cxt wm.Context) ([]wm.MediaTypeHandler, wm.Request, wm.Context, int, os.Error) {
-    genFunc := func() (jsonhelper.JSONObject, *time.Time, string, int, http.Header) {
+func (p *ViewContactRequestHandler) ContentTypesProvided(req wm.Request, cxt wm.Context) ([]wm.MediaTypeHandler, wm.Request, wm.Context, int, error) {
+    genFunc := func() (jsonhelper.JSONObject, time.Time, string, int, http.Header) {
         vcc := cxt.(ViewContactContext)
         jsonObj := vcc.Result()
         headers := apiutil.AddNoCacheHeaders(nil)
         return jsonObj, vcc.LastModified(), vcc.ETag(), http.StatusOK, headers
     }
-    return []wm.MediaTypeHandler{apiutil.NewJSONMediaTypeHandlerWithGenerator(genFunc, nil, "")}, req, cxt, 0, nil
+    return []wm.MediaTypeHandler{apiutil.NewJSONMediaTypeHandlerWithGenerator(genFunc, time.Time{}, "")}, req, cxt, 0, nil
 }
 
-func (p *ViewContactRequestHandler) ContentTypesAccepted(req wm.Request, cxt wm.Context) ([]wm.MediaTypeInputHandler, wm.Request, wm.Context, int, os.Error) {
+func (p *ViewContactRequestHandler) ContentTypesAccepted(req wm.Request, cxt wm.Context) ([]wm.MediaTypeInputHandler, wm.Request, wm.Context, int, error) {
     arr := []wm.MediaTypeInputHandler{
         apiutil.NewJSONMediaTypeInputHandler("", "", p, req.Body()),
         apiutil.NewUrlEncodedMediaTypeInputHandler("", "", p),
@@ -340,7 +339,7 @@ func (p *ViewContactRequestHandler) MovedTemporarily(req wm.Request, cxt wm.Cont
 }
 */
 
-func (p *ViewContactRequestHandler) LastModified(req wm.Request, cxt wm.Context) (*time.Time, wm.Request, wm.Context, int, os.Error) {
+func (p *ViewContactRequestHandler) LastModified(req wm.Request, cxt wm.Context) (time.Time, wm.Request, wm.Context, int, error) {
     vcc := cxt.(ViewContactContext)
     return vcc.LastModified(), req, cxt, 0, nil
 }
@@ -351,7 +350,7 @@ func (p *ViewContactRequestHandler) Expires(req wm.Request, cxt wm.Context) (*ti
 }
 */
 
-func (p *ViewContactRequestHandler) GenerateETag(req wm.Request, cxt wm.Context) (string, wm.Request, wm.Context, int, os.Error) {
+func (p *ViewContactRequestHandler) GenerateETag(req wm.Request, cxt wm.Context) (string, wm.Request, wm.Context, int, error) {
     vcc := cxt.(ViewContactContext)
     return vcc.ETag(), req, cxt, 0, nil
 }

@@ -7,9 +7,8 @@ import (
     dm "github.com/pomack/dsocial.go/models/dsocial"
     "github.com/pomack/jsonhelper.go/jsonhelper"
     wm "github.com/pomack/webmachine.go/webmachine"
-    "http"
     "io"
-    "os"
+    "net/http"
     "strings"
     "time"
 )
@@ -29,7 +28,7 @@ type ViewAccountContext interface {
     SetConsumer(consumer *dm.Consumer)
     ExternalUser() *dm.ExternalUser
     SetExternalUser(externalUser *dm.ExternalUser)
-    LastModified() *time.Time
+    LastModified() time.Time
     ETag() string
     ToObject() interface{}
     RequestingUser() *dm.User
@@ -83,14 +82,14 @@ func (p *viewAccountContext) SetExternalUser(externalUser *dm.ExternalUser) {
     p.externalUser = externalUser
 }
 
-func (p *viewAccountContext) LastModified() *time.Time {
-    var lastModified *time.Time
+func (p *viewAccountContext) LastModified() time.Time {
+    var lastModified time.Time
     if p.user != nil && p.user.ModifiedAt != 0 {
-        lastModified = time.SecondsToUTC(p.user.ModifiedAt)
+        lastModified = time.Unix(p.user.ModifiedAt, 0).UTC()
     } else if p.consumer != nil && p.consumer.ModifiedAt != 0 {
-        lastModified = time.SecondsToUTC(p.consumer.ModifiedAt)
+        lastModified = time.Unix(p.consumer.ModifiedAt, 0).UTC()
     } else if p.externalUser != nil && p.externalUser.ModifiedAt != 0 {
-        lastModified = time.SecondsToUTC(p.externalUser.ModifiedAt)
+        lastModified = time.Unix(p.externalUser.ModifiedAt, 0).UTC()
     }
     return lastModified
 }
@@ -198,16 +197,16 @@ func (p *CreateAccountRequestHandler) ServiceAvailable(req wm.Request, cxt wm.Co
 }
 */
 
-func (p *ViewAccountRequestHandler) ResourceExists(req wm.Request, cxt wm.Context) (bool, wm.Request, wm.Context, int, os.Error) {
+func (p *ViewAccountRequestHandler) ResourceExists(req wm.Request, cxt wm.Context) (bool, wm.Request, wm.Context, int, error) {
     vac := cxt.(ViewAccountContext)
     return vac.ToObject() != nil, req, cxt, 0, nil
 }
 
-func (p *ViewAccountRequestHandler) AllowedMethods(req wm.Request, cxt wm.Context) ([]string, wm.Request, wm.Context, int, os.Error) {
+func (p *ViewAccountRequestHandler) AllowedMethods(req wm.Request, cxt wm.Context) ([]string, wm.Request, wm.Context, int, error) {
     return []string{wm.GET, wm.HEAD}, req, cxt, 0, nil
 }
 
-func (p *ViewAccountRequestHandler) IsAuthorized(req wm.Request, cxt wm.Context) (bool, string, wm.Request, wm.Context, int, os.Error) {
+func (p *ViewAccountRequestHandler) IsAuthorized(req wm.Request, cxt wm.Context) (bool, string, wm.Request, wm.Context, int, error) {
     vac := cxt.(ViewAccountContext)
     hasSignature, userId, consumerId, err := apiutil.CheckSignature(p.authDS, req.UnderlyingRequest())
     if !hasSignature || err != nil {
@@ -224,7 +223,7 @@ func (p *ViewAccountRequestHandler) IsAuthorized(req wm.Request, cxt wm.Context)
     return true, "", req, cxt, 0, nil
 }
 
-func (p *ViewAccountRequestHandler) Forbidden(req wm.Request, cxt wm.Context) (bool, wm.Request, wm.Context, int, os.Error) {
+func (p *ViewAccountRequestHandler) Forbidden(req wm.Request, cxt wm.Context) (bool, wm.Request, wm.Context, int, error) {
     vac := cxt.(ViewAccountContext)
     if vac.RequestingUser() != nil && vac.RequestingUser().Accessible() && (vac.RequestingUser().Role == dm.ROLE_ADMIN || (vac.User() != nil && vac.RequestingUser().Id == vac.User().Id)) {
         return false, req, cxt, 0, nil
@@ -281,7 +280,7 @@ func (p *ViewAccountRequestHandler) ProcessPost(req wm.Request, cxt wm.Context) 
 }
 */
 
-func (p *ViewAccountRequestHandler) ContentTypesProvided(req wm.Request, cxt wm.Context) ([]wm.MediaTypeHandler, wm.Request, wm.Context, int, os.Error) {
+func (p *ViewAccountRequestHandler) ContentTypesProvided(req wm.Request, cxt wm.Context) ([]wm.MediaTypeHandler, wm.Request, wm.Context, int, error) {
     vac := cxt.(ViewAccountContext)
     obj := vac.ToObject()
     lastModified := vac.LastModified()
@@ -354,7 +353,7 @@ func (p *ViewAccountRequestHandler) MovedTemporarily(req wm.Request, cxt wm.Cont
 }
 */
 
-func (p *ViewAccountRequestHandler) LastModified(req wm.Request, cxt wm.Context) (*time.Time, wm.Request, wm.Context, int, os.Error) {
+func (p *ViewAccountRequestHandler) LastModified(req wm.Request, cxt wm.Context) (time.Time, wm.Request, wm.Context, int, error) {
     vac := cxt.(ViewAccountContext)
     return vac.LastModified(), req, cxt, 0, nil
 }
@@ -365,7 +364,7 @@ func (p *ViewAccountRequestHandler) Expires(req wm.Request, cxt wm.Context) (*ti
 }
 */
 
-func (p *ViewAccountRequestHandler) GenerateETag(req wm.Request, cxt wm.Context) (string, wm.Request, wm.Context, int, os.Error) {
+func (p *ViewAccountRequestHandler) GenerateETag(req wm.Request, cxt wm.Context) (string, wm.Request, wm.Context, int, error) {
     vac := cxt.(ViewAccountContext)
     return vac.ETag(), req, cxt, 0, nil
 }
@@ -390,9 +389,9 @@ func (p *ViewAccountRequestHandler) HandleJSONObjectInputHandler(req wm.Request,
     vac := cxt.(ViewAccountContext)
 
     obj := vac.ToObject()
-    var err os.Error
+    var err error
     if err != nil {
-        return apiutil.OutputErrorMessage(err.String(), nil, http.StatusInternalServerError, nil)
+        return apiutil.OutputErrorMessage(err.Error(), nil, http.StatusInternalServerError, nil)
     }
     theobj, _ := jsonhelper.MarshalWithOptions(obj, dm.UTC_DATETIME_FORMAT)
     jsonObj, _ := theobj.(jsonhelper.JSONObject)

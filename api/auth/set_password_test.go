@@ -7,10 +7,11 @@ import (
     //"github.com/pomack/dsocial.go/backend/authentication"
     //"github.com/pomack/dsocial.go/backend/datastore/inmemory"
     "bytes"
+    "encoding/json"
     "github.com/pomack/jsonhelper.go/jsonhelper"
     "github.com/pomack/webmachine.go/webmachine"
-    "http"
-    "json"
+    "net/http"
+    "net/http/httputil"
     "testing"
 )
 
@@ -32,7 +33,7 @@ func TestAuthSetPasswordAdmin(t *testing.T) {
     req.Header.Set("Accept-Language", "en-us")
     req.Header.Set("Connection", "close")
     apiutil.NewSigner(accessKey.Id, accessKey.PrivateKey).SignRequest(req, 0)
-    reqbytes, _ := http.DumpRequest(req, true)
+    reqbytes, _ := httputil.DumpRequest(req, true)
     t.Log("Request is:\n", string(reqbytes), "\n\n")
     resp := webmachine.NewMockResponseWriter(req)
     wm.ServeHTTP(resp, req)
@@ -46,7 +47,7 @@ func TestAuthSetPasswordAdmin(t *testing.T) {
     obj := jsonhelper.NewJSONObject()
     err := json.Unmarshal(resp.Buffer.Bytes(), &obj)
     if err != nil {
-        t.Error("Unable to unmarshal setPassword response due to error:", err.String())
+        t.Error("Unable to unmarshal setPassword response due to error:", err.Error())
     }
     if status := obj.GetAsString("status"); status != "success" {
         t.Error("Expected successful operation, but had status:", status)
@@ -96,7 +97,7 @@ func TestAuthSetPasswordUser(t *testing.T) {
     obj := jsonhelper.NewJSONObject()
     err := json.Unmarshal(resp.Buffer.Bytes(), &obj)
     if err != nil {
-        t.Error("Unable to unmarshal setPassword response due to error:", err.String())
+        t.Error("Unable to unmarshal setPassword response due to error:", err.Error())
     }
     if status := obj.GetAsString("status"); status != "success" {
         t.Error("Expected successful operation, but had status:", status)

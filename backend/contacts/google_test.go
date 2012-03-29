@@ -2,13 +2,13 @@ package contacts_test
 
 import (
     "bytes"
+    "encoding/json"
     "github.com/pomack/contacts.go/google"
     "github.com/pomack/dsocial.go/backend/contacts"
     "github.com/pomack/dsocial.go/backend/datastore/inmemory"
     dm "github.com/pomack/dsocial.go/models/dsocial"
     "github.com/pomack/jsonhelper.go/jsonhelper"
     "github.com/pomack/oauth2_client.go/oauth2_client"
-    "json"
     "testing"
     "time"
 )
@@ -2195,8 +2195,8 @@ var (
 )
 
 func init() {
-    GOOGLE_USERINFO_RESULT = oauth2_client.NewGoogleUserInfoResult("test@example.com", "John", "test@example.com", "https://www.google.com/m8/feeds/contacts/test%40example.com/full", time.UTC())
-    GOOGLE_USERINFO_RESULT2 = oauth2_client.NewGoogleUserInfoResult("test2@example.com", "John", "test2@example.com", "https://www.google.com/m8/feeds/contacts/test2%40example.com/full", time.UTC())
+    GOOGLE_USERINFO_RESULT = oauth2_client.NewGoogleUserInfoResult("test@example.com", "John", "test@example.com", "https://www.google.com/m8/feeds/contacts/test%40example.com/full", time.Now().UTC())
+    GOOGLE_USERINFO_RESULT2 = oauth2_client.NewGoogleUserInfoResult("test2@example.com", "John", "test2@example.com", "https://www.google.com/m8/feeds/contacts/test2%40example.com/full", time.Now().UTC())
 }
 
 func TestInitialSyncWithEmptyDataStoreWithGoogleContacts(t *testing.T) {
@@ -2251,25 +2251,25 @@ func TestInitialSyncWithPartialDataStoreWithGoogleContacts(t *testing.T) {
     ds.SetContactsServiceSettings(csSettings2)
     existingGroups := make([]*dm.Group, 0)
     if err := json.Unmarshal([]byte(EXISTING_GROUPS), &existingGroups); err != nil {
-        t.Fatalf("Unable to parse EXISTING_GROUPS: %s\n\n", err.String())
+        t.Fatalf("Unable to parse EXISTING_GROUPS: %s\n\n", err.Error())
     }
     for _, group := range existingGroups {
         ds.StoreDsocialGroup(dsocialUserId, "", group)
     }
     existingContacts := make([]*dm.Contact, 0)
     if err := json.Unmarshal([]byte(EXISTING_CONTACTS), &existingContacts); err != nil {
-        t.Fatalf("Unable to parse EXISTING_CONTACTS: %s\n\n", err.String())
+        t.Fatalf("Unable to parse EXISTING_CONTACTS: %s\n\n", err.Error())
     }
     for _, contact := range existingContacts {
         t.Logf("%s => %#v", contact.DisplayName, contact)
         ds.StoreDsocialContact(dsocialUserId, "", contact)
     }
     if err := pipeline.InitialSync(mockClient, ds, cs, csSettings, dsocialUserId, "me-contact-id"); err != nil {
-        t.Fatalf("Error on initial sync: %s\n\n", err.String())
+        t.Fatalf("Error on initial sync: %s\n\n", err.Error())
     }
     mockClient.SetRetrieveUserInfo(GOOGLE_USERINFO_RESULT2, nil)
     if err := pipeline.Export(mockClient, ds, cs, csSettings2, dsocialUserId, "me-contact-id"); err != nil {
-        t.Fatalf("Error on pipeline.Export: %s\n\n", err.String())
+        t.Fatalf("Error on pipeline.Export: %s\n\n", err.Error())
     }
     buf := bytes.NewBuffer(make([]byte, 0))
     ds.Encode(buf)
